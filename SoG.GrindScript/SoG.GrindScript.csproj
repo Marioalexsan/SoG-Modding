@@ -84,6 +84,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y  "$(TargetPath)" "G:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
+    <PostBuildEvent>copy /y  "$(TargetPath)" "E:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
   </PropertyGroup>
 </Project>
