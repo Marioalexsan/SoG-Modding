@@ -25,14 +25,10 @@ namespace SoG.GrindScript
             return _definedTypes.First(t => t.FullName == name);
         }
 
-        public static object MakeEnum(string name, int value)
-        {
-            return Enum.ToObject(GetGameType(name), value);
-        }
 
     }
 
-    public static class TypeExtension
+    static class TypeExtension
     {
         public static MethodInfo GetPublicInstanceMethod(this TypeInfo t,string name)
         {
@@ -69,10 +65,7 @@ namespace SoG.GrindScript
             return (T) t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
 
-        public static object ConstructInstance(this TypeInfo t, params object[] args)
-        {
-            return t.GetConstructor(args.Select(arg => arg.GetType()).ToArray())?.Invoke(args);
-        }
+
     }
 
 
