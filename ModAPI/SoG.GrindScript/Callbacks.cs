@@ -464,7 +464,7 @@ namespace SoG.GrindScript
                 // GetItemInstance prefix patch
                 //var postfix = typeof(NativeInterface).GetTypeInfo().GetMethod("LoadGrindscript");
                 var transpiler = typeof(Callbacks).GetTypeInfo().GetMethod("InitializeLoadPatch_Transpiler", BindingFlags.Public | BindingFlags.Static);
-                var original = Utils.GetGameType("SoG.Game1").GetMethod("LoadContent", BindingFlags.Instance | BindingFlags.NonPublic);
+                var original = Utils.GetGameType("SoG.Game1").GetMethod("__StartupThreadExecute", BindingFlags.Instance | BindingFlags.Public);
 
                 harmony.Patch(original, transpiler: new HarmonyMethod(transpiler));
             }

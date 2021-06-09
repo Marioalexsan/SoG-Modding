@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SoG.GrindScript;
-using Lidgren.Network;
 using Microsoft.Xna.Framework.Content;
 
 namespace SoG.ItemExample
