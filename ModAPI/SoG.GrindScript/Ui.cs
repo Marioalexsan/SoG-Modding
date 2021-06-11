@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using HarmonyLib;
-using System.Runtime.InteropServices;
 
 namespace SoG.GrindScript
 {
@@ -16,7 +9,7 @@ namespace SoG.GrindScript
             try
             {
                 MiscText xEntry = new MiscText();
-                Utils.GetTheGame().xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry] = xEntry;
+                GrindScript.Game.xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry] = xEntry;
 
                 // No support for color tags yet...
                 xEntry.sUnparsedFullLine = xEntry.sUnparsedBaseLine = sText;
@@ -64,7 +57,7 @@ namespace SoG.GrindScript
             try
             {
                 // try-catch addiction
-                return Utils.GetTheGame().xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry].sUnparsedBaseLine;
+                return GrindScript.Game.xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry].sUnparsedBaseLine;
             }
             catch (Exception e)
             {

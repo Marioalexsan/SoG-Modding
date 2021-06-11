@@ -23,37 +23,14 @@ namespace SoG.ModLauncher
             InitializeComponent();
         }
 
-        private void runButton_Click_OLD(object sender, EventArgs e)
-        {
-            // Old function
-            var secretsOfGrindea = Process.GetProcessesByName("Secrets of Grindea").First();
-
-            if(secretsOfGrindea == null)
-                return;
-
-            var injector = new Injection(secretsOfGrindea.Handle);
-
-
-            injector.Inject("ModLoader.dll"); 
-            
-        }
-
         private void runButton_Click(object sender, EventArgs e)
         {
-            var existingProcesses = Process.GetProcessesByName("Secrets of Grindea");
+            var injector = new SuspendedInjection("Secrets Of Grindea.exe");
+            injector.BeginProcess();
 
-            if (existingProcesses.Count() > 0)
-            {
-                MessageBox.Show("There's more than one Secrets of Grindea instance!\n Keep in mind only game instances started through the launcher will be patched.", "Multiple Instances", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+            //var injector = new Injection(secretsOfGrindea.Handle);
 
-            var secretsOfGrindea = Process.Start("Secrets Of Grindea.exe");
-
-            Thread.Sleep(1000);
-
-            var injector = new Injection(secretsOfGrindea.Handle);
-
-            injector.Inject("ModLoader.dll");
+            //injector.Inject("ModLoader.dll");
 
         }
 
