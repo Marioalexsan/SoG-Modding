@@ -17,7 +17,7 @@ Disclaimer: The master branch can be broken sometimes.
 To get the mod loader running on your local machine, perform these steps:
 
 1. Clone this repo and open the solution in Visual Studio.
-2. Create a folder called VanillaDependencies and copy Secrets Of Grindea.exe in there
+2. Create a folder called VanillaDependencies and copy `Secrets Of Grindea.exe` in there
 3. Build the solution.
    - If a project fails, try to `Clean` the project and then `Rebuild` it. You can see these options by right clicking the project in Visual Studio.
    - Mod Examples require a reference to `GrindScript.dll`. The default project searches for it in `Build/Debug/`
