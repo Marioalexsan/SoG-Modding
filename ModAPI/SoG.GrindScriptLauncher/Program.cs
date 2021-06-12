@@ -56,7 +56,7 @@ namespace SoG.GrindScriptLauncher
                 GrindScript = Assembly.LoadFile(Directory.GetCurrentDirectory() + "\\GrindScript.dll");
 
                 SoGMain = SoG.DefinedTypes.First(t => t.FullName == "SoG.Program").GetMethod("Main", BindingFlags.Static | BindingFlags.NonPublic);
-                GSInit = GrindScript.DefinedTypes.First(t => t.FullName == "SoG.GrindScript.GrindScript").GetMethod("InitializeInLauncher", BindingFlags.Static | BindingFlags.Public);
+                GSInit = GrindScript.DefinedTypes.First(t => t.FullName == "SoG.Modding.GrindScript").GetMethod("Prepare", BindingFlags.Static | BindingFlags.NonPublic);
 
                 Console.WriteLine("Initializing GrindScript");
                 LaunchGrindScript();

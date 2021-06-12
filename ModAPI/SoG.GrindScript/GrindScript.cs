@@ -5,11 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
     public class GrindScript
     {
         private readonly Harmony harmony = new Harmony("GrindScriptPatcher");
+
         private readonly List<BaseScript> _loadedScripts = new List<BaseScript>();
         private Assembly _gameAssembly;
         private IEnumerable<TypeInfo> _gameTypes;
@@ -24,46 +25,34 @@ namespace SoG.GrindScript
             ModAPI = this;
             _gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
             _gameTypes = _gameAssembly.DefinedTypes;
-
-            CreateMissingDirectories();
             ApplyPatches();
         }
 
-        public static void InitializeInLauncher()
+        // Call this via reflection from launcher
+        private static void Prepare()
         {
             if (ModAPI != null)
             {
-                Console.WriteLine("Tried to InitializeInLauncher while a GrindScript instance exists!");
+                Console.WriteLine("GrindScript::Prepare() - A GrindScript instance already exists!");
                 return;
             }
-            Console.WriteLine("Initializing Grindscript...");
+            Console.WriteLine("Preparing Grindscript...");
+
             new GrindScript();
         }
 
-        public static void InitializeInSoG()
+        // Call this via reflection from Game1::Initialize() patch
+        private static void Initialize()
         {
             if (ModAPI == null)
             {
-                Console.WriteLine("Tried to InitializeInlauncher without a GrindScript instance!");
+                Console.WriteLine("GrindScript::Initialize() - No GrindScript instance to init!");
                 return;
             }
+            Console.WriteLine("Initializing Grindscript...");
             Game = (Game1)ModAPI.GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
             ModAPI.Library = new ModLibrary();
             ModAPI.LoadMods();
-        }
-
-        private static void CreateMissingDirectories()
-        {
-            try
-            {
-                Directory.CreateDirectory("Mods");
-            }
-            catch (Exception) { }
-            try
-            {
-                Directory.CreateDirectory("ModContent");
-            }
-            catch (Exception) { }
         }
 
         public TypeInfo GetGameType(string name)
@@ -73,7 +62,8 @@ namespace SoG.GrindScript
 
         private bool LoadMod(string name)
         {
-            CreateMissingDirectories();
+            Utils.TryCreateDirectory("Mods");
+            Utils.TryCreateDirectory("ModContent");
 
             Console.WriteLine("Loading mod " + name);
             try
@@ -117,7 +107,7 @@ namespace SoG.GrindScript
             Console.WriteLine("Applying Patches...");
             PatchCodex.Patches[] toPatch = new PatchCodex.Patches[]
             {
-                PatchCodex.Patches.Game1_Run,
+                PatchCodex.Patches.Game1_Initialize,
                 PatchCodex.Patches.Game1_FinalDraw,
                 PatchCodex.Patches.Game1_Player_TakeDamage,
                 PatchCodex.Patches.Game1_Player_KillPlayer,
@@ -134,7 +124,7 @@ namespace SoG.GrindScript
             {
                 foreach (var id in toPatch)
                 {
-                    Console.WriteLine("Patch" + id);
+                    Console.WriteLine("Patch: " + id);
                     harmony.Patch(PatchCodex.GetPatch(id));
                 }
                 Console.WriteLine("Patches Applied!");

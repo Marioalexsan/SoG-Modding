@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
     public class Ui
     {

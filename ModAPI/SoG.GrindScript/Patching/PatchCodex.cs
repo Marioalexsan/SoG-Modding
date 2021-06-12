@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
     public static class PatchCodex
     {
         public enum Patches
         {
-            // GrindScript
-            Game1_Run,
+            // GrindScript Initialize
+            Game1_Initialize,
             // BaseScript callbacks
             Game1_FinalDraw,
             Game1_Player_TakeDamage,
@@ -44,7 +40,7 @@ namespace SoG.GrindScript
             PatchDescription patch = new PatchDescription();
             switch (which)
             {
-                case Patches.Game1_Run:
+                case Patches.Game1_Initialize:
                     patch.Target = Game1.GetMethod("Initialize", BindingFlags.Instance | BindingFlags.NonPublic);
                     patch.Prefix = Methods.GetPrivateStaticMethod("OnGame1Run");
                     break;

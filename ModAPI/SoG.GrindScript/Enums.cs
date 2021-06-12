@@ -1,4 +1,4 @@
-﻿namespace SoG.GrindScript
+﻿namespace SoG.Modding
 {
     public enum MiscTextTypes
     {

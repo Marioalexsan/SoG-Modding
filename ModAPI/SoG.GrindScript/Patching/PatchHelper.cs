@@ -1,13 +1,10 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
     public static class PatchHelper
     {
@@ -50,7 +47,10 @@ namespace SoG.GrindScript
         public static MethodInfo Patch(this Harmony harmony, PatchCodex.PatchDescription patch)
         {
             if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))
-                Console.WriteLine("A patch provided is invalid!");
+            {
+                Console.WriteLine("A patch provided is likely invalid!");
+            }
+
             return harmony.Patch(patch.Target,
                 patch.Prefix != null ? new HarmonyMethod(patch.Prefix) : null,
                 patch.Postfix != null ? new HarmonyMethod(patch.Postfix) : null,

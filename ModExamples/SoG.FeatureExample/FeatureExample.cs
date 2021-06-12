@@ -1,11 +1,12 @@
-﻿using System;
-using SoG.GrindScript;
+﻿using SoG.Modding;
+using System;
 
 namespace SoG.FeatureExample
 {
     public class FeatureExample: BaseScript
     {
         bool drewStuff = false;
+        int levelUpsSoFar = 0;
 
         public FeatureExample()
         {
@@ -47,7 +48,11 @@ namespace SoG.FeatureExample
 
         public override void PostPlayerLevelUp(PlayerView player)
         {
-            Console.WriteLine("FeatureExample::PostPlayerLevelUp() called!");
+            levelUpsSoFar++;
+            if ((levelUpsSoFar + 7) % 8 == 0)
+            {
+                Console.WriteLine("FeatureExample::PostPlayerLevelUp() called! Cumulative count: " + levelUpsSoFar);
+            }
         }
 
         public override void OnEnemyDamaged(Enemy enemy, ref int damage, ref byte type)
@@ -73,7 +78,7 @@ namespace SoG.FeatureExample
         public override bool OnChatParseCommand(string command, string argList, int connection)
         {
             Console.WriteLine("FeatureExample::OnChatParseCommand() called!");
-            CAS.AddChatMessage("Loud and clear!");
+            CAS.AddChatMessage("FeatureExample says: Loud and clear!");
             return true;
         }
 

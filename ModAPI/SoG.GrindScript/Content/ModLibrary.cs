@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
     public class ModLibrary
 	{

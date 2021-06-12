@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
     public static class PatchMethods
     {
@@ -20,7 +20,7 @@ namespace SoG.GrindScript
 
         private static void OnGame1Run()
         {
-            GrindScript.InitializeInSoG();
+            typeof(GrindScript).GetTypeInfo().GetPrivateStaticMethod("Initialize").Invoke(null, new object[0]);
         }
 
         private static void OnContentLoad()

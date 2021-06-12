@@ -1,14 +1,10 @@
 ﻿using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
-    public static class ItemExtensions
+    public static partial class SoGExtension
     {
         public static bool IsSoGItem(this ItemCodex.ItemTypes enType)
         {

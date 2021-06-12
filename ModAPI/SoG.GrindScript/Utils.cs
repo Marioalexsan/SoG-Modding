@@ -1,13 +1,21 @@
-﻿using HarmonyLib;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace SoG.GrindScript
+namespace SoG.Modding
 {
 
     public static class Utils
     {
-
+        public static void TryCreateDirectory(string name)
+        {
+            try
+            {
+                Directory.CreateDirectory("Mods");
+            }
+            catch (Exception) { }
+        }
     }
 
     public static partial class TypeExtension
