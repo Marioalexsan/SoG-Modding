@@ -25,14 +25,7 @@ namespace SoG.ModLauncher
 
         private void runButton_Click(object sender, EventArgs e)
         {
-            var injector = new SuspendedInjection("Secrets Of Grindea.exe");
-            injector.BeginProcess();
-
-            //var injector = new Injection(secretsOfGrindea.Handle);
-
-            //injector.Inject("ModLoader.dll");
-
+            Process.Start("GrindScriptLauncher.exe");
         }
-
     }
 }

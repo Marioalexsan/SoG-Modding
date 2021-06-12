@@ -12,7 +12,7 @@ namespace SoG.GrindScript
         public enum Patches
         {
             // GrindScript
-            Game1_StartupThreadExecute,
+            Game1_Run,
             // BaseScript callbacks
             Game1_FinalDraw,
             Game1_Player_TakeDamage,
@@ -44,9 +44,9 @@ namespace SoG.GrindScript
             PatchDescription patch = new PatchDescription();
             switch (which)
             {
-                case Patches.Game1_StartupThreadExecute:
-                    patch.Target = Game1.GetMethod("__StartupThreadExecute", BindingFlags.Instance | BindingFlags.Public);
-                    patch.Transpiler = Methods.GetMethod("InitializeLoadPatch_Transpiler", BindingFlags.Public);
+                case Patches.Game1_Run:
+                    patch.Target = Game1.GetMethod("Initialize", BindingFlags.Instance | BindingFlags.NonPublic);
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGame1Run");
                     break;
                 case Patches.Game1_FinalDraw:
                     patch.Target = Game1.GetPublicInstanceMethod("FinalDraw");

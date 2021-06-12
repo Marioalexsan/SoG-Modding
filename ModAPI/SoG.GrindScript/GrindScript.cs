@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
@@ -28,23 +26,30 @@ namespace SoG.GrindScript
             _gameTypes = _gameAssembly.DefinedTypes;
 
             CreateMissingDirectories();
-
-            Game = (Game1)GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
-            Library = new ModLibrary();
-
             ApplyPatches();
-            LoadMods();
         }
 
-        public static void Initialize()
+        public static void InitializeInLauncher()
         {
             if (ModAPI != null)
             {
-                Console.WriteLine("Tried to Initialize() while a GrindScript instance exists!");
+                Console.WriteLine("Tried to InitializeInLauncher while a GrindScript instance exists!");
                 return;
             }
             Console.WriteLine("Initializing Grindscript...");
             new GrindScript();
+        }
+
+        public static void InitializeInSoG()
+        {
+            if (ModAPI == null)
+            {
+                Console.WriteLine("Tried to InitializeInlauncher without a GrindScript instance!");
+                return;
+            }
+            Game = (Game1)ModAPI.GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            ModAPI.Library = new ModLibrary();
+            ModAPI.LoadMods();
         }
 
         private static void CreateMissingDirectories()
@@ -112,7 +117,7 @@ namespace SoG.GrindScript
             Console.WriteLine("Applying Patches...");
             PatchCodex.Patches[] toPatch = new PatchCodex.Patches[]
             {
-                PatchCodex.Patches.Game1_StartupThreadExecute,
+                PatchCodex.Patches.Game1_Run,
                 PatchCodex.Patches.Game1_FinalDraw,
                 PatchCodex.Patches.Game1_Player_TakeDamage,
                 PatchCodex.Patches.Game1_Player_KillPlayer,

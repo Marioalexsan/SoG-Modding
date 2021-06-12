@@ -1,11 +1,7 @@
 ﻿using HarmonyLib;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
@@ -20,6 +16,11 @@ namespace SoG.GrindScript
             };
 
             return PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+        }
+
+        private static void OnGame1Run()
+        {
+            GrindScript.InitializeInSoG();
         }
 
         private static void OnContentLoad()
