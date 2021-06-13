@@ -40,12 +40,12 @@ namespace SoG.Modding
 
         public ItemCodex.ItemTypes type;
 
-        public ModItemDescription itemInfo;
+        public ModItemInfo itemInfo;
 
-        public ModEquipmentInfo equipInfo;
+        public ModEquipInfo equipInfo;
     }
 
-    internal class ModItemDescription
+    internal class ModItemInfo
     {
         public ItemDescription vanilla;
 
@@ -56,7 +56,7 @@ namespace SoG.Modding
         public ContentManager managerToUse;
     }
 
-    internal class ModEquipmentInfo
+    internal class ModEquipInfo
     {
         public ItemCodex.ItemTypes type;
 
@@ -71,7 +71,7 @@ namespace SoG.Modding
         public ItemCodex.ItemCategories equipCategory;
     }
 
-    public class ModItemDescriptionBuilder
+    public class ModItemInfoBuilder
     {
         private string _name;
         private string _description;
@@ -88,21 +88,21 @@ namespace SoG.Modding
         private ContentManager _managerToUse;
         private ItemCodex.ItemCategories[] _categories = new ItemCodex.ItemCategories[0];
 
-        public ModItemDescriptionBuilder() { }
+        public ModItemInfoBuilder() { }
 
-        public ModItemDescriptionBuilder(string name, string description)
+        public ModItemInfoBuilder(string name, string description)
         {
             Texts(name, description);
         }
 
-        public ModItemDescriptionBuilder Texts(string name, string description)
+        public ModItemInfoBuilder Texts(string name, string description)
         {
             _name = name;
             _description = description;
             return this;
         }
 
-        public ModItemDescriptionBuilder Resources(ContentManager manager, string displayTexPath, string shadowTexPath)
+        public ModItemInfoBuilder Resources(ContentManager manager, string displayTexPath, string shadowTexPath)
         {
             _managerToUse = manager;
             _displayTexPath = displayTexPath;
@@ -110,13 +110,13 @@ namespace SoG.Modding
             return this;
         }
 
-        public ModItemDescriptionBuilder Categories(params ItemCodex.ItemCategories[] categories)
+        public ModItemInfoBuilder Categories(params ItemCodex.ItemCategories[] categories)
         {
             _categories = categories;
             return this;
         }
 
-        public ModItemDescriptionBuilder Value(int value, float arcadeModifier = 1f, int bloodCost = 0)
+        public ModItemInfoBuilder Value(int value, float arcadeModifier = 1f, int bloodCost = 0)
         {
             _value = value;
             _arcadeValueMod = arcadeModifier;
@@ -124,7 +124,19 @@ namespace SoG.Modding
             return this;
         }
 
-        internal ModItemDescription Build(ItemCodex.ItemTypes allocatedType)
+        public ModItemInfoBuilder Level(ushort levelForBestSort)
+        {
+            _levelForBestSort = levelForBestSort;
+            return this;
+        }
+
+        public ModItemInfoBuilder Fancyness(byte fancyness)
+        {
+            _fancyness = fancyness;
+            return this;
+        }
+
+        internal ModItemInfo Build(ItemCodex.ItemTypes allocatedType)
         {
             string entry = _name.Replace(" ", "");
 
@@ -136,13 +148,13 @@ namespace SoG.Modding
                 sDescriptionLibraryHandle = entry + "_Description",
                 sCategory = "",
                 iInternalLevel = _levelForBestSort,
-                byFancyness = _fancyness,
+                byFancyness = Math.Min((byte)1, Math.Max(_fancyness, (byte)3)),
                 iValue = _value,
                 iOverrideBloodValue = _bloodValue,
                 enType = allocatedType
             };
 
-            return new ModItemDescription()
+            return new ModItemInfo()
             {
                 vanilla = itemInfo,
                 shadowToUse = _shadowTexPath,
@@ -152,7 +164,7 @@ namespace SoG.Modding
         }
     }
 
-    public class ModEquipmentInfoBuilder
+    public class ModEquipInfoBuilder
     {
         private static readonly EStat[] statEnumArray = { 
             EStat.HP, EStat.EP, EStat.ATK, EStat.MATK, EStat.DEF, EStat.ASPD, EStat.CSPD, EStat.Crit, EStat.CritDMG, EStat.ShldHP, EStat.EPRegen, EStat.ShldRegen 
@@ -164,14 +176,14 @@ namespace SoG.Modding
         protected EquipmentInfo.SpecialEffect[] _specialEffects = new EquipmentInfo.SpecialEffect[0];
         protected ItemCodex.ItemCategories _categoryForBasic = ItemCodex.ItemCategories.Accessory;
 
-        public ModEquipmentInfoBuilder Resource(ContentManager manager, string resource)
+        public ModEquipInfoBuilder Resource(ContentManager manager, string resource)
         {
             _managerToUse = manager;
             _resource = resource;
             return this;
         }
 
-        public ModEquipmentInfoBuilder Stats(int HP = 0, int EP = 0, int ATK = 0, int MATK = 0, int DEF = 0, int ASPD = 0, int CSPD = 0, int Crit = 0, int CritDMG = 0, int ShldHP = 0, int EPRegen = 0, int ShldRegen = 0)
+        public ModEquipInfoBuilder Stats(int HP = 0, int EP = 0, int ATK = 0, int MATK = 0, int DEF = 0, int ASPD = 0, int CSPD = 0, int Crit = 0, int CritDMG = 0, int ShldHP = 0, int EPRegen = 0, int ShldRegen = 0)
         {
             int[] statValueArray = { HP, EP, ATK, MATK, DEF, ASPD, CSPD, Crit, CritDMG, ShldHP, EPRegen, ShldRegen };
 
@@ -184,14 +196,14 @@ namespace SoG.Modding
             return this;
         }
 
-        public ModEquipmentInfoBuilder SpecialEffects(params EquipmentInfo.SpecialEffect[] effects)
+        public ModEquipInfoBuilder SpecialEffects(params EquipmentInfo.SpecialEffect[] effects)
         {
             _specialEffects = effects;
             return this;
         }
 
         // This is only useful with ModEquipmentBuilder. Derived builders will override this on Build()
-        public ModEquipmentInfoBuilder EquipmentType(ItemCodex.ItemCategories category)
+        public ModEquipInfoBuilder EquipmentType(ItemCodex.ItemCategories category)
         {
             _categoryForBasic = category;
             return this;
@@ -206,11 +218,11 @@ namespace SoG.Modding
                 info.lenSpecialEffects.Add(effect);
         }
 
-        internal virtual ModEquipmentInfo Build(ItemCodex.ItemTypes allocatedType)
+        internal virtual ModEquipInfo Build(ItemCodex.ItemTypes allocatedType)
         {
             EquipmentInfo equipInfo = new EquipmentInfo(_resource, allocatedType);
             BasicBuildOnto(equipInfo);
-            return new ModEquipmentInfo()
+            return new ModEquipInfo()
             {
                 type = allocatedType,
                 resourceToUse = _resource,
@@ -221,7 +233,7 @@ namespace SoG.Modding
         }
     }
 
-    public class ModFacegearInfoBuilder : ModEquipmentInfoBuilder
+    public class ModFacegearInfoBuilder : ModEquipInfoBuilder
     {
         private bool[] _sortsOverHair = new bool[] { true, true, true, true };
         private bool[] _sortsOverHat = new bool[] { true, true, true, true };
@@ -264,7 +276,7 @@ namespace SoG.Modding
             return (ModFacegearInfoBuilder)base.SpecialEffects(effects);
         }
 
-        internal override ModEquipmentInfo Build(ItemCodex.ItemTypes allocatedType)
+        internal override ModEquipInfo Build(ItemCodex.ItemTypes allocatedType)
         {
             FacegearInfo equipInfo = new FacegearInfo(allocatedType);
             BasicBuildOnto(equipInfo);
@@ -274,7 +286,7 @@ namespace SoG.Modding
             _renderOffsets.CopyTo(equipInfo.av2RenderOffsets, 0);
 
             _categoryForBasic = ItemCodex.ItemCategories.Facegear;
-            return new ModEquipmentInfo()
+            return new ModEquipInfo()
             {
                 type = allocatedType,
                 resourceToUse = _resource,
@@ -285,9 +297,9 @@ namespace SoG.Modding
         }
     }
 
-    public class ModHatInfoBuilder : ModEquipmentInfoBuilder
+    public class ModHatInfoBuilder : ModEquipInfoBuilder
     {
-        private class VisualSetDescription
+        private class VSetInfo
         {
             public bool[] _sortsUnderHair = new bool[] { false, false, false, false };
             public bool[] _sortsBehindChar = new bool[] { false, false, false, false };
@@ -297,17 +309,17 @@ namespace SoG.Modding
             public bool _obstructBottom = false;
         }
 
-        private readonly VisualSetDescription _defaultSet = new VisualSetDescription();
-        private readonly Dictionary<ItemCodex.ItemTypes, VisualSetDescription> _alternateSets = new Dictionary<ItemCodex.ItemTypes, VisualSetDescription>();
+        private readonly VSetInfo _defaultSet = new VSetInfo();
+        private readonly Dictionary<ItemCodex.ItemTypes, VSetInfo> _alternateSets = new Dictionary<ItemCodex.ItemTypes, VSetInfo>();
         private readonly Dictionary<ItemCodex.ItemTypes, string> _altSetResources = new Dictionary<ItemCodex.ItemTypes, string>();
         private bool _doubleSlot = false;
 
-        private VisualSetDescription GetSetToUse(ItemCodex.ItemTypes altSet)
+        private VSetInfo GetSetToUse(ItemCodex.ItemTypes altSet)
         {
-            VisualSetDescription setToUse = _defaultSet;
+            VSetInfo setToUse = _defaultSet;
             if (altSet != ItemCodex.ItemTypes.Null)
             {
-                if (!_alternateSets.ContainsKey(altSet)) _alternateSets[altSet] = new VisualSetDescription();
+                if (!_alternateSets.ContainsKey(altSet)) _alternateSets[altSet] = new VSetInfo();
                 setToUse = _alternateSets[altSet];
             }
             return setToUse;
@@ -345,14 +357,14 @@ namespace SoG.Modding
 
         public ModHatInfoBuilder RendersUnderHair(ItemCodex.ItemTypes hairdoAltSet, bool up, bool right, bool down, bool left)
         {
-            VisualSetDescription setToUse = GetSetToUse(hairdoAltSet);
+            VSetInfo setToUse = GetSetToUse(hairdoAltSet);
             setToUse._sortsUnderHair = new bool[] { up, right, down, left };
             return this;
         }
 
         public ModHatInfoBuilder RendersBehindPlayer(ItemCodex.ItemTypes hairdoAltSet, bool up, bool right, bool down, bool left)
         {
-            VisualSetDescription setToUse = GetSetToUse(hairdoAltSet);
+            VSetInfo setToUse = GetSetToUse(hairdoAltSet);
             setToUse._sortsBehindChar = new bool[] { up, right, down, left };
             return this;
         }
@@ -360,7 +372,7 @@ namespace SoG.Modding
 
         public ModHatInfoBuilder RenderOffsets(ItemCodex.ItemTypes hairdoAltSet, Vector2 up, Vector2 right, Vector2 down, Vector2 left)
         {
-            VisualSetDescription setToUse = GetSetToUse(hairdoAltSet);
+            VSetInfo setToUse = GetSetToUse(hairdoAltSet);
             setToUse._renderOffsets = new Vector2[] {
                 new Vector2(up.X, up.Y), new Vector2(right.X, right.Y), new Vector2(down.X, down.Y), new Vector2(left.X, left.Y)
             };
@@ -369,7 +381,7 @@ namespace SoG.Modding
 
         public ModHatInfoBuilder HairObstruction(ItemCodex.ItemTypes hairdoAltSet, bool sides, bool top, bool bottom)
         {
-            VisualSetDescription setToUse = GetSetToUse(hairdoAltSet);
+            VSetInfo setToUse = GetSetToUse(hairdoAltSet);
             setToUse._obstructSides = sides;
             setToUse._obstructTop = top;
             setToUse._obstructBottom = bottom;
@@ -402,7 +414,7 @@ namespace SoG.Modding
             return (ModHatInfoBuilder)base.SpecialEffects(effects);
         }
 
-        private void InitializeSet(HatInfo.VisualSet set, VisualSetDescription desc)
+        private void InitializeSet(HatInfo.VisualSet set, VSetInfo desc)
         {
             desc._sortsUnderHair.CopyTo(set.abUnderHair, 0);
             desc._sortsBehindChar.CopyTo(set.abBehindCharacter, 0);
@@ -412,7 +424,7 @@ namespace SoG.Modding
             set.bObstructsBottom = desc._obstructBottom;
         }
 
-        internal override ModEquipmentInfo Build(ItemCodex.ItemTypes allocatedType)
+        internal override ModEquipInfo Build(ItemCodex.ItemTypes allocatedType)
         {
             HatInfo equipInfo = new HatInfo(allocatedType);
             BasicBuildOnto(equipInfo);
@@ -427,7 +439,7 @@ namespace SoG.Modding
             }
 
             _categoryForBasic = ItemCodex.ItemCategories.Hat;
-            return new ModEquipmentInfo()
+            return new ModEquipInfo()
             {
                 type = allocatedType,
                 resourceToUse = _resource,
@@ -439,7 +451,7 @@ namespace SoG.Modding
         }
     }
 
-    public class ModWeaponInfoBuilder : ModEquipmentInfoBuilder
+    public class ModWeaponInfoBuilder : ModEquipInfoBuilder
     {
         private WeaponInfo.WeaponCategory _handedness = WeaponInfo.WeaponCategory.OneHanded;
         private bool _magicWeapon = false;
@@ -468,7 +480,7 @@ namespace SoG.Modding
             return (ModWeaponInfoBuilder)base.SpecialEffects(effects);
         }
 
-        internal override ModEquipmentInfo Build(ItemCodex.ItemTypes allocatedType)
+        internal override ModEquipInfo Build(ItemCodex.ItemTypes allocatedType)
         {
             WeaponInfo equipInfo = new WeaponInfo(_resource, allocatedType, _handedness); // TODO add custom palette support
             BasicBuildOnto(equipInfo);
@@ -502,7 +514,7 @@ namespace SoG.Modding
                     break;
             }
 
-            return new ModEquipmentInfo()
+            return new ModEquipInfo()
             {
                 type = allocatedType,
                 resourceToUse = _resource,

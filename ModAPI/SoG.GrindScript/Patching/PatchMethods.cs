@@ -16,15 +16,15 @@ namespace SoG.Modding
     {
         private static IEnumerable<CodeInstruction> StartupThreadExecute_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            Console.WriteLine("StartupThreadExecute_Transpiler fired!");
-
             MethodInfo target = GrindScript.GetGameType("SoG.DialogueCharacterLoading").GetMethod("Init", BindingFlags.Public | BindingFlags.Static);
             List<CodeInstruction> insertedCode = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Call, typeof(PatchMethods).GetTypeInfo().GetMethod("OnContentLoad", BindingFlags.NonPublic | BindingFlags.Static))
             };
 
-            return PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+            var newCode = PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+            PatchHelper.LogCodeAroundTarget(newCode, target);
+            return newCode;
         }
 
         private static void OnGame1Initialize()
@@ -34,7 +34,6 @@ namespace SoG.Modding
 
         private static void OnContentLoad()
         {
-            Console.WriteLine("OnContentLoad fired!");
             foreach (BaseScript mod in GrindScript.LoadedScripts)
                 mod.OnCustomContentLoad();
         }
@@ -102,7 +101,9 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
 
-            return PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+            var newCode = PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+            PatchHelper.LogCodeAroundTarget(newCode, target);
+            return newCode;
         }
 
         private static bool OnChatParseCommand(string command, string message, int connection)
@@ -130,7 +131,7 @@ namespace SoG.Modding
             if (!enType.IsModItem()) 
                 return true;
 
-            ModItemDescription details = GrindScript.GlobalLib.ModItems[enType].itemInfo;
+            ModItemInfo details = GrindScript.GlobalLib.ModItems[enType].itemInfo;
             __result = details.vanilla;
             try
             {
@@ -150,7 +151,7 @@ namespace SoG.Modding
             if (!enType.IsModItem()) 
                 return true;
 
-            ModItemDescription details = GrindScript.GlobalLib.ModItems[enType].itemInfo;
+            ModItemInfo details = GrindScript.GlobalLib.ModItems[enType].itemInfo;
             ItemDescription xDesc = details.vanilla;
 
             __result = new Item()
@@ -201,7 +202,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModEquipmentInfo modEquip = GrindScript.GlobalLib.ModItems[enType].equipInfo;
+            ModEquipInfo modEquip = GrindScript.GlobalLib.ModItems[enType].equipInfo;
             __result = modEquip.vanilla as FacegearInfo;
             ContentManager manager = modEquip.managerToUse;
 
@@ -230,7 +231,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModEquipmentInfo modEquip = GrindScript.GlobalLib.ModItems[enType].equipInfo;
+            ModEquipInfo modEquip = GrindScript.GlobalLib.ModItems[enType].equipInfo;
             __result = modEquip.vanilla as HatInfo;
             ContentManager manager = modEquip.managerToUse;
 

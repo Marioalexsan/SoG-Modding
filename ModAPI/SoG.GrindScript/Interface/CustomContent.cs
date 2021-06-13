@@ -9,12 +9,12 @@ namespace SoG.Modding
 {
     public static partial class GrindScript
     {
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemDescriptionBuilder item)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemInfoBuilder item)
         {
             return CreateItem(owner, item, null);
         }
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemDescriptionBuilder item, ModEquipmentInfoBuilder equip)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemInfoBuilder item, ModEquipInfoBuilder equip)
         {
             if (item == null || owner == null)
             {

@@ -29,32 +29,32 @@ namespace SoG.FeatureExample
                 Console.WriteLine("FeatureExample: Creating Items...");
 
                 modShield = GrindScript.CreateItem(this,
-                    new ModItemDescriptionBuilder().Texts("Shield Example", "This is a custom shield!").Resources(ModContent, "WoodenShield", ""),
-                    new ModEquipmentInfoBuilder().EquipmentType(ItemCodex.ItemCategories.Shield).Stats(ShldHP: 1337).Resource(ModContent, "Wooden")
+                    new ModItemInfoBuilder().Texts("Shield Example", "This is a custom shield!").Resources(ModContent, "WoodenShield", ""),
+                    new ModEquipInfoBuilder().EquipmentType(ItemCodex.ItemCategories.Shield).Stats(ShldHP: 1337).Resource(ModContent, "Wooden")
                     );
 
                 modAccessory = GrindScript.CreateItem(this,
-                    new ModItemDescriptionBuilder().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(ModContent, "WoodenShield", ""),
-                    new ModEquipmentInfoBuilder().EquipmentType(ItemCodex.ItemCategories.Accessory).Stats(ATK: 1337).Resource(ModContent, "Wooden")
+                    new ModItemInfoBuilder().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(ModContent, "WoodenShield", ""),
+                    new ModEquipInfoBuilder().EquipmentType(ItemCodex.ItemCategories.Accessory).Stats(ATK: 1337).Resource(ModContent, "Wooden")
                     );
 
                 modHat = GrindScript.CreateItem(this,
-                    new ModItemDescriptionBuilder().Texts("Hat Example", "This is a custom hat!").Resources(ModContent, "Slimeus", ""),
+                    new ModItemInfoBuilder().Texts("Hat Example", "This is a custom hat!").Resources(ModContent, "Slimeus", ""),
                     new ModHatInfoBuilder().Stats(ATK: 1111).Resource(ModContent, "Slimeus").RenderOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f))
                     );
 
                 modFacegear = GrindScript.CreateItem(this,
-                    new ModItemDescriptionBuilder().Texts("Facegear Example", "This is a custom facegear!").Resources(ModContent, "Flybold", ""),
+                    new ModItemInfoBuilder().Texts("Facegear Example", "This is a custom facegear!").Resources(ModContent, "Flybold", ""),
                     new ModFacegearInfoBuilder().Stats(ATK: 1234).Resource(ModContent, "Flybold").RenderOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f))
                     );
 
                 modOneHandedWeapon = GrindScript.CreateItem(this,
-                    new ModItemDescriptionBuilder().Texts("OneHandedMelee Example", "This is a custom 1H weapon! You can also see custom animations for basic attacks if you swing downwards.").Resources(ModContent, "Crowbar", ""),
+                    new ModItemInfoBuilder().Texts("OneHandedMelee Example", "This is a custom 1H weapon! You can also see custom animations for basic attacks if you swing downwards.").Resources(ModContent, "Crowbar", ""),
                     new ModWeaponInfoBuilder().WeaponType(WeaponInfo.WeaponCategory.OneHanded, false).Stats(ATK: 1555).Resource(ModContent, "IronSword")
                     );
 
                 modTwoHandedWeapon = GrindScript.CreateItem(this,
-                    new ModItemDescriptionBuilder().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(ModContent, "Claymore", ""),
+                    new ModItemInfoBuilder().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(ModContent, "Claymore", ""),
                     new ModWeaponInfoBuilder().WeaponType(WeaponInfo.WeaponCategory.TwoHanded, true).Stats(ATK: 776).Resource(ModContent, "Claymore")
                     );
 
