@@ -7,60 +7,60 @@ using System.Reflection;
 
 namespace SoG.Modding
 {
-    public class GrindScript
+    /// <summary>
+    /// Core of the API
+    /// </summary>
+    public static partial class GrindScript
     {
-        private readonly Harmony harmony = new Harmony("GrindScriptPatcher");
+        private static int _launchState = 0;
 
-        private readonly List<BaseScript> _loadedScripts = new List<BaseScript>();
-        private Assembly _gameAssembly;
-        private IEnumerable<TypeInfo> _gameTypes;
-        internal ModLibrary Library { get; private set; }
+        private static readonly Harmony _harmony = new Harmony("GrindScriptPatcher");
 
+        internal static readonly List<BaseScript> LoadedScripts = new List<BaseScript>();
+        private static Assembly _gameAssembly;
+        private static IEnumerable<TypeInfo> _gameTypes;
+
+        internal static ModLibrary GlobalLib { get; private set; }
         public static Game1 Game { get; private set; }
-        public static GrindScript ModAPI { get; private set; }
-        internal static ModLibrary ModLib { get => ModAPI.Library; }
-
-        private GrindScript()
-        {
-            ModAPI = this;
-            _gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
-            _gameTypes = _gameAssembly.DefinedTypes;
-            ApplyPatches();
-        }
 
         // Call this via reflection from launcher
         private static void Prepare()
         {
-            if (ModAPI != null)
+            Console.WriteLine("Preparing Grindscript...");
+            if (_launchState != 0)
             {
-                Console.WriteLine("GrindScript::Prepare() - A GrindScript instance already exists!");
+                Console.WriteLine("Can't proceed because launch state is " + _launchState + "!");
                 return;
             }
-            Console.WriteLine("Preparing Grindscript...");
 
-            new GrindScript();
+            _launchState = 1;
+            _gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
+            _gameTypes = _gameAssembly.DefinedTypes;
+
+            ApplyPatches();
         }
 
         // Call this via reflection from Game1::Initialize() patch
         private static void Initialize()
         {
-            if (ModAPI == null)
+            Console.WriteLine("Initializing Grindscript...");
+            if (_launchState != 1)
             {
-                Console.WriteLine("GrindScript::Initialize() - No GrindScript instance to init!");
+                Console.WriteLine("Can't proceed because launch state is " + _launchState + "!");
                 return;
             }
-            Console.WriteLine("Initializing Grindscript...");
-            Game = (Game1)ModAPI.GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-            ModAPI.Library = new ModLibrary();
-            ModAPI.LoadMods();
+
+            Game = (Game1)GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            GlobalLib = new ModLibrary();
+            LoadMods();
         }
 
-        public TypeInfo GetGameType(string name)
+        public static TypeInfo GetGameType(string name)
         {
             return _gameTypes.First(t => t.FullName == name);
         }
 
-        private bool LoadMod(string name)
+        private static bool LoadMod(string name)
         {
             Utils.TryCreateDirectory("Mods");
             Utils.TryCreateDirectory("ModContent");
@@ -72,7 +72,7 @@ namespace SoG.Modding
                 Type type = assembly.GetTypes().First(t => t.BaseType == typeof(BaseScript));
                 BaseScript script = (BaseScript)type?.GetConstructor(new Type[] { })?.Invoke(new object[] { });
 
-                _loadedScripts.Add(script);
+                LoadedScripts.Add(script);
 
                 Console.WriteLine("Loaded mod " + name);
                 return true;
@@ -85,7 +85,7 @@ namespace SoG.Modding
             }
         }
 
-        private bool LoadMods()
+        private static bool LoadMods()
         {
             var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
 
@@ -97,17 +97,13 @@ namespace SoG.Modding
             return true;
         }
 
-        internal IEnumerable<BaseScript> GetLoadedMods()
-        {
-            return _loadedScripts;
-        }
-
-        private void ApplyPatches()
+        private static void ApplyPatches()
         {
             Console.WriteLine("Applying Patches...");
             PatchCodex.Patches[] toPatch = new PatchCodex.Patches[]
             {
                 PatchCodex.Patches.Game1_Initialize,
+                PatchCodex.Patches.Game1_StartupThreadExecute,
                 PatchCodex.Patches.Game1_FinalDraw,
                 PatchCodex.Patches.Game1_Player_TakeDamage,
                 PatchCodex.Patches.Game1_Player_KillPlayer,
@@ -118,14 +114,25 @@ namespace SoG.Modding
                 PatchCodex.Patches.Game1_LevelLoading_DoStuff_Arcadia,
                 PatchCodex.Patches.Game1_Chat_ParseCommand,
                 PatchCodex.Patches.Game1_Item_Use,
-                // TODO Codex patches
+                // Item API Patches
+                PatchCodex.Patches.ItemCodex_GetItemDescription,
+                PatchCodex.Patches.ItemCodex_GetItemInstance,
+                PatchCodex.Patches.EquipmentCodex_GetArmorInfo,
+                PatchCodex.Patches.EquipmentCodex_GetAccessoryInfo,
+                PatchCodex.Patches.EquipmentCodex_GetShieldInfo,
+                PatchCodex.Patches.EquipmentCodex_GetShoesInfo,
+                PatchCodex.Patches.HatCodex_GetHatInfo,
+                PatchCodex.Patches.FacegearCodex_GetHatInfo,
+                PatchCodex.Patches.WeaponCodex_GetWeaponInfo,
+                PatchCodex.Patches.WeaponContentManager_LoadBatch,
+                PatchCodex.Patches.Game1_Animations_GetAnimationSet
             };
             try
             {
                 foreach (var id in toPatch)
                 {
                     Console.WriteLine("Patch: " + id);
-                    harmony.Patch(PatchCodex.GetPatch(id));
+                    _harmony.Patch(PatchCodex.GetPatch(id));
                 }
                 Console.WriteLine("Patches Applied!");
             }

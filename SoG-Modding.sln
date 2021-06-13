@@ -12,6 +12,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoG.ModLauncher", "ModAPI\SoG.ModLauncher\SoG.ModLauncher.csproj", "{953B78CF-BCCE-4DC3-A5BE-D3C6681E3BC4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoG.FeatureExample", "ModExamples\SoG.FeatureExample\SoG.FeatureExample.csproj", "{4B8BD049-8937-4411-910D-320DD2F06A8B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8B7405AD-3C39-4647-AB62-6FCC42068880} = {8B7405AD-3C39-4647-AB62-6FCC42068880}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoG.GrindScriptLauncher", "ModAPI\SoG.GrindScriptLauncher\SoG.GrindScriptLauncher.csproj", "{112D3D6A-1E19-4E70-93CF-853F80B95AC0}"
 EndProject

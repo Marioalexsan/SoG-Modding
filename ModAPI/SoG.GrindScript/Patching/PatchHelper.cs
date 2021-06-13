@@ -8,6 +8,12 @@ namespace SoG.Modding
 {
     public static class PatchHelper
     {
+        /// <summary>
+        /// <para> Transpiles the given instruction set by inserting code instructions after the first occurence of the target method. </para>
+        /// <para> The target method must either have no return value, or a return value that is not used by the original code. </para>
+        /// </summary>
+        /// <returns> The modified code, with new instructions inserted as described. </returns>
+        /// <exception cref="Exception"> Thrown if the transpile fails due to the described incompatibilities. </exception>
         public static IEnumerable<CodeInstruction> InsertAfterFirstMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert)
         {
             var noReturnValue = target.ReturnType == typeof(void);
@@ -25,7 +31,8 @@ namespace SoG.Modding
                     if (noReturnValue || ins.opcode == OpCodes.Pop)
                     {
                         stage = 2;
-                        yield return ins;
+                        if (ins.opcode == OpCodes.Pop)
+                            yield return ins;
                         continue;
                     }
                     else throw new Exception("Transpile failed: insert target has return value that is being used!");
@@ -44,6 +51,10 @@ namespace SoG.Modding
 
     public static partial class TypeExtension
     {
+        /// <summary>
+        /// Creates patches by specifying a PatchDescription.
+        /// </summary>
+        /// <returns> The replacement method that was created to patch the original method.</returns>
         public static MethodInfo Patch(this Harmony harmony, PatchCodex.PatchDescription patch)
         {
             if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))

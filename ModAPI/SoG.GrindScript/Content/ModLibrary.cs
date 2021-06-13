@@ -2,55 +2,40 @@
 
 namespace SoG.Modding
 {
-    public class ModLibrary
+	/// <summary>
+	/// Holds modded game content
+	/// </summary>
+    internal class ModLibrary
 	{
-		internal const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)400000;
-		internal const EquipmentInfo.SpecialEffect SpecialEffectsStart = (EquipmentInfo.SpecialEffect)200;
+		// Constants
 
-		//internal readonly Dictionary<ItemCodex.ItemTypes, ModItemData> ItemDetails = new Dictionary<ItemCodex.ItemTypes, ModItemData>();
+		public const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)400000;
+		public const EquipmentInfo.SpecialEffect EquipEffectStart = (EquipmentInfo.SpecialEffect)200;
 
-		// "Non-Owning" Helper dictionaries, references, etc.
+		// Enum real estate - should be static due to acting as allocation for SoG
 
-		internal readonly Dictionary<string, ItemCodex.ItemTypes> RegisteredItems = new Dictionary<string, ItemCodex.ItemTypes>(); // Correlates one string to one item ID - utility for modders
-		internal readonly Dictionary<string, EquipmentInfo.SpecialEffect> RegisteredEquipmentEffects = new Dictionary<string, EquipmentInfo.SpecialEffect>(); // Correlates one string to one special effect ID - utility for modders
+		internal static ItemCodex.ItemTypes ItemTypesNext = ItemTypesStart;
+		internal static EquipmentInfo.SpecialEffect EquipEffectNext = EquipEffectStart;
 
-		// Helper values and properties for enum real estate
+		// Modded content - holds a specific mod's added content (except for GrindScript, where the library holds all content added)
 
-		//internal ItemCodex.ItemTypes ItemTypesNext => ItemTypesStart + ItemDetails.Count;
+		public readonly Dictionary<ItemCodex.ItemTypes, ModItem> ModItems = new Dictionary<ItemCodex.ItemTypes, ModItem>();
 
-		internal ushort SpecialEffectsCount = 0;
-		internal EquipmentInfo.SpecialEffect SpecialEffectsNext => SpecialEffectsStart + SpecialEffectsCount;
+		// Dictionaries holding aliases - theoretically useful for human-readable and run time independent "IDs"
+
+		public readonly Dictionary<string, ItemCodex.ItemTypes> ItemAliases = new Dictionary<string, ItemCodex.ItemTypes>();
+		public readonly Dictionary<string, EquipmentInfo.SpecialEffect> EquipEffectAliases = new Dictionary<string, EquipmentInfo.SpecialEffect>();
 
 		// Utility Functions
 
-		public void AddItemAlias(string name, ItemCodex.ItemTypes enType)
-		{
-			RegisteredItems.Add(name, enType);
+		internal static ItemCodex.ItemTypes AllocateItemType()
+        {
+			return ItemTypesNext++;
 		}
 
-		public ItemCodex.ItemTypes ItemAliasValue(string name)
-		{
-			ItemCodex.ItemTypes enType;
-			if (!RegisteredItems.TryGetValue(name, out enType))
-			{
-				enType = (ItemCodex.ItemTypes)(-1);
-			}
-			return enType;
-		}
-
-		public void AddItemEffectAlias(string name, EquipmentInfo.SpecialEffect enType)
-		{
-			RegisteredEquipmentEffects.Add(name, enType);
-		}
-
-		public EquipmentInfo.SpecialEffect ItemEffectAliasValue(string name)
-		{
-			EquipmentInfo.SpecialEffect enType;
-			if (!RegisteredEquipmentEffects.TryGetValue(name, out enType))
-			{
-				enType = (EquipmentInfo.SpecialEffect)(ushort.MaxValue);
-			}
-			return enType;
-		}
+		internal static EquipmentInfo.SpecialEffect AllocateItemEffectAlias()
+        {
+			return EquipEffectNext++;
+        }
 	}
 }

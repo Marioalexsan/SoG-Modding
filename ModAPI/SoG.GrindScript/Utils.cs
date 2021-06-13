@@ -12,7 +12,7 @@ namespace SoG.Modding
         {
             try
             {
-                Directory.CreateDirectory("Mods");
+                Directory.CreateDirectory(name);
             }
             catch (Exception) { }
         }

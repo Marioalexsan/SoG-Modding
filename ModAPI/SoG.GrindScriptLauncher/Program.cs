@@ -8,6 +8,8 @@ namespace SoG.GrindScriptLauncher
 {
     class Program
     {
+        const string whodis = "[GrindScriptLauncher] ";
+
         static Assembly SoG;
         static MethodInfo SoGMain;
 
@@ -16,8 +18,8 @@ namespace SoG.GrindScriptLauncher
 
         static void LogErrorAndQuit(string error)
         {
-            Console.WriteLine(error);
-            Console.WriteLine("Hit Enter to exit.");
+            Console.WriteLine(whodis + error);
+            Console.WriteLine(whodis + "Hit Enter to exit.");
             Console.ReadLine();
             Environment.Exit(1);
         }
@@ -50,7 +52,7 @@ namespace SoG.GrindScriptLauncher
         {
             try
             {
-                Console.WriteLine("Loading Assemblies");
+                Console.WriteLine(whodis + "Loading Assemblies");
 
                 SoG = Assembly.LoadFile(Directory.GetCurrentDirectory() + "\\Secrets Of Grindea.exe");
                 GrindScript = Assembly.LoadFile(Directory.GetCurrentDirectory() + "\\GrindScript.dll");
@@ -58,10 +60,10 @@ namespace SoG.GrindScriptLauncher
                 SoGMain = SoG.DefinedTypes.First(t => t.FullName == "SoG.Program").GetMethod("Main", BindingFlags.Static | BindingFlags.NonPublic);
                 GSInit = GrindScript.DefinedTypes.First(t => t.FullName == "SoG.Modding.GrindScript").GetMethod("Prepare", BindingFlags.Static | BindingFlags.NonPublic);
 
-                Console.WriteLine("Initializing GrindScript");
+                Console.WriteLine(whodis + "Launching GrindScript");
                 LaunchGrindScript();
 
-                Console.WriteLine("Launching SoG");
+                Console.WriteLine(whodis + "Launching SoG");
                 new Thread(LaunchSoG).Start();
             }
             catch (Exception e)

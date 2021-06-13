@@ -3,12 +3,17 @@ using System.Reflection;
 
 namespace SoG.Modding
 {
+    /// <summary>
+    /// Factory class used for retrieving Harmony patches via an enum
+    /// </summary>
     public static class PatchCodex
     {
         public enum Patches
         {
             // GrindScript Initialize
-            Game1_Initialize,
+            Game1_Initialize, 
+            // Mod Content Init / Loading / Whatever
+            Game1_StartupThreadExecute,
             // BaseScript callbacks
             Game1_FinalDraw,
             Game1_Player_TakeDamage,
@@ -19,10 +24,24 @@ namespace SoG.Modding
             Game1_NPC_Interact,
             Game1_LevelLoading_DoStuff_Arcadia,
             Game1_Chat_ParseCommand,
-            Game1_Item_Use
-            // API callbacks
+            Game1_Item_Use,
+            // Item API callbacks
+            ItemCodex_GetItemDescription,
+            ItemCodex_GetItemInstance,
+            EquipmentCodex_GetArmorInfo,
+            EquipmentCodex_GetAccessoryInfo,
+            EquipmentCodex_GetShieldInfo,
+            EquipmentCodex_GetShoesInfo,
+            HatCodex_GetHatInfo,
+            FacegearCodex_GetHatInfo,
+            WeaponCodex_GetWeaponInfo,
+            WeaponContentManager_LoadBatch,
+            Game1_Animations_GetAnimationSet
         }
 
+        /// <summary>
+        /// Describes a Harmony patch as a collection of MethodInfos
+        /// </summary>
         public class PatchDescription
         {
             public MethodInfo Target;
@@ -33,16 +52,19 @@ namespace SoG.Modding
 
         public static PatchDescription GetPatch(Patches which)
         {
-            GrindScript API = GrindScript.ModAPI;
             TypeInfo Methods = typeof(PatchMethods).GetTypeInfo(); // Commonly used
-            TypeInfo Game1 = API.GetGameType("SoG.Game1"); // Commonly used
+            TypeInfo Game1 = GrindScript.GetGameType("SoG.Game1"); // Commonly used
 
             PatchDescription patch = new PatchDescription();
             switch (which)
             {
                 case Patches.Game1_Initialize:
                     patch.Target = Game1.GetMethod("Initialize", BindingFlags.Instance | BindingFlags.NonPublic);
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGame1Run");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGame1Initialize");
+                    break;
+                case Patches.Game1_StartupThreadExecute:
+                    patch.Target = Game1.GetMethod("__StartupThreadExecute", BindingFlags.Instance | BindingFlags.Public);
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("StartupThreadExecute_Transpiler");
                     break;
                 case Patches.Game1_FinalDraw:
                     patch.Target = Game1.GetPublicInstanceMethod("FinalDraw");
@@ -83,6 +105,50 @@ namespace SoG.Modding
                 case Patches.Game1_Item_Use:
                     patch.Target = Game1.GetDeclaredMethods("_Item_Use").ElementAt(1);
                     patch.Prefix = Methods.GetPrivateStaticMethod("OnItemUsePrefix");
+                    break;
+                case Patches.ItemCodex_GetItemDescription:
+                    patch.Target = typeof(ItemCodex).GetMethod("GetItemDescription");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetItemDescription");
+                    break;
+                case Patches.ItemCodex_GetItemInstance:
+                    patch.Target = typeof(ItemCodex).GetMethod("GetItemInstance");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetItemInstance");
+                    break;
+                case Patches.EquipmentCodex_GetArmorInfo:
+                    patch.Target = typeof(EquipmentCodex).GetMethod("GetArmorInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    break;
+                case Patches.EquipmentCodex_GetAccessoryInfo:
+                    patch.Target = typeof(EquipmentCodex).GetMethod("GetAccessoryInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    break;
+                case Patches.EquipmentCodex_GetShieldInfo:
+                    patch.Target = typeof(EquipmentCodex).GetMethod("GetShieldInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    break;
+                case Patches.EquipmentCodex_GetShoesInfo:
+                    patch.Target = typeof(EquipmentCodex).GetMethod("GetShoesInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    break;
+                case Patches.FacegearCodex_GetHatInfo:
+                    patch.Target = typeof(FacegearCodex).GetMethod("GetHatInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetFacegearInfo");
+                    break;
+                case Patches.HatCodex_GetHatInfo:
+                    patch.Target = typeof(HatCodex).GetMethod("GetHatInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetHatInfo");
+                    break;
+                case Patches.WeaponCodex_GetWeaponInfo:
+                    patch.Target = typeof(WeaponCodex).GetMethod("GetWeaponInfo");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetWeaponInfo");
+                    break;
+                case Patches.WeaponContentManager_LoadBatch:
+                    patch.Target = typeof(WeaponAssets.WeaponContentManager).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnLoadBatch");
+                    break;
+                case Patches.Game1_Animations_GetAnimationSet:
+                    patch.Target = typeof(Game1).GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetAnimationSet");
                     break;
                 default:
                     patch = null;
