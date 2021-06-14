@@ -41,6 +41,8 @@ namespace SoG.Modding
             { StackBehaviour.Varpush, 1 }
         };
 
+
+        /// <summary> Attempts to find the target method in the instruction list, and output surrounding IL code to Console. </summary>
         public static void LogCodeAroundTarget(IEnumerable<CodeInstruction> instructions, MethodInfo target, int previous = 3, int following = 3)
         {
             List<CodeInstruction> list = new List<CodeInstruction>(instructions);
@@ -50,16 +52,16 @@ namespace SoG.Modding
                 if (list[index].Calls(target))
                 {
                     found = true;
-                    Console.WriteLine("\n===== Code around method call " + target.DeclaringType.Name + "::" + target.Name + " =====");
+                    Console.WriteLine("\n== Code around method call " + target.DeclaringType.Name + "::" + target.Name + " ==");
                     for (int scanIndex = Math.Max(0, index - previous); scanIndex <= Math.Min(list.Count - 1, index + following); scanIndex++)
                     {
                         Console.WriteLine(list[scanIndex].ToString());
                     }
-                    Console.WriteLine("===== Code end =====\n");
+                    Console.WriteLine("== Code end ==\n");
                     break;
                 }
             }
-            if (!found) Console.WriteLine("Didn't find class " + target.DeclaringType.Name + "::" + target.Name + " to log code around of.");
+            if (!found) Console.WriteLine("Didn't find method call " + target.DeclaringType.Name + "::" + target.Name + " to log code around of.");
         }
 
         /// <summary>
@@ -98,13 +100,15 @@ namespace SoG.Modding
             if (stage != 2) throw new Exception("Transpile failed: couldn't find target!");
         }
 
+        /// <summary> Transpiles the given instruction set by inserting code instructions before the first occurence of the target method. </summary>
+        /// <returns> The modified code, with new instructions inserted as described. </returns>
+        /// <exception cref="Exception"> Thrown if the transpile fails due to failing to find the target method, or if a suitable insertion point wasn't spotted. </exception>
         public static IEnumerable<CodeInstruction> InsertBeforeFirstMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();
             int stage = 0;
 
-            // Step 1: find target
             foreach (CodeInstruction ins in instructions)
             {
                 if (stage == 0 && ins.Calls(target)) stage = 1;
@@ -113,11 +117,9 @@ namespace SoG.Modding
             }
             if (stage != 1) throw new Exception("Transpile failed: couldn't find target!");
 
-            // Step 2: compute starting pushes
-            int stackDelta = -1 * target.GetParameters().Length;
+            
             int insertIndex = codeStore.Count;
-
-            // Step 3: go through previous instructions, adding stack deltas until we hit 0
+            int stackDelta = -1 * target.GetParameters().Length;
             if (stackDelta != 0) 
             {
                 for (insertIndex = codeStore.Count - 1; insertIndex >= 0; insertIndex--)
@@ -135,10 +137,8 @@ namespace SoG.Modding
                 }
             }
             else stage = 2;
-
             if (stage != 2) throw new Exception("Transpile failed: couldn't calculate position before method!");
 
-            // Step 4: insert the new IL, and return all of the goodies
             for (int index = 0; index < codeStore.Count; index++)
             {
                 if (index == insertIndex)
