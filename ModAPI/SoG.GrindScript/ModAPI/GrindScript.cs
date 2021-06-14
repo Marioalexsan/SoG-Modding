@@ -10,7 +10,7 @@ namespace SoG.Modding
     /// <summary>
     /// Core of the API
     /// </summary>
-    public static partial class GrindScript
+    public static class GrindScript
     {
         private static int _launchState = 0;
 
@@ -20,7 +20,6 @@ namespace SoG.Modding
         private static Assembly _gameAssembly;
         private static IEnumerable<TypeInfo> _gameTypes;
 
-        internal static ModLibrary GlobalLib { get; private set; }
         public static Game1 Game { get; private set; }
 
         // Call this via reflection from launcher
@@ -51,50 +50,12 @@ namespace SoG.Modding
             }
 
             Game = (Game1)GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-            GlobalLib = new ModLibrary();
             LoadMods();
         }
 
         public static TypeInfo GetGameType(string name)
         {
             return _gameTypes.First(t => t.FullName == name);
-        }
-
-        private static bool LoadMod(string name)
-        {
-            Utils.TryCreateDirectory("Mods");
-            Utils.TryCreateDirectory("ModContent");
-
-            Console.WriteLine("Loading mod " + name);
-            try
-            {
-                Assembly assembly = Assembly.LoadFile(name);
-                Type type = assembly.GetTypes().First(t => t.BaseType == typeof(BaseScript));
-                BaseScript script = (BaseScript)type?.GetConstructor(new Type[] { })?.Invoke(new object[] { });
-
-                LoadedScripts.Add(script);
-
-                Console.WriteLine("Loaded mod " + name);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to load mod" + name);
-                Console.WriteLine(e);
-                return false;
-            }
-        }
-
-        private static bool LoadMods()
-        {
-            var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
-
-            foreach (var file in Directory.GetFiles(dir))
-            {
-                LoadMod(file);
-            }
-
-            return true;
         }
 
         private static void ApplyPatches()
@@ -140,8 +101,43 @@ namespace SoG.Modding
             {
                 Console.WriteLine("Failed to apply patches!\n" + e);
             }
-            
-            // Callbacks.InitializeUniquePatches();
+        }
+
+        public static bool LoadMod(string name)
+        {
+            Utils.TryCreateDirectory("Mods");
+            Utils.TryCreateDirectory("ModContent");
+
+            Console.WriteLine("Loading mod " + name);
+            try
+            {
+                Assembly assembly = Assembly.LoadFile(name);
+                Type type = assembly.GetTypes().First(t => t.BaseType == typeof(BaseScript));
+                BaseScript script = (BaseScript)type?.GetConstructor(new Type[] { })?.Invoke(new object[] { });
+
+                LoadedScripts.Add(script);
+
+                Console.WriteLine("Loaded mod " + name);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to load mod" + name);
+                Console.WriteLine(e);
+                return false;
+            }
+        }
+
+        public static bool LoadMods()
+        {
+            var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
+
+            foreach (var file in Directory.GetFiles(dir))
+            {
+                LoadMod(file);
+            }
+
+            return true;
         }
     }
 }

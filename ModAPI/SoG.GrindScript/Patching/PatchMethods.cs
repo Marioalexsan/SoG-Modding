@@ -131,7 +131,7 @@ namespace SoG.Modding
             if (!enType.IsModItem()) 
                 return true;
 
-            ModItemInfo details = GrindScript.GlobalLib.ModItems[enType].itemInfo;
+            ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
             __result = details.vanilla;
             try
             {
@@ -151,7 +151,7 @@ namespace SoG.Modding
             if (!enType.IsModItem()) 
                 return true;
 
-            ModItemInfo details = GrindScript.GlobalLib.ModItems[enType].itemInfo;
+            ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
             ItemDescription xDesc = details.vanilla;
 
             __result = new Item()
@@ -176,7 +176,7 @@ namespace SoG.Modding
             try
             {
                 string trueShadowTex = details.shadowToUse != "" ? details.shadowToUse : "hartass02";
-                __result.xRenderComponent.txShadowTexture = GrindScript.Game.xLevelMaster.contRegionContent.Load<Texture2D>("Items/DropAppearance/" + details.shadowToUse);
+                __result.xRenderComponent.txShadowTexture = GrindScript.Game.xLevelMaster.contRegionContent.Load<Texture2D>("Items/DropAppearance/" + trueShadowTex);
             }
             catch (Exception e)
             {
@@ -192,7 +192,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            __result = GrindScript.GlobalLib.ModItems[enType].equipInfo.vanilla;
+            __result = ModLibrary.Global.ModItems[enType].equipInfo.vanilla;
 
             return false;
         }
@@ -202,7 +202,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModEquipInfo modEquip = GrindScript.GlobalLib.ModItems[enType].equipInfo;
+            ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
             __result = modEquip.vanilla as FacegearInfo;
             ContentManager manager = modEquip.managerToUse;
 
@@ -231,7 +231,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModEquipInfo modEquip = GrindScript.GlobalLib.ModItems[enType].equipInfo;
+            ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
             __result = modEquip.vanilla as HatInfo;
             ContentManager manager = modEquip.managerToUse;
 
@@ -277,7 +277,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            __result = GrindScript.GlobalLib.ModItems[enType].equipInfo.vanilla as WeaponInfo;
+            __result = ModLibrary.Global.ModItems[enType].equipInfo.vanilla as WeaponInfo;
 
             return false;
         }
@@ -290,7 +290,7 @@ namespace SoG.Modding
 
             try
             {
-                __instance.contWeaponContent.RootDirectory = GrindScript.GlobalLib.ModItems[__instance.enType].equipInfo.managerToUse.RootDirectory;
+                __instance.contWeaponContent.RootDirectory = ModLibrary.Global.ModItems[__instance.enType].equipInfo.managerToUse.RootDirectory;
             }
             catch
             {
@@ -339,7 +339,7 @@ namespace SoG.Modding
                     ItemCodex.ItemTypes enType = xPlayerView.xEquipment.DisplayShield.enItemType;
                     if (enType.IsModItem())
                     {
-                        __result.txShield = GrindScript.GlobalLib.ModItems[enType].equipInfo.managerToUse.Load<Texture2D>("Sprites/Heroes/" + sAttackPath + sAnimation + "/" + xPlayerView.xEquipment.DisplayShield.sResourceName + "/" + sDirection);
+                        __result.txShield = ModLibrary.Global.ModItems[enType].equipInfo.managerToUse.Load<Texture2D>("Sprites/Heroes/" + sAttackPath + sAnimation + "/" + xPlayerView.xEquipment.DisplayShield.sResourceName + "/" + sDirection);
                     }
                     else
                     {

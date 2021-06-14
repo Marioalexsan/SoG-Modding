@@ -5,13 +5,13 @@ namespace SoG.Modding
 {
     public partial class BaseScript
     {
-        protected ContentManager ModContent;
+        protected ContentManager CustomAssets;
 
         protected BaseScript() 
         {
-            ModContent = new ContentManager(GrindScript.Game.Content.ServiceProvider, "ModContent/" + GetType().Name);
+            CustomAssets = new ContentManager(GrindScript.Game.Content.ServiceProvider, "ModContent/" + GetType().Name);
 
-            Console.WriteLine(this.GetType().Name + " ContentManager path set as " + ModContent.RootDirectory);
+            Console.WriteLine(this.GetType().Name + " ContentManager path set as " + CustomAssets.RootDirectory);
         }
 
         public virtual void OnDraw()

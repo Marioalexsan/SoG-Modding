@@ -7,6 +7,9 @@ namespace SoG.Modding
 	/// </summary>
     internal class ModLibrary
 	{
+		private static ModLibrary _globalLibrary = new ModLibrary();
+		internal static ModLibrary Global => _globalLibrary;
+
 		// Constants
 
 		public const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)400000;
@@ -19,7 +22,7 @@ namespace SoG.Modding
 
 		// Modded content - holds a specific mod's added content (except for GrindScript, where the library holds all content added)
 
-		public readonly Dictionary<ItemCodex.ItemTypes, ModItem> ModItems = new Dictionary<ItemCodex.ItemTypes, ModItem>();
+		public readonly Dictionary<ItemCodex.ItemTypes, ModItemEntry> ModItems = new Dictionary<ItemCodex.ItemTypes, ModItemEntry>();
 
 		// Dictionaries holding aliases - theoretically useful for human-readable and run time independent "IDs"
 

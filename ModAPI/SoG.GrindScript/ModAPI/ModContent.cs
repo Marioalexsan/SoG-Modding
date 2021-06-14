@@ -1,20 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding;
 
 namespace SoG.Modding
 {
-    public static partial class GrindScript
+    public static class ModContent
     {
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemInfoBuilder item)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemBuilder item)
         {
             return CreateItem(owner, item, null);
         }
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemInfoBuilder item, ModEquipInfoBuilder equip)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemBuilder item, ModEquipBuilder equip)
         {
             if (item == null || owner == null)
             {
@@ -26,7 +22,7 @@ namespace SoG.Modding
 
 
             // ModItem entry and ItemDescription need to be created before the respective EquipmentInfo
-            ModItem newEntry = GlobalLib.ModItems[allocatedType] = new ModItem()
+            ModItemEntry newEntry = ModLibrary.Global.ModItems[allocatedType] = new ModItemEntry()
             {
                 owner = owner,
                 type = allocatedType,
@@ -52,17 +48,22 @@ namespace SoG.Modding
             foreach (var toRemove in toSanitize)
                 itemInfo.lenCategory.Remove(toRemove);
 
-            if (newEntry.equipInfo != null && toSanitize.Contains(newEntry.equipInfo.equipCategory))
+            if (newEntry.equipInfo != null)
             {
-                var wantedCategory = newEntry.equipInfo.equipCategory;
-                itemInfo.lenCategory.Add(wantedCategory);
+                var type = (ItemCodex.ItemCategories)newEntry.equipInfo.equipType;
+                itemInfo.lenCategory.Add(type);
 
-                switch (wantedCategory)
+                if (type == ItemCodex.ItemCategories.Weapon)
                 {
-                    case ItemCodex.ItemCategories.OneHandedWeapon:
-                    case ItemCodex.ItemCategories.TwoHandedWeapon:
-                        itemInfo.lenCategory.Add(ItemCodex.ItemCategories.Weapon);
-                        break;
+                    switch ((newEntry.equipInfo.vanilla as WeaponInfo).enWeaponCategory)
+                    {
+                        case WeaponInfo.WeaponCategory.OneHanded:
+                            itemInfo.lenCategory.Add(ItemCodex.ItemCategories.OneHandedWeapon);
+                            break;
+                        case WeaponInfo.WeaponCategory.TwoHanded:
+                            itemInfo.lenCategory.Add(ItemCodex.ItemCategories.TwoHandedWeapon);
+                            break;
+                    }
                 }
             }
 
