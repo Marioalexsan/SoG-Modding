@@ -1,26 +1,15 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SoG.Modding
 {
-
-    public static class Utils
-    {
-        public static void TryCreateDirectory(string name)
-        {
-            try
-            {
-                Directory.CreateDirectory(name);
-            }
-            catch (Exception) { }
-        }
-    }
-
     public static partial class TypeExtension
     {
-        public static MethodInfo GetPublicInstanceMethod(this TypeInfo t,string name)
+        public static MethodInfo GetPublicInstanceMethod(this TypeInfo t, string name)
         {
             return t.GetMethod(name, BindingFlags.Public | BindingFlags.Instance);
         }
@@ -52,7 +41,7 @@ namespace SoG.Modding
 
         public static T GetPublicStaticField<T>(this TypeInfo t, string field)
         {
-            return (T) t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+            return (T)t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
 
         public static dynamic GetPublicStaticField(this TypeInfo t, string field)

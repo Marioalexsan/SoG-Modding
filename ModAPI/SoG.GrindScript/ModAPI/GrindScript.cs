@@ -21,14 +21,15 @@ namespace SoG.Modding
         private static IEnumerable<TypeInfo> _gameTypes;
 
         public static Game1 Game { get; private set; }
+        internal static ConsoleLogger Logger { get; private set; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
 
-        // Call this via reflection from launcher
         private static void Prepare()
         {
-            Console.WriteLine("Preparing Grindscript...");
+            Logger.Info("Preparing Grindscript...");
+
             if (_launchState != 0)
             {
-                Console.WriteLine("Can't proceed because launch state is " + _launchState + "!");
+                Logger.Fatal($"Can't proceed because launch state is {_launchState}!");
                 return;
             }
 
@@ -39,13 +40,12 @@ namespace SoG.Modding
             ApplyPatches();
         }
 
-        // Call this via reflection from Game1::Initialize() patch
         private static void Initialize()
         {
-            Console.WriteLine("Initializing Grindscript...");
+            Logger.Info("Initializing Grindscript...");
             if (_launchState != 1)
             {
-                Console.WriteLine("Can't proceed because launch state is " + _launchState + "!");
+                Logger.Fatal("Can't proceed because launch state is " + _launchState + "!");
                 return;
             }
 
@@ -60,7 +60,7 @@ namespace SoG.Modding
 
         private static void ApplyPatches()
         {
-            Console.WriteLine("Applying Patches...");
+            Logger.Info("Applying Patches...");
             PatchCodex.Patches[] toPatch = new PatchCodex.Patches[]
             {
                 PatchCodex.Patches.Game1_Initialize,
@@ -92,14 +92,14 @@ namespace SoG.Modding
             {
                 foreach (var id in toPatch)
                 {
-                    Console.WriteLine("Patch: " + id);
+                    Logger.Info("Patch: " + id);
                     _harmony.Patch(PatchCodex.GetPatch(id));
                 }
-                Console.WriteLine("Patches Applied!");
+                Logger.Info("Patches Applied!");
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to apply patches!\n" + e);
+                Logger.Fatal("Failed to apply patches!\n" + e);
             }
         }
 
@@ -108,7 +108,7 @@ namespace SoG.Modding
             Utils.TryCreateDirectory("Mods");
             Utils.TryCreateDirectory("ModContent");
 
-            Console.WriteLine("Loading mod " + name);
+            Logger.Info("Loading mod " + name);
             try
             {
                 Assembly assembly = Assembly.LoadFile(name);
@@ -117,13 +117,12 @@ namespace SoG.Modding
 
                 LoadedScripts.Add(script);
 
-                Console.WriteLine("Loaded mod " + name);
+                Logger.Info("Loaded mod " + name);
                 return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to load mod" + name);
-                Console.WriteLine(e);
+                Logger.Error($"Failed to load mod {name}. Exception message: {e.Message}");
                 return false;
             }
         }

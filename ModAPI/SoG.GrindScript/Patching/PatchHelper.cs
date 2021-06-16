@@ -41,29 +41,6 @@ namespace SoG.Modding
             { StackBehaviour.Varpush, 1 }
         };
 
-
-        /// <summary> Attempts to find the target method in the instruction list, and output surrounding IL code to Console. </summary>
-        public static void LogCodeAroundTarget(IEnumerable<CodeInstruction> instructions, MethodInfo target, int previous = 3, int following = 3)
-        {
-            List<CodeInstruction> list = new List<CodeInstruction>(instructions);
-            bool found = false;
-            for (int index = 0; index < list.Count; index++)
-            {
-                if (list[index].Calls(target))
-                {
-                    found = true;
-                    Console.WriteLine("\n== Code around method call " + target.DeclaringType.Name + "::" + target.Name + " ==");
-                    for (int scanIndex = Math.Max(0, index - previous); scanIndex <= Math.Min(list.Count - 1, index + following); scanIndex++)
-                    {
-                        Console.WriteLine(list[scanIndex].ToString());
-                    }
-                    Console.WriteLine("== Code end ==\n");
-                    break;
-                }
-            }
-            if (!found) Console.WriteLine("Didn't find method call " + target.DeclaringType.Name + "::" + target.Name + " to log code around of.");
-        }
-
         /// <summary>
         /// <para> Transpiles the given instruction set by inserting code instructions after the first occurence of the target method. </para>
         /// <para> The target method must either have no return value, or a return value that is not used by the original code. </para>

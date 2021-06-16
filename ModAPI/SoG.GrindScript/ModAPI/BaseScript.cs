@@ -7,11 +7,14 @@ namespace SoG.Modding
     {
         protected ContentManager CustomAssets;
 
+        protected ConsoleLogger Logger;
+
         protected BaseScript() 
         {
             CustomAssets = new ContentManager(GrindScript.Game.Content.ServiceProvider, "ModContent/" + GetType().Name);
+            Logger = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, GetType().Name) { SourceColor = ConsoleColor.Yellow };
 
-            Console.WriteLine(this.GetType().Name + " ContentManager path set as " + CustomAssets.RootDirectory);
+            Logger.Info($"ContentManager path set as {CustomAssets.RootDirectory}");
         }
 
         public virtual void OnDraw()

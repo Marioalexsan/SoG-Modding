@@ -10,8 +10,9 @@ using System.Reflection.Emit;
 namespace SoG.Modding
 {
     /// <summary>
-    /// Stores various methods used in patches by GrindScript
+    /// Stores various methods used in patches by GrindScript.
     /// </summary>
+
     public static class PatchMethods
     {
         private static IEnumerable<CodeInstruction> StartupThreadExecute_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -22,8 +23,9 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Call, typeof(PatchMethods).GetTypeInfo().GetMethod("OnContentLoad", BindingFlags.NonPublic | BindingFlags.Static))
             };
 
+
             var newCode = PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
-            PatchHelper.LogCodeAroundTarget(newCode, target);
+            GrindScript.Logger.DebugInspectCode(newCode, target);
             return newCode;
         }
 
@@ -100,9 +102,8 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Ret),
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
-
             var newCode = PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
-            PatchHelper.LogCodeAroundTarget(newCode, target);
+            GrindScript.Logger.DebugInspectCode(instructions, target, 3, 10);
             return newCode;
         }
 
@@ -133,15 +134,7 @@ namespace SoG.Modding
 
             ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
             __result = details.vanilla;
-            try
-            {
-                __result.txDisplayImage = details.managerToUse.Load<Texture2D>("Items/DropAppearance/" + details.resourceToUse);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to load a drop appearance for item " + enType + ". Exception:\n" + e);
-                __result.txDisplayImage = RenderMaster.txNullTex;
-            }
+            __result.txDisplayImage = Utils.TryLoadTex("Items/DropAppearance/" + details.resourceToUse, details.managerToUse);
 
             return false;
         }
@@ -152,6 +145,7 @@ namespace SoG.Modding
                 return true;
 
             ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
+            string trueShadowTex = details.shadowToUse != "" ? details.shadowToUse : "hartass02";
             ItemDescription xDesc = details.vanilla;
 
             __result = new Item()
@@ -161,28 +155,9 @@ namespace SoG.Modding
                 bGiveToServer = xDesc.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer)
             };
 
-            try
-            {
-                __result.xRenderComponent.txTexture = details.managerToUse.Load<Texture2D>("Items/DropAppearance/" + details.resourceToUse);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to load a drop appearance for item instance " + enType + ". Exception:\n" + e);
-                __result.xRenderComponent.txTexture = RenderMaster.txNullTex;
-            }
-
+            __result.xRenderComponent.txTexture = Utils.TryLoadTex("Items/DropAppearance/" + details.resourceToUse, details.managerToUse);
+            __result.xRenderComponent.txShadowTexture = Utils.TryLoadTex("Items/DropAppearance/" + trueShadowTex, details.managerToUse);
             __result.xCollisionComponent.xMovementCollider = new SphereCollider(10f, Vector2.Zero, __result.xTransform, 1f, __result) { bCollideWithFlat = true };
-
-            try
-            {
-                string trueShadowTex = details.shadowToUse != "" ? details.shadowToUse : "hartass02";
-                __result.xRenderComponent.txShadowTexture = GrindScript.Game.xLevelMaster.contRegionContent.Load<Texture2D>("Items/DropAppearance/" + trueShadowTex);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to load a shadow texture for item instance " + enType + ". Exception:\n" + e);
-                __result.xRenderComponent.txShadowTexture = RenderMaster.txNullTex;
-            }
 
             return false;
         }
@@ -203,25 +178,14 @@ namespace SoG.Modding
                 return true;
 
             ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
-            __result = modEquip.vanilla as FacegearInfo;
+            string hatPath = "Sprites/Equipment/Facegear/" + modEquip.resourceToUse + "/";
             ContentManager manager = modEquip.managerToUse;
 
-            try
-            {
-                string hatPath = "Sprites/Equipment/Facegear/" + modEquip.resourceToUse + "/";
-                __result.atxTextures[0] = manager.Load<Texture2D>(hatPath + "Up");
-                __result.atxTextures[1] = manager.Load<Texture2D>(hatPath + "Right");
-                __result.atxTextures[2] = manager.Load<Texture2D>(hatPath + "Down");
-                __result.atxTextures[3] = manager.Load<Texture2D>(hatPath + "Left");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to load facegear textures for item " + enType + ". Exception:\n" + e);
-                __result.atxTextures[0] = RenderMaster.txNullTex;
-                __result.atxTextures[1] = RenderMaster.txNullTex;
-                __result.atxTextures[2] = RenderMaster.txNullTex;
-                __result.atxTextures[3] = RenderMaster.txNullTex;
-            }
+            __result = modEquip.vanilla as FacegearInfo;
+            __result.atxTextures[0] = Utils.TryLoadTex(hatPath + "Up", manager);
+            __result.atxTextures[1] = Utils.TryLoadTex(hatPath + "Right", manager);
+            __result.atxTextures[2] = Utils.TryLoadTex(hatPath + "Down", manager);
+            __result.atxTextures[3] = Utils.TryLoadTex(hatPath + "Left", manager);
 
             return false;
         }
@@ -232,41 +196,21 @@ namespace SoG.Modding
                 return true;
 
             ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
-            __result = modEquip.vanilla as HatInfo;
+            string hatPath = "Sprites/Equipment/Hats/" + modEquip.resourceToUse + "/";
             ContentManager manager = modEquip.managerToUse;
 
-            // This shouldn't be too expensive if the content manager already has the textures
-            try
+            __result = modEquip.vanilla as HatInfo;
+            __result.xDefaultSet.atxTextures[0] = Utils.TryLoadTex(hatPath + "Up", manager);
+            __result.xDefaultSet.atxTextures[1] = Utils.TryLoadTex(hatPath + "Right", manager);
+            __result.xDefaultSet.atxTextures[2] = Utils.TryLoadTex(hatPath + "Down", manager);
+            __result.xDefaultSet.atxTextures[3] = Utils.TryLoadTex(hatPath + "Left", manager);
+            foreach (var kvp in __result.denxAlternateVisualSets)
             {
-                string hatPath = "Sprites/Equipment/Hats/" + modEquip.resourceToUse + "/";
-                __result.xDefaultSet.atxTextures[0] = manager.Load<Texture2D>(hatPath + "Up");
-                __result.xDefaultSet.atxTextures[1] = manager.Load<Texture2D>(hatPath + "Right");
-                __result.xDefaultSet.atxTextures[2] = manager.Load<Texture2D>(hatPath + "Down");
-                __result.xDefaultSet.atxTextures[3] = manager.Load<Texture2D>(hatPath + "Left");
-                foreach (var kvp in __result.denxAlternateVisualSets)
-                {
-                    string altPath = hatPath + modEquip.hatAltSetResources[kvp.Key] + "/";
-                    kvp.Value.atxTextures[0] = manager.Load<Texture2D>(altPath + "Up");
-                    kvp.Value.atxTextures[1] = manager.Load<Texture2D>(altPath + "Right");
-                    kvp.Value.atxTextures[2] = manager.Load<Texture2D>(altPath + "Down");
-                    kvp.Value.atxTextures[3] = manager.Load<Texture2D>(altPath + "Left");
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to load hat textures for item " + enType + ". Exception:\n" + e);
-                __result.xDefaultSet.atxTextures[0] = RenderMaster.txNullTex;
-                __result.xDefaultSet.atxTextures[1] = RenderMaster.txNullTex;
-                __result.xDefaultSet.atxTextures[2] = RenderMaster.txNullTex;
-                __result.xDefaultSet.atxTextures[3] = RenderMaster.txNullTex;
-
-                foreach (var kvp in __result.denxAlternateVisualSets)
-                {
-                    kvp.Value.atxTextures[0] = RenderMaster.txNullTex;
-                    kvp.Value.atxTextures[1] = RenderMaster.txNullTex;
-                    kvp.Value.atxTextures[2] = RenderMaster.txNullTex;
-                    kvp.Value.atxTextures[3] = RenderMaster.txNullTex;
-                }
+                string altPath = hatPath + modEquip.hatAltSetResources[kvp.Key] + "/";
+                kvp.Value.atxTextures[0] = Utils.TryLoadTex(altPath + "Up", manager);
+                kvp.Value.atxTextures[1] = Utils.TryLoadTex(altPath + "Right", manager);
+                kvp.Value.atxTextures[2] = Utils.TryLoadTex(altPath + "Down", manager);
+                kvp.Value.atxTextures[3] = Utils.TryLoadTex(altPath + "Left", manager);
             }
 
             return false;
@@ -288,30 +232,13 @@ namespace SoG.Modding
             if (!__instance.enType.IsModItem())
                 return true;
 
-            try
-            {
-                __instance.contWeaponContent.RootDirectory = ModLibrary.Global.ModItems[__instance.enType].equipInfo.managerToUse.RootDirectory;
-            }
-            catch
-            {
-                Console.WriteLine("LoadBatch: couldn't set RootDirectory for item " + __instance.enType);
-            }
+
+            ContentManager managerToUse = ModLibrary.Global.ModItems[__instance.enType].equipInfo.managerToUse;
+            if (managerToUse != null)
+                __instance.contWeaponContent.RootDirectory = managerToUse.RootDirectory;
 
             foreach (KeyValuePair<ushort, string> kvp in dis)
-            {
-                string sPath = kvp.Value.Replace("Weapons/", "");
-
-                try
-                {
-                    __instance.ditxWeaponTextures.Add(kvp.Key, __instance.contWeaponContent.Load<Texture2D>(sPath));
-                }
-                catch
-                {
-                    GrindScript.Game.Log("Failed to load weapon texture at: " + __instance.contWeaponContent.RootDirectory + "/" + sPath);
-                    Console.WriteLine("LoadBatch: failed to load weapon texture for item " + __instance.enType + " at " + __instance.contWeaponContent.RootDirectory + "/" + sPath);
-                    __instance.ditxWeaponTextures[kvp.Key] = RenderMaster.txNullTex;
-                }
-            }
+                __instance.ditxWeaponTextures.Add(kvp.Key, Utils.TryLoadTex(kvp.Value.Replace("Weapons/", ""), __instance.contWeaponContent));
 
             return false;
         }
@@ -327,34 +254,28 @@ namespace SoG.Modding
             string sAttackPath = "";
 
             ContentManager VanillaContent = RenderMaster.contPlayerStuff;
+            __result.txBase = Utils.TryLoadTex("Sprites/Heroes/" + sAttackPath + sAnimation + "/" + sDirection, VanillaContent);
 
-            __result.txBase = VanillaContent.Load<Texture2D>("Sprites/Heroes/" + sAttackPath + sAnimation + "/" + sDirection);
-
-            // Skipped code which isn't used in vanilla
-
-            try
+            if (bWithShield && xPlayerView.xEquipment.DisplayShield != null && xPlayerView.xEquipment.DisplayShield.sResourceName != "")
             {
-                if (bWithShield && xPlayerView.xEquipment.DisplayShield != null && xPlayerView.xEquipment.DisplayShield.sResourceName != "")
+                ItemCodex.ItemTypes enType = xPlayerView.xEquipment.DisplayShield.enItemType;
+                ContentManager managerToUse;
+                string path;
+                if (enType.IsModItem())
                 {
-                    ItemCodex.ItemTypes enType = xPlayerView.xEquipment.DisplayShield.enItemType;
-                    if (enType.IsModItem())
-                    {
-                        __result.txShield = ModLibrary.Global.ModItems[enType].equipInfo.managerToUse.Load<Texture2D>("Sprites/Heroes/" + sAttackPath + sAnimation + "/" + xPlayerView.xEquipment.DisplayShield.sResourceName + "/" + sDirection);
-                    }
-                    else
-                    {
-                        __result.txShield = VanillaContent.Load<Texture2D>("Sprites/Heroes/" + sAttackPath + sAnimation + "/Shields/" + xPlayerView.xEquipment.DisplayShield.sResourceName + "/" + sDirection);
-                    }
+                    managerToUse = ModLibrary.Global.ModItems[enType].equipInfo.managerToUse;
+                    path = "Sprites/Heroes/" + sAttackPath + sAnimation + "/" + xPlayerView.xEquipment.DisplayShield.sResourceName + "/" + sDirection;
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Shield texture load failed! Exception: " + e.Message);
-                __result.txShield = RenderMaster.txNullTex;
+                else
+                {
+                    managerToUse = VanillaContent;
+                    path = "Sprites/Heroes/" + sAttackPath + sAnimation + "/Shields/" + xPlayerView.xEquipment.DisplayShield.sResourceName + "/" + sDirection;
+                }
+                __result.txShield = Utils.TryLoadTex(path, managerToUse);
             }
 
             if (bWithWeapon)
-                __result.txWeapon = RenderMaster.txNullTex;
+                __result.txWeapon = RenderMaster.txNullTex; // Dunno why this is a thing
 
             return false; // Never executes the original
         }

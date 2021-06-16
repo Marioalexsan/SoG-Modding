@@ -50,6 +50,7 @@ namespace SoG.GrindScriptLauncher
 
         static void Main(string[] args)
         {
+            Console.Title = "GrindScript";
             try
             {
                 Console.WriteLine(whodis + "Loading Assemblies");

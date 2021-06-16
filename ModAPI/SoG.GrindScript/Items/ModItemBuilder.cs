@@ -1,24 +1,24 @@
 ﻿using Microsoft.Xna.Framework.Content;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoG.Modding
 {
+    /// <summary>
+    /// Used to define a custom item's basic properties, such as its name, value, item categories, and other things.
+    /// </summary>
+
     public class ModItemBuilder
     {
-        private string _name;
-        private string _description;
+        private string _name = "Unknown Mod Item";
+        private string _description = "It's all mysterious and stuff!";
         private string _displayTexPath;
         private string _shadowTexPath;
 
-        private int _value;
-        private int _bloodValue;
-        private float _arcadeValueMod;
+        private int _value = 1;
+        private int _bloodValue = 0;
+        private float _arcadeValueMod = 1f;
 
-        private ushort _levelForBestSort;
+        private ushort _levelForBestSort = 1;
         private byte _fancyness = 1;
 
         private ContentManager _managerToUse;
@@ -36,6 +36,11 @@ namespace SoG.Modding
             _name = name;
             _description = description;
             return this;
+        }
+
+        public ModItemBuilder Resources(ContentManager manager, string displayTexPath)
+        {
+            return Resources(manager, displayTexPath, _shadowTexPath);
         }
 
         public ModItemBuilder Resources(ContentManager manager, string displayTexPath, string shadowTexPath)
@@ -87,8 +92,12 @@ namespace SoG.Modding
                 byFancyness = Math.Min((byte)1, Math.Max(_fancyness, (byte)3)),
                 iValue = _value,
                 iOverrideBloodValue = _bloodValue,
+                fArcadeModeCostModifier = _arcadeValueMod,
                 enType = allocatedType
             };
+
+            foreach (var cat in _categories)
+                itemInfo.lenCategory.Add(cat);
 
             return new ModItem()
             {
