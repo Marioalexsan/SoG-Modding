@@ -11,5 +11,6 @@ namespace SoG.Modding
 		internal static ModLibrary Global { get; private set; } = new ModLibrary();
 
 		internal readonly Dictionary<ItemCodex.ItemTypes, ModItemEntry> ModItems = new Dictionary<ItemCodex.ItemTypes, ModItemEntry>();
+		internal readonly Dictionary<int, ModAudioEntry> ModAudio = new Dictionary<int, ModAudioEntry>();
 	}
 }

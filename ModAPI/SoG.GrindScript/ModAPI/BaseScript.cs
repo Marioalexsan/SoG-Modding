@@ -5,16 +5,31 @@ namespace SoG.Modding
 {
     public partial class BaseScript
     {
-        protected ContentManager CustomAssets;
+        public ContentManager CustomAssets { get; private set; }
 
-        protected ConsoleLogger Logger;
+        protected ConsoleLogger Logger { get; private set; }
+
+        internal readonly int _AudioID;
 
         protected BaseScript() 
         {
-            CustomAssets = new ContentManager(GrindScript.Game.Content.ServiceProvider, "ModContent/" + GetType().Name);
             Logger = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, GetType().Name) { SourceColor = ConsoleColor.Yellow };
 
+            CustomAssets = new ContentManager(GrindScript.Game.Content.ServiceProvider, "ModContent/" + GetType().Name);
             Logger.Info($"ContentManager path set as {CustomAssets.RootDirectory}");
+
+            var allAudio = ModLibrary.Global.ModAudio;
+            if (allAudio.ContainsKey(ModAllocator.AudioIDNext))
+            {
+                _AudioID = ModAllocator.AudioIDNext;
+                Logger.Warn($"An existing audio entry ({_AudioID}) was found while trying to create one for mod {GetType().Name}!");
+            }
+            else
+            {
+                _AudioID = ModAllocator.AllocateAudioEntry();
+                allAudio.Add(_AudioID, new ModAudioEntry() { allocatedID = _AudioID, owner = this });
+                Logger.Info($"AudioID set as {_AudioID}");
+            }
         }
 
         public virtual void OnDraw()

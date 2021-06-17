@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -24,7 +25,7 @@ namespace SoG.Modding
             };
 
 
-            var newCode = PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+            var newCode = PatchHelper.InsertAfterMethod(instructions, generator, target, insertedCode, 1);
             GrindScript.Logger.DebugInspectCode(newCode, target);
             return newCode;
         }
@@ -102,7 +103,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Ret),
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
-            var newCode = PatchHelper.InsertAfterFirstMethod(instructions, generator, target, insertedCode);
+            var newCode = PatchHelper.InsertAfterMethod(instructions, generator, target, insertedCode, 1);
             GrindScript.Logger.DebugInspectCode(instructions, target, 3, 10);
             return newCode;
         }
@@ -278,6 +279,282 @@ namespace SoG.Modding
                 __result.txWeapon = RenderMaster.txNullTex; // Dunno why this is a thing
 
             return false; // Never executes the original
+        }
+
+        //
+        // SoundSystem.cs specific
+        //
+
+        private static IEnumerable<CodeInstruction> PlayEffectCueTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            // Turned from:
+            // soundBank.PlayCue(sCueName)
+            // To:
+            // (local1 = GetEffectSoundBank(sCueName)) != null ? local1.PlayCue(sCueName) : soundBank.PlayCue(sCueName)
+
+            // also adds a translation from the sCueName (which is an ID of form GS_001_S001) to the actual cue
+
+
+            MethodInfo target = typeof(SoundBank).GetMethod("PlayCue", new Type[] { typeof(string) });
+            Label skipVanillaBank = generator.DefineLabel();
+            Label doVanillaBank = generator.DefineLabel();
+            LocalBuilder modBank = generator.DeclareLocal(typeof(SoundBank));
+
+            List<CodeInstruction> insertBefore = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetEffectSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex), 
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetTypeInfo().GetMethod("GetCueName", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, target),
+                new CodeInstruction(OpCodes.Br, skipVanillaBank),
+                new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
+            };
+
+            List<CodeInstruction> insertAfter = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
+            };
+
+            // Order matters
+            GrindScript.Logger.DebugInspectCode(instructions, target, 15, 15);
+            var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
+            var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
+            GrindScript.Logger.DebugInspectCode(step2, target, 15, 15);
+            return step2;
+        }
+
+        private static IEnumerable<CodeInstruction> GetEffectCueTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            // Turned from:
+            // soundBank.GetCue(sCueName)
+            // To:
+            // (local1 = GetEffectSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
+
+            MethodInfo target = typeof(SoundBank).GetMethod("GetCue", new Type[] { typeof(string) });
+            Label skipVanillaBank = generator.DefineLabel();
+            Label doVanillaBank = generator.DefineLabel();
+            LocalBuilder modBank = generator.DeclareLocal(typeof(SoundBank));
+
+            List<CodeInstruction> insertBefore = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetEffectSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetTypeInfo().GetMethod("GetCueName", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, target),
+                new CodeInstruction(OpCodes.Br, skipVanillaBank),
+                new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
+            };
+
+            List<CodeInstruction> insertAfter = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
+            };
+
+            // Order matters
+            var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
+            var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
+            GrindScript.Logger.DebugInspectCode(step2, target);
+            return step2;
+        }
+
+        private static IEnumerable<CodeInstruction> GetMusicCueTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            // Turned from:
+            // musicBank.GetCue(sCueName)
+            // To:
+            // (local1 = GetMusicSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
+
+            MethodInfo target = typeof(SoundBank).GetMethod("GetCue", new Type[] { typeof(string) });
+            Label skipVanillaBank = generator.DefineLabel();
+            Label doVanillaBank = generator.DefineLabel();
+            LocalBuilder modBank = generator.DeclareLocal(typeof(SoundBank));
+
+            List<CodeInstruction> insertBefore = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetMusicSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetTypeInfo().GetMethod("GetCueName", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, target),
+                new CodeInstruction(OpCodes.Br, skipVanillaBank),
+                new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
+            };
+
+            List<CodeInstruction> insertAfter = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
+            };
+
+            // Order matters
+            GrindScript.Logger.DebugInspectCode(instructions, target, 15, 15);
+            var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
+            var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
+            GrindScript.Logger.DebugInspectCode(step2, target, 15, 15);
+            return step2;
+        }
+
+        private static IEnumerable<CodeInstruction> PlayMixCuesTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            // Same as the previous, but applied for two methods
+
+            MethodInfo target = typeof(SoundBank).GetMethod("GetCue", new Type[] { typeof(string) });
+            Label skipVanillaBank = generator.DefineLabel();
+            Label doVanillaBank = generator.DefineLabel();
+            LocalBuilder modBank = generator.DeclareLocal(typeof(SoundBank));
+
+            List<CodeInstruction> insertBefore = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetMusicSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
+                new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetTypeInfo().GetMethod("GetCueName", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, target),
+                new CodeInstruction(OpCodes.Br, skipVanillaBank),
+                new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
+            };
+
+            List<CodeInstruction> insertAfter = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
+            };
+
+            // Order matters
+            var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
+            var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
+            var step3 = PatchHelper.InsertAfterMethod(step2, generator, target, insertAfter, 3, missingPopIsOk: true);
+            var step4 = PatchHelper.InsertBeforeMethod(step3, generator, target, insertBefore, 3);
+            GrindScript.Logger.DebugInspectCode(step4, target);
+            return step4;
+        }
+
+        // This needs to be modified!
+        private static bool songRegionInit = false;
+        private static FieldInfo standbyWaveBanksField;
+        private static FieldInfo songRegionMapField;
+        private static FieldInfo audioEngineField;
+        private static FieldInfo fieldMusicWaveBank;
+        private static FieldInfo vanillaUniversalMusicField;
+
+
+        private static bool OnChangeSongRegionIfNecessary(ref SoundSystem __instance, string sSongName)
+        {
+            // The following code is a modified version of the vanilla method.
+            // This will probably cause you brain and eye damage if you read it
+            // You have been warned
+
+            if (!songRegionInit)
+            {
+                songRegionInit = true;
+                standbyWaveBanksField = typeof(SoundSystem).GetTypeInfo().GetField("dsxStandbyWaveBanks", BindingFlags.NonPublic | BindingFlags.Instance);
+                songRegionMapField = typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance);
+                audioEngineField = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic);
+                fieldMusicWaveBank = typeof(SoundSystem).GetTypeInfo().GetField("musicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
+                vanillaUniversalMusicField = typeof(SoundSystem).GetTypeInfo().GetField("universalMusicWaveBank", BindingFlags.Instance | BindingFlags.NonPublic);
+            }
+            SoundSystem soundSystem = GrindScript.Game.xSoundSystem;
+
+            bool currentIsModded = AudioUtils.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
+            bool previousIsModded = soundSystem.sCurrentMusicWaveBank.StartsWith("GS_");
+            if (currentIsModded && !isMusic)
+            {
+                GrindScript.Logger.Warn($"Tried to play modded audio as music, but the audio isn't music! ID: {sSongName}");
+            }
+
+            var dsxStandbyWaveBanks = (Dictionary<string, WaveBank>) standbyWaveBanksField.GetValue(soundSystem);
+            var dssSongRegionMap = (Dictionary<string, string>) songRegionMapField.GetValue(soundSystem);
+            AudioEngine audioEngine = (AudioEngine) audioEngineField.GetValue(GrindScript.Game.xSoundSystem);
+            FieldInfo fieldLoadedMusicWaveBank = typeof(SoundSystem).GetTypeInfo().GetField("loadedMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
+            WaveBank vanillaUniversalMusic = (WaveBank)vanillaUniversalMusicField.GetValue(soundSystem);
+
+            ModAudioEntry entry = currentIsModded ? ModLibrary.Global.ModAudio[entryID] : null;
+            string cueName = currentIsModded ? entry.musicIDToMusic[cueID] : sSongName;
+            string modBank = currentIsModded ? entry.musicToWaveBank[cueName] : dssSongRegionMap[sSongName];
+            string prefixedBank = currentIsModded ? $"GS_{entryID}:{modBank}" : modBank;
+
+            
+
+            WaveBank currentMusicBank = (WaveBank)fieldMusicWaveBank.GetValue(soundSystem);
+
+            if (modBank == "UniversalMusic" || prefixedBank.EndsWith(":ModUniversalMusic"))
+            {
+                if (currentIsModded && entry.universalMusicBank == null)
+                {
+                    GrindScript.Logger.Warn($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
+                    return false; // Will crash and restart the sound system
+                }
+                if (currentMusicBank != null && !AudioUtils.IsUniversalMusicBank(currentMusicBank))
+                {
+                    soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
+                }
+                fieldMusicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicBank : vanillaUniversalMusic);
+            }
+            else if (soundSystem.sCurrentMusicWaveBank != prefixedBank)
+            {
+                if (currentMusicBank != null && !AudioUtils.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
+                {
+                    soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
+                }
+                soundSystem.sCurrentMusicWaveBank = prefixedBank;
+                if (dsxStandbyWaveBanks.ContainsKey(prefixedBank))
+                {
+                    fieldMusicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[prefixedBank]);
+                    dsxStandbyWaveBanks.Remove(prefixedBank);
+                }
+                else
+                {
+                    WaveBank newBank;
+                    if (currentIsModded)
+                        newBank = new WaveBank(audioEngine, entry.owner.CustomAssets.RootDirectory + "/Sound/" + modBank + ".xwb");
+                    else
+                        newBank = new WaveBank(audioEngine, GrindScript.Game.Content.RootDirectory + "/Sound/" + soundSystem.sCurrentMusicWaveBank + ".xwb");
+                    
+                    fieldLoadedMusicWaveBank.SetValue(soundSystem, newBank);
+                    fieldMusicWaveBank.SetValue(soundSystem, null);
+                }
+                soundSystem.xMusicVolumeMods.iMusicCueRetries = 0;
+                soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
+                typeof(SoundSystem).GetMethod("CheckStandbyBanks", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(soundSystem, new object[] { prefixedBank });
+            }
+            else if (AudioUtils.IsUniversalMusicBank(currentMusicBank))
+            {
+                if (dsxStandbyWaveBanks.ContainsKey(soundSystem.sCurrentMusicWaveBank))
+                {
+                    fieldMusicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[soundSystem.sCurrentMusicWaveBank]);
+                    dsxStandbyWaveBanks.Remove(soundSystem.sCurrentMusicWaveBank);
+                    return false;
+                }
+
+                WaveBank newBank;
+                if (currentIsModded)
+                    newBank = new WaveBank(audioEngine, entry.owner.CustomAssets.RootDirectory + "/Sound/" + modBank + ".xwb");
+                else
+                    newBank = new WaveBank(audioEngine, GrindScript.Game.Content.RootDirectory + "/Sound/" + soundSystem.sCurrentMusicWaveBank + ".xwb");
+
+                fieldLoadedMusicWaveBank.SetValue(soundSystem, newBank);
+                fieldMusicWaveBank.SetValue(soundSystem, null);
+                soundSystem.xMusicVolumeMods.iMusicCueRetries = 0;
+                soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
+            }
+
+            return false;
         }
     }
 }

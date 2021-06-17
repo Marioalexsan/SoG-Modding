@@ -42,25 +42,32 @@ namespace SoG.Modding
         };
 
         /// <summary>
-        /// <para> Transpiles the given instruction set by inserting code instructions after the first occurence of the target method. </para>
-        /// <para> The target method must either have no return value, or a return value that is not used by the original code. </para>
+        /// <para> Transpiles the given instruction set by inserting code instructions after the target method. </para>
+        /// <para> If there are multiple calls of the target method, whichMethod will specify the one to pick. whichMethod = 1 will insert after the first occurence, for example. </para>
+        /// <para> 
+        /// If the target method has a return value that is being used by subsquent code, you can specify ignoreLackOfPop = true to force the insertion.
+        /// This is useful if you also use other insertions to create a ternary operator.
+        /// </para>
         /// </summary>
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to the described incompatibilities. </exception>
-        public static IEnumerable<CodeInstruction> InsertAfterFirstMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert)
+        /// 
+
+        public static IEnumerable<CodeInstruction> InsertAfterMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert, int whichMethod, bool missingPopIsOk = false)
         {
+            int counter = whichMethod;
             var noReturnValue = target.ReturnType == typeof(void);
             int stage = 0;
             foreach (CodeInstruction ins in instructions)
             {
                 if (stage == 0)
                 {
-                    if (ins.Calls(target)) 
+                    if (ins.Calls(target) && --counter == 0) 
                         stage = 1;
                 }
                 else if (stage == 1)
                 {
-                    if (!(ins.opcode == OpCodes.Pop || noReturnValue)) 
+                    if (!(ins.opcode == OpCodes.Pop || noReturnValue || missingPopIsOk)) 
                         throw new Exception("Transpile failed: insert target has return value that is being used!");
 
                     stage = 2;
@@ -77,18 +84,23 @@ namespace SoG.Modding
             if (stage != 2) throw new Exception("Transpile failed: couldn't find target!");
         }
 
-        /// <summary> Transpiles the given instruction set by inserting code instructions before the first occurence of the target method. </summary>
+        /// <summary> 
+        /// <para> Transpiles the given instruction set by inserting code instructions before the target method. </para>
+        /// <para> If there are multiple calls of the target method, whichMethod will specify the one to pick. whichMethod = 1 will insert before the first occurence, for example. </para>
+        /// </summary>
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to failing to find the target method, or if a suitable insertion point wasn't spotted. </exception>
-        public static IEnumerable<CodeInstruction> InsertBeforeFirstMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert)
+
+        public static IEnumerable<CodeInstruction> InsertBeforeMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert, int whichMethod)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();
+            int counter = whichMethod;
             int stage = 0;
 
             foreach (CodeInstruction ins in instructions)
             {
-                if (stage == 0 && ins.Calls(target)) stage = 1;
+                if (stage == 0 && ins.Calls(target) && --counter == 0) stage = 1;
                 if (stage == 0) codeStore.Add(ins);
                 else leftoverCode.Add(ins);
             }
@@ -97,6 +109,9 @@ namespace SoG.Modding
             
             int insertIndex = codeStore.Count;
             int stackDelta = -1 * target.GetParameters().Length;
+            if ((target.CallingConvention & CallingConventions.HasThis) == CallingConventions.HasThis)
+                stackDelta -= 1; // Account for "this"
+
             if (stackDelta != 0) 
             {
                 for (insertIndex = codeStore.Count - 1; insertIndex >= 0; insertIndex--)

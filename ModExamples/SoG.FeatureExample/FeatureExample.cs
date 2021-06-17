@@ -16,6 +16,12 @@ namespace SoG.FeatureExample
         ItemCodex.ItemTypes modFacegear = ItemCodex.ItemTypes.Null;
         ItemCodex.ItemTypes modAccessory = ItemCodex.ItemTypes.Null;
 
+        string audioIntro = "";
+        string audioRipped = "";
+        string audioDestiny = "";
+        string audioClash = "";
+        string audioDeafSilence = "";
+
         public FeatureExample()
         {
             Logger.Info("FeatureExample is an example mod that tests GrindScript functionality.");
@@ -59,6 +65,22 @@ namespace SoG.FeatureExample
                     );
 
                 Logger.Info("Done with Creating Items!");
+
+                Logger.Info("Building sounds...");
+
+                ModContent.DefineModAudio(this,
+                    new ModAudioBuilder().AddMusicForRegion("ModUniversalMusic", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny")
+                    );
+
+                audioIntro = ModContent.GetMusicID(this, "Intro");
+                audioDestiny = ModContent.GetMusicID(this, "Destiny");
+                audioRipped = ModContent.GetMusicID(this, "Ripped");
+                audioClash = ModContent.GetMusicID(this, "Clash");
+                audioDeafSilence = ModContent.GetMusicID(this, "DeafSilence");
+
+                Logger.Info($"Music IDs: Intro - {audioIntro}, Destiny - {audioDestiny}, Ripped - {audioRipped}");
+
+                Logger.Info("Done with sounds!");
             }
             catch(Exception e)
             {
@@ -125,6 +147,7 @@ namespace SoG.FeatureExample
 
             PlayerView localPlayer = GrindScript.Game.xLocalPlayer;
 
+            string[] args = argList.Split(' ');
             switch (command)
             {
                 case "GiveItems":
@@ -140,8 +163,36 @@ namespace SoG.FeatureExample
                     }
                     else CAS.AddChatMessage("You can't do that if you're a client!");
                     return true;
+                case "PlayMusic":
+                    if (args.Length != 1)
+                    {
+                        CAS.AddChatMessage("Usage: /PlayMusic <Audio>");
+                        return true;
+                    }
+                    switch (args[0])
+                    {
+                        case "Intro":
+                            GrindScript.Game.xSoundSystem.PlaySong(audioIntro, true);
+                            break;
+                        case "Destiny":
+                            GrindScript.Game.xSoundSystem.PlaySong(audioDestiny, true);
+                            break;
+                        case "Ripped":
+                            GrindScript.Game.xSoundSystem.PlaySong(audioRipped, true);
+                            break;
+                        case "Clash":
+                            GrindScript.Game.xSoundSystem.PlaySong(audioClash, true);
+                            break;
+                        case "DeafSilence":
+                            GrindScript.Game.xSoundSystem.PlaySong(audioDeafSilence, true);
+                            break;
+                        default:
+                            CAS.AddChatMessage("Unknown mod music!");
+                            break;
+                    }
+                    return true;
                 default:
-                    return false;
+                    return true;
             }
         }
 

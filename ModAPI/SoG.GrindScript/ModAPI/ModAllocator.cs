@@ -12,14 +12,22 @@
 		public const EquipmentInfo.SpecialEffect EquipEffectStart = (EquipmentInfo.SpecialEffect)200;
 		public static EquipmentInfo.SpecialEffect EquipEffectNext { get; private set; } = EquipEffectStart;
 
+		public const int AudioIDStart = 0;
+		public static int AudioIDNext { get; private set; } = AudioIDStart;
+
 		internal static ItemCodex.ItemTypes AllocateItemType()
 		{
 			return ItemTypesNext++; // Naive implementation
 		}
 
-		internal static EquipmentInfo.SpecialEffect AllocateItemEffectAlias()
+		internal static EquipmentInfo.SpecialEffect AlocateEquipEffect()
 		{
 			return EquipEffectNext++;
+		}
+
+		internal static int AllocateAudioEntry()
+		{
+			return AudioIDNext++;
 		}
 	}
 }

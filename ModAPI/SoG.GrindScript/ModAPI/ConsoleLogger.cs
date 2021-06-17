@@ -121,8 +121,8 @@ namespace SoG.Modding
 
             List<CodeInstruction> list = new List<CodeInstruction>(instructions);
 
-            int index = 0;
-            while (index < list.Count)
+            int index = -1;
+            while (++index < list.Count)
                 if (list[index].Calls(target)) break;
 
             if (index == list.Count)
@@ -142,7 +142,7 @@ namespace SoG.Modding
 
             int scanIndex = Math.Max(0, index - previous) - 1;
             int endIndex = Math.Min(list.Count - 1, index + following);
-            while (scanIndex++ <= endIndex)
+            while (++scanIndex <= endIndex)
                 Console.WriteLine((scanIndex == index ? "--->" : "") + $"\t{list[scanIndex]}");
 
             Console.BackgroundColor = bgColor;

@@ -8,7 +8,7 @@ namespace SoG.GrindScriptLauncher
 {
     class Program
     {
-        const string whodis = "[GrindScriptLauncher] ";
+        const string whodis = "GrindScriptLauncher - ";
 
         static Assembly SoG;
         static MethodInfo SoGMain;
@@ -32,7 +32,7 @@ namespace SoG.GrindScriptLauncher
             }
             catch (Exception e)
             {
-                LogErrorAndQuit("Exception during GrindScript Init call: " + e);
+                LogErrorAndQuit("Exception during GrindScript Init call: " + e.Message);
             }
         }
 
@@ -44,7 +44,7 @@ namespace SoG.GrindScriptLauncher
             }
             catch (Exception e)
             {
-                LogErrorAndQuit("Exception during SoG Main call: " + e);
+                LogErrorAndQuit("Exception during SoG Main call: " + e.Message);
             }
         }
 
@@ -69,7 +69,7 @@ namespace SoG.GrindScriptLauncher
             }
             catch (Exception e)
             {
-                LogErrorAndQuit("Exception during Launcher execution: " + e);
+                LogErrorAndQuit("Exception during Launcher execution: " + e.Message);
             }
         }
     }

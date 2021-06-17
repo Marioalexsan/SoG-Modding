@@ -61,36 +61,9 @@ namespace SoG.Modding
         private static void ApplyPatches()
         {
             Logger.Info("Applying Patches...");
-            PatchCodex.Patches[] toPatch = new PatchCodex.Patches[]
-            {
-                PatchCodex.Patches.Game1_Initialize,
-                PatchCodex.Patches.Game1_StartupThreadExecute,
-                PatchCodex.Patches.Game1_FinalDraw,
-                PatchCodex.Patches.Game1_Player_TakeDamage,
-                PatchCodex.Patches.Game1_Player_KillPlayer,
-                PatchCodex.Patches.Game1_Player_ApplyLvUpBonus,
-                PatchCodex.Patches.Game1_Enemy_TakeDamage,
-                PatchCodex.Patches.Game1_NPC_TakeDamage,
-                PatchCodex.Patches.Game1_NPC_Interact,
-                PatchCodex.Patches.Game1_LevelLoading_DoStuff_Arcadia,
-                PatchCodex.Patches.Game1_Chat_ParseCommand,
-                PatchCodex.Patches.Game1_Item_Use,
-                // Item API Patches
-                PatchCodex.Patches.ItemCodex_GetItemDescription,
-                PatchCodex.Patches.ItemCodex_GetItemInstance,
-                PatchCodex.Patches.EquipmentCodex_GetArmorInfo,
-                PatchCodex.Patches.EquipmentCodex_GetAccessoryInfo,
-                PatchCodex.Patches.EquipmentCodex_GetShieldInfo,
-                PatchCodex.Patches.EquipmentCodex_GetShoesInfo,
-                PatchCodex.Patches.HatCodex_GetHatInfo,
-                PatchCodex.Patches.FacegearCodex_GetHatInfo,
-                PatchCodex.Patches.WeaponCodex_GetWeaponInfo,
-                PatchCodex.Patches.WeaponContentManager_LoadBatch,
-                PatchCodex.Patches.Game1_Animations_GetAnimationSet
-            };
             try
             {
-                foreach (var id in toPatch)
+                foreach (PatchCodex.Patches id in Enum.GetValues(typeof(PatchCodex.Patches)))
                 {
                     Logger.Info("Patch: " + id);
                     _harmony.Patch(PatchCodex.GetPatch(id));

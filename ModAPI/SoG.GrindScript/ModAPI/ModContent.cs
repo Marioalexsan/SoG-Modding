@@ -24,7 +24,7 @@ namespace SoG.Modding
         {
             if (item == null || owner == null)
             {
-                Console.WriteLine("Can't create item due to owner or item being null.");
+                GrindScript.Logger.Warn("Can't create item due to owner or item being null.");
                 return ItemCodex.ItemTypes.Null;
             }
 
@@ -78,6 +78,76 @@ namespace SoG.Modding
             Ui.AddMiscText("Items", itemInfo.sDescriptionLibraryHandle, itemInfo.sDescription, MiscTextTypes.GenericItemDescription);
 
             return allocatedType;
+        }
+
+        public static void DefineModAudio(BaseScript owner, ModAudioBuilder audio)
+        {
+            if (audio == null || owner == null)
+            {
+                GrindScript.Logger.Warn("Can't create audio due to owner or builder being null!");
+                return;
+            }
+            audio.UpdateExistingEntry(owner.CustomAssets.RootDirectory, owner._AudioID);
+        }
+
+        public static string GetSoundID(BaseScript owner, string cueName)
+        {
+            if (owner == null)
+            {
+                GrindScript.Logger.Warn("Can't get sound ID due to owner being null!");
+                return "";
+            }
+            return GetSoundID(owner._AudioID, cueName);
+        }
+
+        public static string GetSoundID(int audioID, string cueName)
+        {
+            var effects = ModLibrary.Global.ModAudio[audioID].effectIDToEffect;
+            foreach (var kvp in effects)
+            {
+                if (kvp.Value == cueName)
+                {
+                    return $"GS_{audioID}_S{kvp.Key}";
+                }
+            }
+            return "";
+        }
+
+        public static string GetMusicID(BaseScript owner, string cueName)
+        {
+            if (owner == null)
+            {
+                GrindScript.Logger.Warn("Can't get sound ID due to owner being null!");
+                return "";
+            }
+            return GetMusicID(owner._AudioID, cueName);
+        }
+
+        public static string GetMusicID(int audioID, string cueName)
+        {
+            var music = ModLibrary.Global.ModAudio[audioID].musicIDToMusic;
+            foreach (var kvp in music)
+            {
+                if (kvp.Value == cueName)
+                {
+                    return $"GS_{audioID}_M{kvp.Key}";
+                }
+            }
+            return "";
+        }
+
+        public static string GetCueName(string GSID)
+        {
+            string cueName = "";
+            if (AudioUtils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
+            {
+                if (isMusic)
+                    cueName = ModLibrary.Global.ModAudio[entryID].musicIDToMusic[cueID];
+                else
+                    cueName = ModLibrary.Global.ModAudio[entryID].effectIDToEffect[cueID];
+            }
+            GrindScript.Logger.Debug("GetCueName: " + cueName);
+            return cueName;
         }
     }
 }

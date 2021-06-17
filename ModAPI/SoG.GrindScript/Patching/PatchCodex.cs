@@ -36,7 +36,19 @@ namespace SoG.Modding
             FacegearCodex_GetHatInfo,
             WeaponCodex_GetWeaponInfo,
             WeaponContentManager_LoadBatch,
-            Game1_Animations_GetAnimationSet
+            Game1_Animations_GetAnimationSet,
+
+            // SoundSystem patches
+            SoundSystem_PlayInterfaceCue,
+            SoundSystem_PlayTrackableInterfaceCue,
+            SoundSystem_PlayCue1,
+            SoundSystem_PlayCue2,
+            SoundSystem_PlayCue3,
+            SoundSystem_PlayCue4,
+            SoundSystem_ReadySongInCue,
+            SoundSystem_PlaySong,
+            SoundSystem_PlayMixCues,
+            SoundSystem_ChangeSongRegionIfNecessary
         }
 
         /// <summary>
@@ -54,6 +66,7 @@ namespace SoG.Modding
         {
             TypeInfo Methods = typeof(PatchMethods).GetTypeInfo(); // Commonly used
             TypeInfo Game1 = GrindScript.GetGameType("SoG.Game1"); // Commonly used
+            TypeInfo SoundSystem = GrindScript.GetGameType("SoG.SoundSystem"); // SoundSystem patching
 
             PatchDescription patch = new PatchDescription();
             switch (which)
@@ -147,8 +160,48 @@ namespace SoG.Modding
                     patch.Prefix = Methods.GetPrivateStaticMethod("OnLoadBatch");
                     break;
                 case Patches.Game1_Animations_GetAnimationSet:
-                    patch.Target = typeof(Game1).GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                    patch.Target = Game1.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
                     patch.Prefix = Methods.GetPrivateStaticMethod("OnGetAnimationSet");
+                    break;
+                case Patches.SoundSystem_PlayInterfaceCue:
+                    patch.Target = SoundSystem.GetMethod("PlayInterfaceCue");
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("PlayEffectCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlayTrackableInterfaceCue:
+                    patch.Target = SoundSystem.GetMethod("PlayTrackableInterfaceCue");
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlayCue1:
+                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(0);
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlayCue2:
+                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(1);
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlayCue3:
+                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(2);
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlayCue4:
+                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(3);
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    break;
+                case Patches.SoundSystem_ReadySongInCue:
+                    patch.Target = SoundSystem.GetMethod("ReadySongInCue");
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetMusicCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlaySong:
+                    patch.Target = SoundSystem.GetMethod("PlaySong");
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetMusicCueTranspiler");
+                    break;
+                case Patches.SoundSystem_PlayMixCues:
+                    patch.Target = SoundSystem.GetMethod("PlayMixCues");
+                    patch.Transpiler = Methods.GetPrivateStaticMethod("PlayMixCuesTranspiler");
+                    break;
+                case Patches.SoundSystem_ChangeSongRegionIfNecessary:
+                    patch.Target = SoundSystem.GetMethod("ChangeSongRegionIfNecessary");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnChangeSongRegionIfNecessary");
                     break;
                 default:
                     patch = null;
