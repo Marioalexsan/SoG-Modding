@@ -87,7 +87,9 @@ namespace SoG.Modding
             int effectID = 0;
             foreach (var effect in effectCues)
                 effectIDToCue[effectID++] = effect;
-            
+
+            string modName = entry.owner.GetType().Name;
+
             // Assign modlocal music IDs
             Dictionary<int, string> musicIDToCue = new Dictionary<int, string>();
             Dictionary<string, string> cueToWaveBank = new Dictionary<string, string>();
@@ -99,12 +101,18 @@ namespace SoG.Modding
                     cueToWaveBank[music] = kvp.Key;
                     musicIDToCue[musicID++] = music;
                 }
+                if (!kvp.Key.StartsWith(modName))
+                {
+                    GrindScript.Logger.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not begin with the mod's name, so it's likely that its name is not unique!");
+                    GrindScript.Logger.Warn("Keep in mind that if a name clash occurs, audio may be bugged!");
+                }
             }
 
-            entry.effectsWaveBank = Utils.TryLoadWaveBank(assetPath + "/Sound/ModEffects.xwb", audioEngine);
-            entry.effectsSoundBank = Utils.TryLoadSoundBank(assetPath + "/Sound/ModEffects.xsb", audioEngine);
-            entry.musicSoundBank = Utils.TryLoadSoundBank(assetPath + "/Sound/ModMusic.xsb", audioEngine);
-            entry.universalMusicBank = Utils.TryLoadWaveBank(assetPath + "/Sound/ModUniversalMusic.xwb", audioEngine);
+            
+            entry.effectsWaveBank = Utils.TryLoadWaveBank(assetPath + "/Sound/" + modName + "Effects.xwb", audioEngine);
+            entry.effectsSoundBank = Utils.TryLoadSoundBank(assetPath + "/Sound/" + modName + "Effects.xsb", audioEngine);
+            entry.musicSoundBank = Utils.TryLoadSoundBank(assetPath + "/Sound/" + modName + "Music.xsb", audioEngine);
+            entry.universalMusicBank = Utils.TryLoadWaveBank(assetPath + "/Sound/" + modName + ".xwb", audioEngine);
             entry.effectIDToEffect = effectIDToCue;
             entry.musicIDToMusic = musicIDToCue;
             entry.musicToWaveBank = cueToWaveBank;

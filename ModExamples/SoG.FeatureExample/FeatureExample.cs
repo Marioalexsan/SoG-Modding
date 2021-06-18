@@ -69,7 +69,7 @@ namespace SoG.FeatureExample
                 Logger.Info("Building sounds...");
 
                 ModContent.DefineModAudio(this,
-                    new ModAudioBuilder().AddMusicForRegion("ModUniversalMusic", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny")
+                    new ModAudioBuilder().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny")
                     );
 
                 audioIntro = ModContent.GetMusicID(this, "Intro");
@@ -77,6 +77,25 @@ namespace SoG.FeatureExample
                 audioRipped = ModContent.GetMusicID(this, "Ripped");
                 audioClash = ModContent.GetMusicID(this, "Clash");
                 audioDeafSilence = ModContent.GetMusicID(this, "DeafSilence");
+
+                // Testing the song redirects in a bit more detail
+
+                Logger.Info("Testing sound redirects...");
+
+                ModContent.DefineSongRedirect("BossBattle01", "BishopBattle"); // Redirect is invalid
+                ModContent.DefineSongRedirect("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
+                ModContent.DefineSongRedirect("GS_1337_M1337", audioClash); // Vanilla is invalid
+
+                ModContent.DefineSongRedirect("BossBattle01", audioClash); // Sets a redirect
+                ModContent.DefineSongRedirect("BossBattle01", audioRipped); // Overrides the redirect
+                ModContent.DefineSongRedirect("BossBattle01", ""); // Clears the redirect
+
+                Logger.Info("Redirect tests done!");
+
+                // Doing the actual redirects
+
+                ModContent.DefineSongRedirect("BossBattle01", audioClash);
+                ModContent.DefineSongRedirect("BishopBattle", audioRipped);
 
                 Logger.Info($"Music IDs: Intro - {audioIntro}, Destiny - {audioDestiny}, Ripped - {audioRipped}");
 

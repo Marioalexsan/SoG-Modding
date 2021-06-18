@@ -194,6 +194,7 @@ namespace SoG.Modding
                 case Patches.SoundSystem_PlaySong:
                     patch.Target = SoundSystem.GetMethod("PlaySong");
                     patch.Transpiler = Methods.GetPrivateStaticMethod("GetMusicCueTranspiler");
+                    patch.Prefix = Methods.GetPrivateStaticMethod("OnPlaySong");
                     break;
                 case Patches.SoundSystem_PlayMixCues:
                     patch.Target = SoundSystem.GetMethod("PlayMixCues");

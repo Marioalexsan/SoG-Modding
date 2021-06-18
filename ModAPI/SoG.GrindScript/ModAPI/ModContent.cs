@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace SoG.Modding
 {
@@ -89,6 +90,48 @@ namespace SoG.Modding
             }
             audio.UpdateExistingEntry(owner.CustomAssets.RootDirectory, owner._AudioID);
         }
+
+        public static void DefineSongRedirect(string vanilla, string redirect)
+        {
+            var songRegionMapField = (Dictionary<string, string>)typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(GrindScript.Game.xSoundSystem);
+            if (!songRegionMapField.ContainsKey(vanilla))
+            {
+                GrindScript.Logger.Warn($"Redirecting {vanilla} to {redirect} is not possible since {vanilla} is not a vanilla music!");
+                return;
+            }
+
+            bool isModded = AudioUtils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
+            var entry = ModLibrary.Global.ModAudio.ContainsKey(entryID) ? ModLibrary.Global.ModAudio[entryID] : null;
+            string cueName = entry != null && entry.musicIDToMusic.ContainsKey(cueID) ? entry.musicIDToMusic[cueID] : null;
+
+            if ((!isModded || !isMusic || cueName == null) && !(redirect == ""))
+            {
+                GrindScript.Logger.Warn($"Redirecting {vanilla} to {redirect} is not possible since {redirect} is not a modded music!");
+                return;
+            }
+
+            var redirectedSongs = ModLibrary.Global.VanillaRedirectedSongs;
+
+            if (redirectedSongs.ContainsKey(vanilla))
+            {
+                GrindScript.Logger.Info($"Song {vanilla} has a previous redirect {redirectedSongs[vanilla]}, which will be replaced!");
+            }
+
+            if (redirect == "")
+            {
+                redirectedSongs.Remove(vanilla);
+                GrindScript.Logger.Info($"Song {vanilla} has been cleared of any redirects.");
+            }
+            else
+            {
+                redirectedSongs[vanilla] = redirect;
+                GrindScript.Logger.Info($"Song {vanilla} is now redirected to {redirect}, which is cue {cueName}.");
+            }
+        }
+
+        //
+        // Getters and crappers
+        //
 
         public static string GetSoundID(BaseScript owner, string cueName)
         {

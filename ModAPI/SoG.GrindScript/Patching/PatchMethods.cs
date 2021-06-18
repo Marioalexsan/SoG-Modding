@@ -445,14 +445,15 @@ namespace SoG.Modding
             return step4;
         }
 
-        // This needs to be modified!
-        private static bool songRegionInit = false;
-        private static FieldInfo standbyWaveBanksField;
-        private static FieldInfo songRegionMapField;
-        private static FieldInfo audioEngineField;
-        private static FieldInfo fieldMusicWaveBank;
-        private static FieldInfo vanillaUniversalMusicField;
+        private static void OnPlaySong(ref string sSongName, bool bFadeIn)
+        {
+            // Executes a song redirection if applicable
+            string audioIDToUse = sSongName;
+            if (!audioIDToUse.StartsWith("GS_") && ModLibrary.Global.VanillaRedirectedSongs.ContainsKey(audioIDToUse))
+                audioIDToUse = ModLibrary.Global.VanillaRedirectedSongs[audioIDToUse];
 
+            sSongName = audioIDToUse;
+        }
 
         private static bool OnChangeSongRegionIfNecessary(ref SoundSystem __instance, string sSongName)
         {
@@ -460,45 +461,43 @@ namespace SoG.Modding
             // This will probably cause you brain and eye damage if you read it
             // You have been warned
 
-            if (!songRegionInit)
-            {
-                songRegionInit = true;
-                standbyWaveBanksField = typeof(SoundSystem).GetTypeInfo().GetField("dsxStandbyWaveBanks", BindingFlags.NonPublic | BindingFlags.Instance);
-                songRegionMapField = typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance);
-                audioEngineField = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic);
-                fieldMusicWaveBank = typeof(SoundSystem).GetTypeInfo().GetField("musicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
-                vanillaUniversalMusicField = typeof(SoundSystem).GetTypeInfo().GetField("universalMusicWaveBank", BindingFlags.Instance | BindingFlags.NonPublic);
-            }
+            TypeInfo SoundSys = typeof(SoundSystem).GetTypeInfo();
+
+            FieldInfo standbyWaveBanksField = SoundSys.GetField("dsxStandbyWaveBanks", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo songRegionMapField = SoundSys.GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo audioEngineField = SoundSys.GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo fieldMusicWaveBank = SoundSys.GetField("musicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo vanillaUniversalMusicField = SoundSys.GetField("universalMusicWaveBank", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo fieldLoadedMusicWaveBank = SoundSys.GetField("loadedMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
+
             SoundSystem soundSystem = GrindScript.Game.xSoundSystem;
 
             bool currentIsModded = AudioUtils.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
-            bool previousIsModded = soundSystem.sCurrentMusicWaveBank.StartsWith("GS_");
+
             if (currentIsModded && !isMusic)
             {
-                GrindScript.Logger.Warn($"Tried to play modded audio as music, but the audio isn't music! ID: {sSongName}");
+                GrindScript.Logger.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
             }
 
             var dsxStandbyWaveBanks = (Dictionary<string, WaveBank>) standbyWaveBanksField.GetValue(soundSystem);
             var dssSongRegionMap = (Dictionary<string, string>) songRegionMapField.GetValue(soundSystem);
             AudioEngine audioEngine = (AudioEngine) audioEngineField.GetValue(GrindScript.Game.xSoundSystem);
-            FieldInfo fieldLoadedMusicWaveBank = typeof(SoundSystem).GetTypeInfo().GetField("loadedMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
             WaveBank vanillaUniversalMusic = (WaveBank)vanillaUniversalMusicField.GetValue(soundSystem);
 
             ModAudioEntry entry = currentIsModded ? ModLibrary.Global.ModAudio[entryID] : null;
             string cueName = currentIsModded ? entry.musicIDToMusic[cueID] : sSongName;
             string modBank = currentIsModded ? entry.musicToWaveBank[cueName] : dssSongRegionMap[sSongName];
-            string prefixedBank = currentIsModded ? $"GS_{entryID}:{modBank}" : modBank;
 
-            
+            // All bank names must be unique due to XACT design
 
             WaveBank currentMusicBank = (WaveBank)fieldMusicWaveBank.GetValue(soundSystem);
 
-            if (modBank == "UniversalMusic" || prefixedBank.EndsWith(":ModUniversalMusic"))
+            if (AudioUtils.IsUniversalMusicBank(modBank))
             {
                 if (currentIsModded && entry.universalMusicBank == null)
                 {
                     GrindScript.Logger.Warn($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
-                    return false; // Will crash and restart the sound system
+                    return false; // This may crash and restart the sound system
                 }
                 if (currentMusicBank != null && !AudioUtils.IsUniversalMusicBank(currentMusicBank))
                 {
@@ -506,17 +505,17 @@ namespace SoG.Modding
                 }
                 fieldMusicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicBank : vanillaUniversalMusic);
             }
-            else if (soundSystem.sCurrentMusicWaveBank != prefixedBank)
+            else if (soundSystem.sCurrentMusicWaveBank != modBank)
             {
                 if (currentMusicBank != null && !AudioUtils.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
                 {
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
                 }
-                soundSystem.sCurrentMusicWaveBank = prefixedBank;
-                if (dsxStandbyWaveBanks.ContainsKey(prefixedBank))
+                soundSystem.sCurrentMusicWaveBank = modBank;
+                if (dsxStandbyWaveBanks.ContainsKey(modBank))
                 {
-                    fieldMusicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[prefixedBank]);
-                    dsxStandbyWaveBanks.Remove(prefixedBank);
+                    fieldMusicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[modBank]);
+                    dsxStandbyWaveBanks.Remove(modBank);
                 }
                 else
                 {
@@ -531,7 +530,7 @@ namespace SoG.Modding
                 }
                 soundSystem.xMusicVolumeMods.iMusicCueRetries = 0;
                 soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
-                typeof(SoundSystem).GetMethod("CheckStandbyBanks", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(soundSystem, new object[] { prefixedBank });
+                typeof(SoundSystem).GetMethod("CheckStandbyBanks", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(soundSystem, new object[] { modBank });
             }
             else if (AudioUtils.IsUniversalMusicBank(currentMusicBank))
             {
@@ -554,7 +553,7 @@ namespace SoG.Modding
                 soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
             }
 
-            return false;
+            return false; // Never returns control to original
         }
     }
 }

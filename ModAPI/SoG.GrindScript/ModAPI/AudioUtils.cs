@@ -91,6 +91,7 @@ namespace SoG.Modding
             return entry.effectsWaveBank;
         }
 
+        // This also does music redirects
         public static SoundBank GetMusicSoundBank(string audioID)
         {
             bool success = SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
@@ -105,6 +106,7 @@ namespace SoG.Modding
             return entry.musicSoundBank;
         }
 
+        // This also does music redirects
         public static string GetMusicWaveBank(string audioID)
         {
             bool success = SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
@@ -120,6 +122,20 @@ namespace SoG.Modding
                 return null;
 
             return bank;
+        }
+
+        public static bool IsUniversalMusicBank(string bank)
+        {
+            if (bank == "UniversalMusic")
+                return true;
+
+            foreach (var kvp in ModLibrary.Global.ModAudio)
+            {
+                if (kvp.Value.owner.GetType().Name == bank)
+                    return true;
+            }
+
+            return false;
         }
 
         public static bool IsUniversalMusicBank(WaveBank bank)
