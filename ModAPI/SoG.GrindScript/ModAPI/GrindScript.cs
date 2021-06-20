@@ -38,6 +38,7 @@ namespace SoG.Modding
             _gameTypes = _gameAssembly.DefinedTypes;
 
             ApplyPatches();
+            InitializeCommands();
         }
 
         private static void Initialize()
@@ -76,7 +77,7 @@ namespace SoG.Modding
             }
         }
 
-        public static bool LoadMod(string name)
+        private static bool LoadMod(string name)
         {
             Utils.TryCreateDirectory("Mods");
             Utils.TryCreateDirectory("ModContent");
@@ -100,7 +101,7 @@ namespace SoG.Modding
             }
         }
 
-        public static bool LoadMods()
+        private static bool LoadMods()
         {
             var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
 
@@ -110,6 +111,57 @@ namespace SoG.Modding
             }
 
             return true;
+        }
+
+        private static void InitializeCommands()
+        {
+            var parsers = ModLibrary.Global.ModCommands["Modding"] = new Dictionary<string, CommandParser>();
+
+            parsers["ModList"] = (_1, _2) =>
+            {
+                CAS.AddChatMessage($"Mod Count: {LoadedScripts.Count}");
+
+                var messages = new List<string>();
+                var concated = "";
+                foreach (var mod in LoadedScripts)
+                {
+                    string name = mod.GetType().Name;
+                    if (concated.Length + name.Length > 40)
+                    {
+                        messages.Add(concated);
+                        concated = "";
+                    }
+                    concated += mod.GetType().Name + " ";
+                }
+                if (concated != "")
+                    messages.Add(concated);
+
+                foreach (var line in messages)
+                    CAS.AddChatMessage(line);
+            };
+
+            parsers["ModList"] = (_1, _2) =>
+            {
+                CAS.AddChatMessage($"Mod Count: {LoadedScripts.Count}");
+
+                var messages = new List<string>();
+                var concated = "";
+                foreach (var mod in LoadedScripts)
+                {
+                    string name = mod.GetType().Name;
+                    if (concated.Length + name.Length > 40)
+                    {
+                        messages.Add(concated);
+                        concated = "";
+                    }
+                    concated += mod.GetType().Name + " ";
+                }
+                if (concated != "")
+                    messages.Add(concated);
+
+                foreach (var line in messages)
+                    CAS.AddChatMessage(line);
+            };
         }
     }
 }

@@ -13,19 +13,19 @@ namespace SoG.Modding
     /// While it is called a Builder, it doesn't create anything, but updates a mod's Audio entry instead.
     /// </summary>
     
-    public class ModAudioBuilder
+    public class AudioConfig
     {
         readonly HashSet<string> effectCues = new HashSet<string>();
         readonly Dictionary<string, HashSet<string>> regionCues = new Dictionary<string, HashSet<string>>();
 
-        public ModAudioBuilder AddEffects(params string[] effects)
+        public AudioConfig AddEffects(params string[] effects)
         {
             foreach (var audio in effects)
                 effectCues.Add(audio);
             return this;
         }
 
-        public ModAudioBuilder AddMusicForRegion(string wavebank, params string[] music)
+        public AudioConfig AddMusicForRegion(string wavebank, params string[] music)
         {
             var setToUpdate = regionCues.TryGetValue(wavebank, out var set) ? set : regionCues[wavebank] = new HashSet<string>();
             foreach (var audio in music)
@@ -48,9 +48,9 @@ namespace SoG.Modding
                 return;
             }
 
-            if (entry.previouslyBuilt)
+            if (entry.isReady)
             {
-                GrindScript.Logger.Warn($"Audio Entry {ID} is being rebuilt by a mod! This can cause issues later on, so try to avoid it if possible.");
+                GrindScript.Logger.Warn($"Audio Entry {ID} is being redefined for a second time! This may cause issues.");
 
                 if (entry.effectsSoundBank != null)
                 {
@@ -73,16 +73,16 @@ namespace SoG.Modding
                     entry.musicSoundBank = null;
                 }
 
-                if (entry.universalMusicBank != null)
+                if (entry.universalMusicWaveBank != null)
                 {
-                    if (!entry.universalMusicBank.IsDisposed)
-                        entry.universalMusicBank.Dispose();
-                    entry.universalMusicBank = null;
+                    if (!entry.universalMusicWaveBank.IsDisposed)
+                        entry.universalMusicWaveBank.Dispose();
+                    entry.universalMusicWaveBank = null;
                 }
             }
-            entry.previouslyBuilt = true;
+            entry.isReady = true;
 
-            // Assign modlocal effect IDs
+            // Assign indexes to effects
             Dictionary<int, string> effectIDToCue = new Dictionary<int, string>();
             int effectID = 0;
             foreach (var effect in effectCues)
@@ -90,7 +90,7 @@ namespace SoG.Modding
 
             string modName = entry.owner.GetType().Name;
 
-            // Assign modlocal music IDs
+            // Assign indexes to music
             Dictionary<int, string> musicIDToCue = new Dictionary<int, string>();
             Dictionary<string, string> cueToWaveBank = new Dictionary<string, string>();
             int musicID = 0;
@@ -102,20 +102,16 @@ namespace SoG.Modding
                     musicIDToCue[musicID++] = music;
                 }
                 if (!kvp.Key.StartsWith(modName))
-                {
-                    GrindScript.Logger.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not begin with the mod's name, so it's likely that its name is not unique!");
-                    GrindScript.Logger.Warn("Keep in mind that if a name clash occurs, audio may be bugged!");
-                }
+                    GrindScript.Logger.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not follow the naming convention, and may cause conflicts!");
             }
-
             
             entry.effectsWaveBank = Utils.TryLoadWaveBank(assetPath + "/Sound/" + modName + "Effects.xwb", audioEngine);
             entry.effectsSoundBank = Utils.TryLoadSoundBank(assetPath + "/Sound/" + modName + "Effects.xsb", audioEngine);
             entry.musicSoundBank = Utils.TryLoadSoundBank(assetPath + "/Sound/" + modName + "Music.xsb", audioEngine);
-            entry.universalMusicBank = Utils.TryLoadWaveBank(assetPath + "/Sound/" + modName + ".xwb", audioEngine);
-            entry.effectIDToEffect = effectIDToCue;
-            entry.musicIDToMusic = musicIDToCue;
-            entry.musicToWaveBank = cueToWaveBank;
+            entry.universalMusicWaveBank = Utils.TryLoadWaveBank(assetPath + "/Sound/" + modName + ".xwb", audioEngine);
+            entry.effectIDToName = effectIDToCue;
+            entry.musicIDToName = musicIDToCue;
+            entry.musicNameToBank = cueToWaveBank;
         }
     }
 }

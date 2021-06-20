@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Content;
 using System;
+using System.Collections.Generic;
 
 namespace SoG.Modding
 {
@@ -9,7 +10,7 @@ namespace SoG.Modding
 
         protected ConsoleLogger Logger { get; private set; }
 
-        internal readonly int _AudioID;
+        internal readonly int _audioID;
 
         protected BaseScript() 
         {
@@ -21,71 +22,39 @@ namespace SoG.Modding
             var allAudio = ModLibrary.Global.ModAudio;
             if (allAudio.ContainsKey(ModAllocator.AudioIDNext))
             {
-                _AudioID = ModAllocator.AudioIDNext;
-                Logger.Warn($"An existing audio entry ({_AudioID}) was found while trying to create one for mod {GetType().Name}!");
+                _audioID = ModAllocator.AudioIDNext;
+                Logger.Warn($"An existing audio entry ({_audioID}) was found while trying to create one for mod {GetType().Name}!");
             }
             else
             {
-                _AudioID = ModAllocator.AllocateAudioEntry();
-                allAudio.Add(_AudioID, new ModAudioEntry() { allocatedID = _AudioID, owner = this });
-                Logger.Info($"AudioID set as {_AudioID}");
+                _audioID = ModAllocator.AllocateAudioEntry();
+                allAudio.Add(_audioID, new ModAudioEntry() { allocatedID = _audioID, owner = this });
+                Logger.Info($"AudioID set as {_audioID}");
             }
+
+            ModLibrary.Global.ModCommands[GetType().Name] = new Dictionary<string, CommandParser>();
         }
 
-        public virtual void OnDraw()
-        {
-            return;
-        }
+        public virtual void LoadContent() { }
 
-        public virtual void OnPlayerDamaged(ref int damage, ref byte type)
-        {
-            return;
-        }
+        // Hooks
 
-        public virtual void OnPlayerKilled()
-        {
-            return;
-        }
+        public virtual void OnDraw() { }
 
-        public virtual void PostPlayerLevelUp(PlayerView player)
-        {
-            return;
-        }
+        public virtual void OnPlayerDamaged(ref int damage, ref byte type) { }
 
-        public virtual void OnEnemyDamaged(Enemy enemy, ref int damage, ref byte type)
-        {
-            return;
-        }
+        public virtual void OnPlayerKilled() { }
 
-        public virtual void OnNPCDamaged(NPC enemy, ref int damage, ref byte type)
-        {
-            return;
-        }
+        public virtual void PostPlayerLevelUp(PlayerView player) { }
 
-        public virtual void OnNPCInteraction(NPC npc)
-        {
-            return;
-        }
+        public virtual void OnEnemyDamaged(Enemy enemy, ref int damage, ref byte type) { }
 
-        public virtual void OnArcadiaLoad()
-        {
-            return;
-        }
+        public virtual void OnNPCDamaged(NPC enemy, ref int damage, ref byte type) { }
 
-        public virtual void OnCustomContentLoad()
-        {
-            return;
-        }
+        public virtual void OnNPCInteraction(NPC npc) { }
 
-        // This should return true if the command was parsed, false otherwise.
-        public virtual bool OnChatParseCommand(string command, string argList, int connection)
-        {
-            return false;
-        }
+        public virtual void OnArcadiaLoad() { }
 
-        public virtual void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
-        {
-            return;
-        }
+        public virtual void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend) { }
     }
 }

@@ -5,14 +5,18 @@ using System.Reflection;
 
 namespace SoG.Modding
 {
+    /// <summary>
+    /// A simple class for logging information to the console.
+    /// </summary>
+
     public class ConsoleLogger
     {
-        private static (ConsoleColor, ConsoleColor)[] _levelColors = new (ConsoleColor, ConsoleColor)[]
+        readonly static (ConsoleColor, ConsoleColor)[] _levelColors = new (ConsoleColor, ConsoleColor)[]
         {
             (ConsoleColor.Black, ConsoleColor.DarkBlue),
             (ConsoleColor.Black, ConsoleColor.Blue),
             (ConsoleColor.Black, ConsoleColor.White),
-            (ConsoleColor.Black, ConsoleColor.Yellow),
+            (ConsoleColor.DarkGreen, ConsoleColor.Yellow),
             (ConsoleColor.DarkYellow, ConsoleColor.White),
             (ConsoleColor.DarkRed, ConsoleColor.White)
         };
@@ -22,7 +26,7 @@ namespace SoG.Modding
             Trace = 0, Debug = 1, Info = 2, Warn = 3, Error = 4, Fatal = 5, None = 6
         }
 
-        private LogLevels _logLevel = LogLevels.Warn;
+        LogLevels _logLevel = LogLevels.Warn;
         public LogLevels LogLevel
         {
             get => _logLevel;
@@ -45,7 +49,12 @@ namespace SoG.Modding
             DefaultSource = source;
         }
 
-        public void Log(LogLevels level, string msg, string source = "", bool newLine = true)
+        /// <summary>
+        /// Logs the message if its level is equal or higher in severity than LogLevel. <para/>
+        /// If source is empty, DefaultSource is used.
+        /// </summary>
+
+        public void Log(LogLevels level, string msg, string source = "")
         {
             if (level < _logLevel || _logLevel == LogLevels.None) return;
             string sourceToUse = source != "" ? source : DefaultSource;
@@ -74,56 +83,57 @@ namespace SoG.Modding
 
                 Console.Write($"{msg}");
 
-                if (newLine) Console.WriteLine();
+                Console.WriteLine();
 
                 Console.BackgroundColor = bgColor;
                 Console.ForegroundColor = fgColor;
             }
         }
 
-        public void Trace(string msg, string source = "", bool newLine = true)
+        public void Trace(string msg, string source = "")
         {
             Log(LogLevels.Trace, msg, source);
         }
 
-        public void Debug(string msg, string source = "", bool newLine = true)
+        public void Debug(string msg, string source = "")
         {
             Log(LogLevels.Debug, msg, source);
         }
 
-        public void Info(string msg, string source = "", bool newLine = true)
+        public void Info(string msg, string source = "")
         {
             Log(LogLevels.Info, msg, source);
         }
 
-        public void Warn(string msg, string source = "", bool newLine = true)
+        public void Warn(string msg, string source = "")
         {
             Log(LogLevels.Warn, msg, source);
         }
 
-        public void Error(string msg, string source = "", bool newLine = true)
+        public void Error(string msg, string source = "")
         {
             Log(LogLevels.Error, msg, source);
         }
 
-        public void Fatal(string msg, string source = "", bool newLine = true)
+        public void Fatal(string msg, string source = "")
         {
             Log(LogLevels.Fatal, msg, source);
         }
 
         /// <summary>
-        /// Attempts to find the target method in the instruction list, and outputs surrounding IL code in Debug Level. 
+        /// Attempts to find the target method in the instruction list, and outputs surrounding IL code. <para/>
+        /// By default, this method outputs at Trace level.
         /// </summary>
 
-        public void DebugInspectCode(IEnumerable<CodeInstruction> instructions, MethodInfo target, int previous = 3, int following = 3)
+        public void InspectCode(IEnumerable<CodeInstruction> instructions, MethodInfo target, int previous = 3, int following = 3, int whichMethod = 1, LogLevels level = LogLevels.Trace)
         {
-            if (_logLevel > LogLevels.Debug) return;
+            if (level < _logLevel || _logLevel == LogLevels.None) return;
 
             List<CodeInstruction> list = new List<CodeInstruction>(instructions);
 
             int index = -1;
             while (++index < list.Count)
-                if (list[index].Calls(target)) break;
+                if (list[index].Calls(target) && --whichMethod <= 0) break;
 
             if (index == list.Count)
             {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 
 namespace SoG.Modding
@@ -10,22 +9,22 @@ namespace SoG.Modding
         /// Creates a new item using the provided builder. Shorthand for CreateItem(owner, item, null). 
         /// </summary>
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemBuilder item)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ItemBuilder item)
         {
             return CreateItem(owner, item, null);
         }
 
         /// <summary> 
-        /// <para> Creates a new item using the provided builders. </para>
-        /// <para> A null equipment builder can be provided if the new item isn't an equipment. </para>
+        /// Creates a new item using the provided item and equipment builder. <para/>
+        /// The equipment builder can be null, in which case the item will act as a non-equippable item.
         /// </summary>
-        /// <returns>The new item's ID, or ItemCodex.ItemTypes.Null if creation failed.</returns>
+        /// <returns> The new item's ItemTypes ID. If creation failed, ItemCodex.ItemTypes.Null is returned. </returns>
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ModItemBuilder item, ModEquipBuilder equip)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ItemBuilder itemBuilder, EquipBuilder equipBuilder)
         {
-            if (item == null || owner == null)
+            if (itemBuilder == null || owner == null)
             {
-                GrindScript.Logger.Warn("Can't create item due to owner or item being null.");
+                GrindScript.Logger.Warn("Can't create item because owner or itemBuilder is null.");
                 return ItemCodex.ItemTypes.Null;
             }
 
@@ -36,13 +35,13 @@ namespace SoG.Modding
             {
                 owner = owner,
                 type = allocatedType,
-                itemInfo = item.Build(allocatedType),
+                itemInfo = itemBuilder.Build(allocatedType),
             };
-            newEntry.equipInfo = equip?.Build(allocatedType);
+            newEntry.equipInfo = equipBuilder?.Build(allocatedType);
 
             ItemDescription itemInfo = newEntry.itemInfo.vanilla;
 
-            var toSanitize = new List<ItemCodex.ItemCategories>
+            ItemCodex.ItemCategories[] toSanitize = new ItemCodex.ItemCategories[]
             {
                 ItemCodex.ItemCategories.OneHandedWeapon,
                 ItemCodex.ItemCategories.TwoHandedWeapon,
@@ -60,7 +59,7 @@ namespace SoG.Modding
 
             if (newEntry.equipInfo != null)
             {
-                var type = (ItemCodex.ItemCategories)newEntry.equipInfo.equipType;
+                ItemCodex.ItemCategories type = (ItemCodex.ItemCategories)newEntry.equipInfo.equipType;
                 itemInfo.lenCategory.Add(type);
 
                 if (type == ItemCodex.ItemCategories.Weapon)
@@ -81,17 +80,27 @@ namespace SoG.Modding
             return allocatedType;
         }
 
-        public static void DefineModAudio(BaseScript owner, ModAudioBuilder audio)
+        /// <summary>
+        /// Configures custom audio for the mod, using the config provided. <para/>
+        /// After configuring the audio, music and effect IDs can be obtained with <see cref="GetEffectID"/> and <see cref="GetMusicID"/>.
+        /// </summary>
+
+        public static void ConfigureModAudio(BaseScript owner, AudioConfig audio)
         {
             if (audio == null || owner == null)
             {
                 GrindScript.Logger.Warn("Can't create audio due to owner or builder being null!");
                 return;
             }
-            audio.UpdateExistingEntry(owner.CustomAssets.RootDirectory, owner._AudioID);
+            audio.UpdateExistingEntry(owner.CustomAssets.RootDirectory, owner._audioID);
         }
 
-        public static void DefineSongRedirect(string vanilla, string redirect)
+        /// <summary>
+        /// Instructs the SoundSystem to play the target modded music instead of the vanilla music. <para/>
+        /// If redirect is the empty string, any existing redirects and cleared.
+        /// </summary>
+
+        public static void RedirectVanillaMusic(string vanilla, string redirect)
         {
             var songRegionMapField = (Dictionary<string, string>)typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(GrindScript.Game.xSoundSystem);
             if (!songRegionMapField.ContainsKey(vanilla))
@@ -100,9 +109,9 @@ namespace SoG.Modding
                 return;
             }
 
-            bool isModded = AudioUtils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
+            bool isModded = Utils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
             var entry = ModLibrary.Global.ModAudio.ContainsKey(entryID) ? ModLibrary.Global.ModAudio[entryID] : null;
-            string cueName = entry != null && entry.musicIDToMusic.ContainsKey(cueID) ? entry.musicIDToMusic[cueID] : null;
+            string cueName = entry != null && entry.musicIDToName.ContainsKey(cueID) ? entry.musicIDToName[cueID] : null;
 
             if ((!isModded || !isMusic || cueName == null) && !(redirect == ""))
             {
@@ -110,51 +119,58 @@ namespace SoG.Modding
                 return;
             }
 
-            var redirectedSongs = ModLibrary.Global.VanillaRedirectedSongs;
-
-            if (redirectedSongs.ContainsKey(vanilla))
-            {
-                GrindScript.Logger.Info($"Song {vanilla} has a previous redirect {redirectedSongs[vanilla]}, which will be replaced!");
-            }
+            var redirectedSongs = ModLibrary.Global.VanillaMusicRedirects;
+            bool replacing = redirectedSongs.ContainsKey(vanilla);
 
             if (redirect == "")
             {
-                redirectedSongs.Remove(vanilla);
                 GrindScript.Logger.Info($"Song {vanilla} has been cleared of any redirects.");
+                redirectedSongs.Remove(vanilla);
             }
             else
             {
+                GrindScript.Logger.Info($"Song {vanilla} is now redirected to {redirect} ({cueName}). {(replacing ? $"Previous redirect was {redirectedSongs[vanilla]}" : "")}");
                 redirectedSongs[vanilla] = redirect;
-                GrindScript.Logger.Info($"Song {vanilla} is now redirected to {redirect}, which is cue {cueName}.");
             }
         }
 
-        //
-        // Getters and crappers
-        //
+        /// <summary>
+        /// Gets the ID of the effect that has the given cue name. <para/>
+        /// This ID can be used to play effects with methods such as <see cref="SoundSystem.PlayCue"/>.
+        /// </summary>
 
-        public static string GetSoundID(BaseScript owner, string cueName)
+        public static string GetEffectID(BaseScript owner, string cueName)
         {
             if (owner == null)
             {
                 GrindScript.Logger.Warn("Can't get sound ID due to owner being null!");
                 return "";
             }
-            return GetSoundID(owner._AudioID, cueName);
+            return GetEffectID(owner._audioID, cueName);
         }
 
-        public static string GetSoundID(int audioID, string cueName)
+        /// <summary>
+        /// Gets the ID of the effect that has the given cue name. <para/>
+        /// This ID can be used to play effects with methods such as <see cref="SoundSystem.PlayCue"/>.
+        /// </summary>
+
+        public static string GetEffectID(int audioEntryID, string cueName)
         {
-            var effects = ModLibrary.Global.ModAudio[audioID].effectIDToEffect;
+            var effects = ModLibrary.Global.ModAudio[audioEntryID].effectIDToName;
             foreach (var kvp in effects)
             {
                 if (kvp.Value == cueName)
                 {
-                    return $"GS_{audioID}_S{kvp.Key}";
+                    return $"GS_{audioEntryID}_S{kvp.Key}";
                 }
             }
             return "";
         }
+
+        /// <summary>
+        /// Gets the ID of the music that has the given cue name. <para/>
+        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
+        /// </summary>
 
         public static string GetMusicID(BaseScript owner, string cueName)
         {
@@ -163,34 +179,86 @@ namespace SoG.Modding
                 GrindScript.Logger.Warn("Can't get sound ID due to owner being null!");
                 return "";
             }
-            return GetMusicID(owner._AudioID, cueName);
+            return GetMusicID(owner._audioID, cueName);
         }
 
-        public static string GetMusicID(int audioID, string cueName)
+        /// <summary>
+        /// Gets the ID of the music that has the given cue name. <para/>
+        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
+        /// </summary>
+
+        public static string GetMusicID(int audioEntryID, string cueName)
         {
-            var music = ModLibrary.Global.ModAudio[audioID].musicIDToMusic;
+            var music = ModLibrary.Global.ModAudio[audioEntryID].musicIDToName;
             foreach (var kvp in music)
             {
                 if (kvp.Value == cueName)
-                {
-                    return $"GS_{audioID}_M{kvp.Key}";
-                }
+                    return $"GS_{audioEntryID}_M{kvp.Key}";
             }
             return "";
         }
 
+        /// <summary>
+        /// Gets the cue name based on the modded ID. <para/>
+        /// </summary>
+
         public static string GetCueName(string GSID)
         {
-            string cueName = "";
-            if (AudioUtils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
+            if (!Utils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
+                return "";
+            ModAudioEntry entry = ModLibrary.Global.ModAudio[entryID];
+            return isMusic ? entry.musicIDToName[cueID] : entry.effectIDToName[cueID];
+        }
+
+        /// <summary>
+        /// Adds a new command that can be executed by typing in chat "/(ModName):(command) (argList)" <para/>
+        /// The command must not have whitespace in it.
+        /// </summary>
+
+        public static void ConfigureCommand(BaseScript owner, string command, CommandParser parser)
+        {
+            if (owner == null || command == null)
             {
-                if (isMusic)
-                    cueName = ModLibrary.Global.ModAudio[entryID].musicIDToMusic[cueID];
-                else
-                    cueName = ModLibrary.Global.ModAudio[entryID].effectIDToEffect[cueID];
+                GrindScript.Logger.Warn("Can't configure command due to owner or command being null!");
+                return;
             }
-            GrindScript.Logger.Debug("GetCueName: " + cueName);
-            return cueName;
+
+            string name = owner.GetType().Name;
+
+            if (!ModLibrary.Global.ModCommands.TryGetValue(name, out var parsers))
+            {
+                GrindScript.Logger.Error($"Couldn't retrieve command table for mod {name}!");
+                return;
+            }
+
+            if (parser == null)
+            {
+                parsers.Remove(command);
+                GrindScript.Logger.Info($"Cleared command /{name}:{command}.");
+            }
+            else
+            {
+                parsers[command] = parser;
+                GrindScript.Logger.Info($"Updated command /{name}:{command}.");
+            }
+        }
+
+        /// <summary>
+        /// Helper method for setting up multiple commands.
+        /// </summary>
+
+        public static void ConfigureCommandsFrom(BaseScript owner, Dictionary<string, CommandParser> parsers)
+        {
+            if (owner == null || parsers == null)
+            {
+                GrindScript.Logger.Warn("Can't configure commands due to owner or parsers being null!");
+                return;
+            }
+
+            foreach (var kvp in parsers)
+            {
+                ConfigureCommand(owner, kvp.Key, kvp.Value);
+            }
         }
     }
 }

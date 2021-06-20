@@ -1,12 +1,12 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Graphics;
-using System;
+﻿using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
 
 namespace SoG.Modding
 {
-    // Represents a modded item in the ModLibrary
+    /// <summary>
+    /// Represents a modded item in the ModLibrary.
+    /// </summary>
+
     internal class ModItemEntry
     {
         public BaseScript owner;
@@ -18,7 +18,10 @@ namespace SoG.Modding
         public ModEquip equipInfo;
     }
 
-    // Stores additional data for a modded item description
+    /// <summary>
+    /// Stores data for a modded item description.
+    /// </summary>
+
     internal class ModItem
     {
         public ItemDescription vanilla;
@@ -30,7 +33,10 @@ namespace SoG.Modding
         public ContentManager managerToUse;
     }
 
-    // Stores additional data for a modded equipment
+    /// <summary>
+    /// Stores data for a modded equipment info.
+    /// </summary>
+
     internal class ModEquip
     {
         public EquipmentInfo vanilla;
@@ -41,6 +47,6 @@ namespace SoG.Modding
 
         public Dictionary<ItemCodex.ItemTypes, string> hatAltSetResources;
 
-        public ModEquipType equipType;
+        public EquipType equipType;
     }
 }

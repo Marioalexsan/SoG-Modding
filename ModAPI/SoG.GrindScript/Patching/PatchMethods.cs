@@ -16,6 +16,10 @@ namespace SoG.Modding
 
     public static class PatchMethods
     {
+        /// <summary>
+        /// Inserts <see cref="OnContentLoad"/> before <see cref="DialogueCharacterLoading.Init"/> in <see cref="Game1.__StartupThreadExecute"/>.
+        /// </summary>
+
         private static IEnumerable<CodeInstruction> StartupThreadExecute_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             MethodInfo target = GrindScript.GetGameType("SoG.DialogueCharacterLoading").GetMethod("Init", BindingFlags.Public | BindingFlags.Static);
@@ -24,9 +28,8 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Call, typeof(PatchMethods).GetTypeInfo().GetMethod("OnContentLoad", BindingFlags.NonPublic | BindingFlags.Static))
             };
 
-
             var newCode = PatchHelper.InsertAfterMethod(instructions, generator, target, insertedCode, 1);
-            GrindScript.Logger.DebugInspectCode(newCode, target);
+            GrindScript.Logger.InspectCode(newCode, target);
             return newCode;
         }
 
@@ -38,7 +41,7 @@ namespace SoG.Modding
         private static void OnContentLoad()
         {
             foreach (BaseScript mod in GrindScript.LoadedScripts)
-                mod.OnCustomContentLoad();
+                mod.LoadContent();
         }
 
         private static void OnFinalDrawPrefix()
@@ -104,18 +107,35 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
             var newCode = PatchHelper.InsertAfterMethod(instructions, generator, target, insertedCode, 1);
-            GrindScript.Logger.DebugInspectCode(instructions, target, 3, 10);
+            GrindScript.Logger.InspectCode(instructions, target, 3, 10, level: ConsoleLogger.LogLevels.Debug);
             return newCode;
         }
 
         private static bool OnChatParseCommand(string command, string message, int connection)
         {
-            foreach (BaseScript mod in GrindScript.LoadedScripts)
+            var words = command.Split(':');
+            if (words.Length < 2) 
+                return false; // Is probably a vanilla command
+
+            var target = words[0];
+            var trueCommand = command.Substring(command.IndexOf(':') + 1);
+
+
+            if (!ModLibrary.Global.ModCommands.TryGetValue(target, out var parsers))
             {
-                if (mod.OnChatParseCommand(command, message, connection)) 
-                    return true;
+                CAS.AddChatMessage("[GrindScript] Unknown mod!");
+                return true;
             }
-            return false;
+            if (!parsers.TryGetValue(trueCommand, out var parser))
+            {
+                CAS.AddChatMessage($"[{target}] Unknown command!");
+                return true;
+            }
+
+            GrindScript.Logger.Info($"Parsed command {target} : {trueCommand}, argument list: {message}");
+            parser(message, connection);
+            
+            return true;
         }
 
         private static void OnItemUsePrefix(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
@@ -303,7 +323,7 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetEffectSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, typeof(Utils).GetTypeInfo().GetMethod("GetEffectSoundBank", BindingFlags.Public | BindingFlags.Static)),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex), 
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
@@ -321,10 +341,10 @@ namespace SoG.Modding
             };
 
             // Order matters
-            GrindScript.Logger.DebugInspectCode(instructions, target, 15, 15);
+            GrindScript.Logger.InspectCode(instructions, target, 15, 15);
             var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
             var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
-            GrindScript.Logger.DebugInspectCode(step2, target, 15, 15);
+            GrindScript.Logger.InspectCode(step2, target, 15, 15);
             return step2;
         }
 
@@ -343,7 +363,7 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetEffectSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, typeof(Utils).GetTypeInfo().GetMethod("GetEffectSoundBank", BindingFlags.Public | BindingFlags.Static)),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
@@ -363,7 +383,7 @@ namespace SoG.Modding
             // Order matters
             var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
             var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
-            GrindScript.Logger.DebugInspectCode(step2, target);
+            GrindScript.Logger.InspectCode(step2, target);
             return step2;
         }
 
@@ -382,7 +402,7 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetMusicSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, typeof(Utils).GetTypeInfo().GetMethod("GetMusicSoundBank", BindingFlags.Public | BindingFlags.Static)),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
@@ -400,10 +420,10 @@ namespace SoG.Modding
             };
 
             // Order matters
-            GrindScript.Logger.DebugInspectCode(instructions, target, 15, 15);
+            GrindScript.Logger.InspectCode(instructions, target, 15, 15);
             var step1 = PatchHelper.InsertAfterMethod(instructions, generator, target, insertAfter, 1, missingPopIsOk: true);
             var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
-            GrindScript.Logger.DebugInspectCode(step2, target, 15, 15);
+            GrindScript.Logger.InspectCode(step2, target, 15, 15);
             return step2;
         }
 
@@ -419,7 +439,7 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioUtils).GetTypeInfo().GetMethod("GetMusicSoundBank", BindingFlags.Public | BindingFlags.Static)),
+                new CodeInstruction(OpCodes.Call, typeof(Utils).GetTypeInfo().GetMethod("GetMusicSoundBank", BindingFlags.Public | BindingFlags.Static)),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
@@ -441,7 +461,7 @@ namespace SoG.Modding
             var step2 = PatchHelper.InsertBeforeMethod(step1, generator, target, insertBefore, 1);
             var step3 = PatchHelper.InsertAfterMethod(step2, generator, target, insertAfter, 3, missingPopIsOk: true);
             var step4 = PatchHelper.InsertBeforeMethod(step3, generator, target, insertBefore, 3);
-            GrindScript.Logger.DebugInspectCode(step4, target);
+            GrindScript.Logger.InspectCode(step4, target);
             return step4;
         }
 
@@ -449,8 +469,8 @@ namespace SoG.Modding
         {
             // Executes a song redirection if applicable
             string audioIDToUse = sSongName;
-            if (!audioIDToUse.StartsWith("GS_") && ModLibrary.Global.VanillaRedirectedSongs.ContainsKey(audioIDToUse))
-                audioIDToUse = ModLibrary.Global.VanillaRedirectedSongs[audioIDToUse];
+            if (!audioIDToUse.StartsWith("GS_") && ModLibrary.Global.VanillaMusicRedirects.ContainsKey(audioIDToUse))
+                audioIDToUse = ModLibrary.Global.VanillaMusicRedirects[audioIDToUse];
 
             sSongName = audioIDToUse;
         }
@@ -470,9 +490,9 @@ namespace SoG.Modding
             FieldInfo vanillaUniversalMusicField = SoundSys.GetField("universalMusicWaveBank", BindingFlags.Instance | BindingFlags.NonPublic);
             FieldInfo fieldLoadedMusicWaveBank = SoundSys.GetField("loadedMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            SoundSystem soundSystem = GrindScript.Game.xSoundSystem;
+            SoundSystem soundSystem = __instance;
 
-            bool currentIsModded = AudioUtils.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
+            bool currentIsModded = Utils.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
 
             if (currentIsModded && !isMusic)
             {
@@ -485,29 +505,29 @@ namespace SoG.Modding
             WaveBank vanillaUniversalMusic = (WaveBank)vanillaUniversalMusicField.GetValue(soundSystem);
 
             ModAudioEntry entry = currentIsModded ? ModLibrary.Global.ModAudio[entryID] : null;
-            string cueName = currentIsModded ? entry.musicIDToMusic[cueID] : sSongName;
-            string modBank = currentIsModded ? entry.musicToWaveBank[cueName] : dssSongRegionMap[sSongName];
+            string cueName = currentIsModded ? entry.musicIDToName[cueID] : sSongName;
+            string modBank = currentIsModded ? entry.musicNameToBank[cueName] : dssSongRegionMap[sSongName];
 
             // All bank names must be unique due to XACT design
 
             WaveBank currentMusicBank = (WaveBank)fieldMusicWaveBank.GetValue(soundSystem);
 
-            if (AudioUtils.IsUniversalMusicBank(modBank))
+            if (Utils.IsUniversalMusicBank(modBank))
             {
-                if (currentIsModded && entry.universalMusicBank == null)
+                if (currentIsModded && entry.universalMusicWaveBank == null)
                 {
                     GrindScript.Logger.Warn($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
                     return false; // This may crash and restart the sound system
                 }
-                if (currentMusicBank != null && !AudioUtils.IsUniversalMusicBank(currentMusicBank))
+                if (currentMusicBank != null && !Utils.IsUniversalMusicBank(currentMusicBank))
                 {
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
                 }
-                fieldMusicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicBank : vanillaUniversalMusic);
+                fieldMusicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicWaveBank : vanillaUniversalMusic);
             }
             else if (soundSystem.sCurrentMusicWaveBank != modBank)
             {
-                if (currentMusicBank != null && !AudioUtils.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
+                if (currentMusicBank != null && !Utils.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
                 {
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
                 }
@@ -532,7 +552,7 @@ namespace SoG.Modding
                 soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
                 typeof(SoundSystem).GetMethod("CheckStandbyBanks", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(soundSystem, new object[] { modBank });
             }
-            else if (AudioUtils.IsUniversalMusicBank(currentMusicBank))
+            else if (Utils.IsUniversalMusicBank(currentMusicBank))
             {
                 if (dsxStandbyWaveBanks.ContainsKey(soundSystem.sCurrentMusicWaveBank))
                 {

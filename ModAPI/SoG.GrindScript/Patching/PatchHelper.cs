@@ -152,7 +152,7 @@ namespace SoG.Modding
         }
     }
 
-    public static partial class TypeExtension
+    public static class PatchExtension
     {
         /// <summary>
         /// Creates patches by specifying a PatchDescription.

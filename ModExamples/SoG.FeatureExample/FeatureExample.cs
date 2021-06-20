@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using SoG.Modding;
 using System;
+using System.Collections.Generic;
 
 namespace SoG.FeatureExample
 {
@@ -27,7 +28,7 @@ namespace SoG.FeatureExample
             Logger.Info("FeatureExample is an example mod that tests GrindScript functionality.");
         }
 
-        public override void OnCustomContentLoad()
+        public override void LoadContent()
         {
             Logger.Info("Loading....");
             try
@@ -35,41 +36,41 @@ namespace SoG.FeatureExample
                 Logger.Info("Creating Items...");
 
                 modShield = ModContent.CreateItem(this,
-                    new ModItemBuilder().Texts("Shield Example", "This is a custom shield!").Resources(CustomAssets, "WoodenShield"),
-                    new ModEquipBuilder(ModEquipType.Shield).Stats(ShldHP: 1337).Resource(CustomAssets, "Wooden")
+                    new ItemBuilder().Texts("Shield Example", "This is a custom shield!").Resources(CustomAssets, "WoodenShield"),
+                    new EquipBuilder(EquipType.Shield).Stats(ShldHP: 1337).Resource(CustomAssets, "Wooden")
                     );
 
                 modAccessory = ModContent.CreateItem(this,
-                    new ModItemBuilder().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(CustomAssets, "WoodenShield"),
-                    new ModEquipBuilder(ModEquipType.Accessory).Stats(ATK: 1337).Resource(CustomAssets, "Wooden")
+                    new ItemBuilder().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(CustomAssets, "WoodenShield"),
+                    new EquipBuilder(EquipType.Accessory).Stats(ATK: 1337).Resource(CustomAssets, "Wooden")
                     );
 
                 modHat = ModContent.CreateItem(this,
-                    new ModItemBuilder().Texts("Hat Example", "This is a custom hat!").Resources(CustomAssets, "Slimeus"),
-                    new ModEquipBuilder(ModEquipType.Hat).Stats(ATK: 1111).Resource(CustomAssets, "Slimeus").HatOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f))
+                    new ItemBuilder().Texts("Hat Example", "This is a custom hat!").Resources(CustomAssets, "Slimeus"),
+                    new EquipBuilder(EquipType.Hat).Stats(ATK: 1111).Resource(CustomAssets, "Slimeus").HatOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f))
                     );
 
                 modFacegear = ModContent.CreateItem(this,
-                    new ModItemBuilder().Texts("Facegear Example", "This is a custom facegear!").Resources(CustomAssets, "Flybold"),
-                    new ModEquipBuilder(ModEquipType.Facegear).Stats(ATK: 1234).Resource(CustomAssets, "Flybold").FacegearOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f))
+                    new ItemBuilder().Texts("Facegear Example", "This is a custom facegear!").Resources(CustomAssets, "Flybold"),
+                    new EquipBuilder(EquipType.Facegear).Stats(ATK: 1234).Resource(CustomAssets, "Flybold").FacegearOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f))
                     );
 
                 modOneHandedWeapon = ModContent.CreateItem(this,
-                    new ModItemBuilder().Texts("OneHandedMelee Example", "This is a custom 1H weapon! It has custom animations for downward basic attacks.").Resources(CustomAssets, "Crowbar"),
-                    new ModEquipBuilder(ModEquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.OneHanded, false).Stats(ATK: 1555).Resource(CustomAssets, "IronSword")
+                    new ItemBuilder().Texts("OneHandedMelee Example", "This is a custom 1H weapon! It has custom animations for downward basic attacks.").Resources(CustomAssets, "Crowbar"),
+                    new EquipBuilder(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.OneHanded, false).Stats(ATK: 1555).Resource(CustomAssets, "IronSword")
                     );
 
                 modTwoHandedWeapon = ModContent.CreateItem(this,
-                    new ModItemBuilder().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(CustomAssets, "Claymore"),
-                    new ModEquipBuilder(ModEquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.TwoHanded, true).Stats(ATK: 776).Resource(CustomAssets, "Claymore")
+                    new ItemBuilder().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(CustomAssets, "Claymore"),
+                    new EquipBuilder(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.TwoHanded, true).Stats(ATK: 776).Resource(CustomAssets, "Claymore")
                     );
 
                 Logger.Info("Done with Creating Items!");
 
                 Logger.Info("Building sounds...");
 
-                ModContent.DefineModAudio(this,
-                    new ModAudioBuilder().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny")
+                ModContent.ConfigureModAudio(this,
+                    new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny")
                     );
 
                 audioIntro = ModContent.GetMusicID(this, "Intro");
@@ -82,24 +83,30 @@ namespace SoG.FeatureExample
 
                 Logger.Info("Testing sound redirects...");
 
-                ModContent.DefineSongRedirect("BossBattle01", "BishopBattle"); // Redirect is invalid
-                ModContent.DefineSongRedirect("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
-                ModContent.DefineSongRedirect("GS_1337_M1337", audioClash); // Vanilla is invalid
+                ModContent.RedirectVanillaMusic("BossBattle01", "BishopBattle"); // Redirect is invalid
+                ModContent.RedirectVanillaMusic("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
+                ModContent.RedirectVanillaMusic("GS_1337_M1337", audioClash); // Vanilla is invalid
 
-                ModContent.DefineSongRedirect("BossBattle01", audioClash); // Sets a redirect
-                ModContent.DefineSongRedirect("BossBattle01", audioRipped); // Overrides the redirect
-                ModContent.DefineSongRedirect("BossBattle01", ""); // Clears the redirect
+                ModContent.RedirectVanillaMusic("BossBattle01", audioClash); // Sets a redirect
+                ModContent.RedirectVanillaMusic("BossBattle01", audioRipped); // Overrides the redirect
+                ModContent.RedirectVanillaMusic("BossBattle01", ""); // Clears the redirect
 
                 Logger.Info("Redirect tests done!");
 
                 // Doing the actual redirects
 
-                ModContent.DefineSongRedirect("BossBattle01", audioClash);
-                ModContent.DefineSongRedirect("BishopBattle", audioRipped);
+                ModContent.RedirectVanillaMusic("BossBattle01", audioClash);
+                ModContent.RedirectVanillaMusic("BishopBattle", audioRipped);
 
                 Logger.Info($"Music IDs: Intro - {audioIntro}, Destiny - {audioDestiny}, Ripped - {audioRipped}");
 
                 Logger.Info("Done with sounds!");
+
+                Logger.Info("Setting up commands...");
+
+                SetupCommands();
+
+                Logger.Info("Commands set up successfully!");
             }
             catch(Exception e)
             {
@@ -160,18 +167,16 @@ namespace SoG.FeatureExample
             Logger.Info("OnArcadiaLoad() called!");
         }
 
-        public override bool OnChatParseCommand(string command, string argList, int connection)
+        private void SetupCommands()
         {
-            Logger.Info("OnChatParseCommand() called!");
-
-            PlayerView localPlayer = GrindScript.Game.xLocalPlayer;
-
-            string[] args = argList.Split(' ');
-            switch (command)
+            var parsers = new Dictionary<string, CommandParser>
             {
-                case "GiveItems":
+                ["GiveItems"] = (argList, _) =>
+                {
+                    string[] args = argList.Split(' ');
                     if (ModNetworking.IsLocalOrServer)
                     {
+                        PlayerView localPlayer = GrindScript.Game.xLocalPlayer;
                         CAS.AddChatMessage("Dropping Items!");
                         modShield.SpawnItem(localPlayer);
                         modAccessory.SpawnItem(localPlayer);
@@ -181,38 +186,30 @@ namespace SoG.FeatureExample
                         modTwoHandedWeapon.SpawnItem(localPlayer);
                     }
                     else CAS.AddChatMessage("You can't do that if you're a client!");
-                    return true;
-                case "PlayMusic":
+                },
+
+                ["PlayMusic"] = (argList, _) =>
+                {
+                    string[] args = argList.Split(' ');
                     if (args.Length != 1)
-                    {
                         CAS.AddChatMessage("Usage: /PlayMusic <Audio>");
-                        return true;
-                    }
-                    switch (args[0])
+
+                    var music = new Dictionary<string, string>
                     {
-                        case "Intro":
-                            GrindScript.Game.xSoundSystem.PlaySong(audioIntro, true);
-                            break;
-                        case "Destiny":
-                            GrindScript.Game.xSoundSystem.PlaySong(audioDestiny, true);
-                            break;
-                        case "Ripped":
-                            GrindScript.Game.xSoundSystem.PlaySong(audioRipped, true);
-                            break;
-                        case "Clash":
-                            GrindScript.Game.xSoundSystem.PlaySong(audioClash, true);
-                            break;
-                        case "DeafSilence":
-                            GrindScript.Game.xSoundSystem.PlaySong(audioDeafSilence, true);
-                            break;
-                        default:
-                            CAS.AddChatMessage("Unknown mod music!");
-                            break;
-                    }
-                    return true;
-                default:
-                    return true;
-            }
+                        ["Intro"] = audioIntro,
+                        ["Destiny"] = audioDestiny,
+                        ["Ripped"] = audioRipped,
+                        ["Clash"] = audioClash,
+                        ["DeafSilence"] = audioDeafSilence
+                    };
+
+                    if (music.TryGetValue(args[0], out string ID))
+                        GrindScript.Game.xSoundSystem.PlaySong(ID, true);
+                    else CAS.AddChatMessage("Unknown mod music!");
+                }
+            };
+
+            ModContent.ConfigureCommandsFrom(this, parsers);
         }
 
         public override void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)

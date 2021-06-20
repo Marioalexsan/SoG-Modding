@@ -4,7 +4,7 @@ using System.Reflection;
 namespace SoG.Modding
 {
     /// <summary>
-    /// Factory class used for retrieving Harmony patches via an enum
+    /// Factory class used for retrieving Harmony patches via an enum.
     /// </summary>
     public static class PatchCodex
     {
@@ -12,8 +12,10 @@ namespace SoG.Modding
         {
             // GrindScript Initialize
             Game1_Initialize, 
+
             // Mod Content Init / Loading / Whatever
             Game1_StartupThreadExecute,
+
             // BaseScript callbacks
             Game1_FinalDraw,
             Game1_Player_TakeDamage,
@@ -25,6 +27,7 @@ namespace SoG.Modding
             Game1_LevelLoading_DoStuff_Arcadia,
             Game1_Chat_ParseCommand,
             Game1_Item_Use,
+
             // Item API callbacks
             ItemCodex_GetItemDescription,
             ItemCodex_GetItemInstance,
@@ -52,7 +55,7 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Describes a Harmony patch as a collection of MethodInfos
+        /// Describes a Harmony patch as a collection of MethodInfo.
         /// </summary>
         public class PatchDescription
         {

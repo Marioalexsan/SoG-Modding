@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoG.Modding
 {
-    public static partial class TypeExtension
+    public static class TypeExtension
     {
         public static MethodInfo GetPublicInstanceMethod(this TypeInfo t, string name)
         {
@@ -24,19 +20,24 @@ namespace SoG.Modding
             return t.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance);
         }
 
+        public static MethodInfo GetPublicStaticMethod(this TypeInfo t, string name)
+        {
+            return t.GetMethod(name, BindingFlags.Public | BindingFlags.Static);
+        }
+
         public static MethodInfo GetPrivateStaticMethod(this TypeInfo t, string name)
         {
             return t.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static);
         }
 
-        public static T GetPrivateInstanceField<T>(this TypeInfo t, object instance, string field)
-        {
-            return (T)t.GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(instance);
-        }
-
         public static T GetPublicInstanceField<T>(this TypeInfo t, object instance, string field)
         {
-            return (T)t.GetField(field, BindingFlags.Instance | BindingFlags.Public)?.GetValue(instance);
+            return (T)t.GetField(field, BindingFlags.Public | BindingFlags.Instance)?.GetValue(instance);
+        }
+
+        public static T GetPrivateInstanceField<T>(this TypeInfo t, object instance, string field)
+        {
+            return (T)t.GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance);
         }
 
         public static T GetPublicStaticField<T>(this TypeInfo t, string field)
@@ -44,9 +45,9 @@ namespace SoG.Modding
             return (T)t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
 
-        public static dynamic GetPublicStaticField(this TypeInfo t, string field)
+        public static T GetPrivateStaticField<T>(this TypeInfo t, string field)
         {
-            return t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+            return (T)t.GetField(field, BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null);
         }
     }
 }
