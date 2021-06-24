@@ -9,18 +9,19 @@ namespace SoG.Modding
         /// Creates a new item using the provided builder. Shorthand for CreateItem(owner, item, null). 
         /// </summary>
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ItemBuilder item)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, string uniqueID, ItemBuilder item)
         {
-            return CreateItem(owner, item, null);
+            return CreateItem(owner, uniqueID, item, null);
         }
 
         /// <summary> 
         /// Creates a new item using the provided item and equipment builder. <para/>
+        /// The uniqueID should not be identical to other IDs inside this mod. <para/>
         /// The equipment builder can be null, in which case the item will act as a non-equippable item.
         /// </summary>
         /// <returns> The new item's ItemTypes ID. If creation failed, ItemCodex.ItemTypes.Null is returned. </returns>
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ItemBuilder itemBuilder, EquipBuilder equipBuilder)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, string uniqueID, ItemBuilder itemBuilder, EquipBuilder equipBuilder)
         {
             if (itemBuilder == null || owner == null)
             {
@@ -33,11 +34,25 @@ namespace SoG.Modding
             // ModItem entry and ItemDescription need to be created before the respective EquipmentInfo
             ModItemEntry newEntry = ModLibrary.Global.ModItems[allocatedType] = new ModItemEntry()
             {
+                uniqueID = uniqueID,
                 owner = owner,
                 type = allocatedType,
                 itemInfo = itemBuilder.Build(allocatedType),
             };
             newEntry.equipInfo = equipBuilder?.Build(allocatedType);
+
+            // Also add to the Mod's list, for Load / Save
+            owner.ModLib.ModItems[allocatedType] = newEntry;
+
+            foreach (var existing in owner.ModLib.ModItems.Values)
+            {
+                if (existing != newEntry && existing.uniqueID == uniqueID)
+                {
+                    GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more items with the uniqueID {uniqueID}!");
+                    GrindScript.Logger.Error($"This is likely to break loading, saving, and many other things!");
+                    break;
+                }
+            }
 
             ItemDescription itemInfo = newEntry.itemInfo.vanilla;
 
@@ -73,6 +88,9 @@ namespace SoG.Modding
                     }
                 }
             }
+
+            itemInfo.sNameLibraryHandle = uniqueID + "_Name";
+            itemInfo.sDescriptionLibraryHandle = uniqueID + "_sDescription";
 
             Ui.AddMiscText("Items", itemInfo.sNameLibraryHandle, itemInfo.sFullName, MiscTextTypes.GenericItemName);
             Ui.AddMiscText("Items", itemInfo.sDescriptionLibraryHandle, itemInfo.sDescription, MiscTextTypes.GenericItemDescription);

@@ -1,4 +1,6 @@
-﻿namespace SoG.Modding
+﻿using System.Collections.Generic;
+
+namespace SoG.Modding
 {
     /// <summary>
     /// Allocates IDs and other things.
@@ -8,6 +10,8 @@
     {
 		public const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)400000;
 		public static ItemCodex.ItemTypes ItemTypesNext { get; private set; } = ItemTypesStart;
+
+		public const ItemCodex.ItemTypes ItemTypes_ShuffleStart = (ItemCodex.ItemTypes)13371337;
 
 		public const EquipmentInfo.SpecialEffect EquipEffectStart = (EquipmentInfo.SpecialEffect)200;
 		public static EquipmentInfo.SpecialEffect EquipEffectNext { get; private set; } = EquipEffectStart;

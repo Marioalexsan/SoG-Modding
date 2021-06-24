@@ -10,54 +10,73 @@ namespace SoG.Modding
     /// <summary>
     /// Core of the API
     /// </summary>
+
     public static class GrindScript
     {
-        private static int _launchState = 0;
-
         private static readonly Harmony _harmony = new Harmony("GrindScriptPatcher");
 
-        internal static readonly List<BaseScript> LoadedScripts = new List<BaseScript>();
+        internal static readonly List<BaseScript> _loadedScripts = new List<BaseScript>();
+
         private static Assembly _gameAssembly;
+
         private static IEnumerable<TypeInfo> _gameTypes;
 
         public static Game1 Game { get; private set; }
+
         internal static ConsoleLogger Logger { get; private set; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
+
+        /// <summary>
+        /// Prepares GrindScript by doing some processing before SoG's Main method runs.
+        /// </summary>
 
         private static void Prepare()
         {
             Logger.Info("Preparing Grindscript...");
 
-            if (_launchState != 0)
-            {
-                Logger.Fatal($"Can't proceed because launch state is {_launchState}!");
-                return;
-            }
-
-            _launchState = 1;
             _gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
             _gameTypes = _gameAssembly.DefinedTypes;
 
             ApplyPatches();
-            InitializeCommands();
+            SetupCommands();
         }
+
+        /// <summary>
+        /// Initializes GrindScript during SoG's startup thread
+        /// </summary>
 
         private static void Initialize()
         {
-            Logger.Info("Initializing Grindscript...");
-            if (_launchState != 1)
+            if (_gameTypes == null)
             {
-                Logger.Fatal("Can't proceed because launch state is " + _launchState + "!");
+                Logger.Error("Can not start GrindScript because it hasn't been prepared!");
                 return;
             }
 
+            Logger.Info("Initializing Grindscript...");
+
             Game = (Game1)GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            
+            // Modded content resides in a separate folder to avoid breaking vanilla stuff accidentally.
+            Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
+
+            // It is not a good idea for modded runs to submit scores.
+            Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
+
             LoadMods();
         }
+
+        /// <summary>
+        /// Gets a game type via reflection. Not needed if you have a reference to Secrets of Grindea.exe
+        /// </summary>
 
         public static TypeInfo GetGameType(string name)
         {
             return _gameTypes.First(t => t.FullName == name);
         }
+
+        /// <summary>
+        /// Applies all patches found in PatchCodex.
+        /// </summary>
 
         private static void ApplyPatches()
         {
@@ -77,6 +96,10 @@ namespace SoG.Modding
             }
         }
 
+        /// <summary>
+        /// Loads a mod and instantiates its BaseScript derived class (if any).
+        /// </summary>
+
         private static bool LoadMod(string name)
         {
             Utils.TryCreateDirectory("Mods");
@@ -89,7 +112,7 @@ namespace SoG.Modding
                 Type type = assembly.GetTypes().First(t => t.BaseType == typeof(BaseScript));
                 BaseScript script = (BaseScript)type?.GetConstructor(new Type[] { })?.Invoke(new object[] { });
 
-                LoadedScripts.Add(script);
+                _loadedScripts.Add(script);
 
                 Logger.Info("Loaded mod " + name);
                 return true;
@@ -100,6 +123,10 @@ namespace SoG.Modding
                 return false;
             }
         }
+
+        /// <summary>
+        /// Loads all mods found in the "/Mods" directory
+        /// </summary>
 
         private static bool LoadMods()
         {
@@ -113,17 +140,21 @@ namespace SoG.Modding
             return true;
         }
 
-        private static void InitializeCommands()
+        /// <summary>
+        /// Prepares commands that come bundled with GrindScript. These can be accessed using "/GScript:{command}"
+        /// </summary>
+
+        private static void SetupCommands()
         {
-            var parsers = ModLibrary.Global.ModCommands["Modding"] = new Dictionary<string, CommandParser>();
+            var parsers = ModLibrary.Global.ModCommands["GScript"] = new Dictionary<string, CommandParser>();
 
             parsers["ModList"] = (_1, _2) =>
             {
-                CAS.AddChatMessage($"Mod Count: {LoadedScripts.Count}");
+                CAS.AddChatMessage($"[GrindScript] Mod Count: {_loadedScripts.Count}");
 
                 var messages = new List<string>();
                 var concated = "";
-                foreach (var mod in LoadedScripts)
+                foreach (var mod in _loadedScripts)
                 {
                     string name = mod.GetType().Name;
                     if (concated.Length + name.Length > 40)
@@ -140,21 +171,31 @@ namespace SoG.Modding
                     CAS.AddChatMessage(line);
             };
 
-            parsers["ModList"] = (_1, _2) =>
+            parsers["Help"] = (message, _2) =>
             {
-                CAS.AddChatMessage($"Mod Count: {LoadedScripts.Count}");
+                Dictionary<string, CommandParser> commandList = null;
+                var args = Utils.GetArgs(message);
+                if (args.Length == 0)
+                {
+                    commandList = ModLibrary.Global.ModCommands["GScript"];
+                }
+                else if(!ModLibrary.Global.ModCommands.TryGetValue(args[0], out commandList))
+                {
+                    CAS.AddChatMessage("[GrindScript] Unknown mod!");
+                    return;
+                }
+                CAS.AddChatMessage($"[GrindScript] Command list{(args.Length == 0 ? "" : $" for {args[0]}" )}:");
 
                 var messages = new List<string>();
                 var concated = "";
-                foreach (var mod in LoadedScripts)
+                foreach (var cmd in commandList.Keys)
                 {
-                    string name = mod.GetType().Name;
-                    if (concated.Length + name.Length > 40)
+                    if (concated.Length + cmd.Length > 40)
                     {
                         messages.Add(concated);
                         concated = "";
                     }
-                    concated += mod.GetType().Name + " ";
+                    concated += cmd + " ";
                 }
                 if (concated != "")
                     messages.Add(concated);

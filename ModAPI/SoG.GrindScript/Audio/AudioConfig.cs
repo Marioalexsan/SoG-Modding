@@ -10,7 +10,7 @@ namespace SoG.Modding
 {
     /// <summary>
     /// Used to define custom audio added by a mod.
-    /// While it is called a Builder, it doesn't create anything, but updates a mod's Audio entry instead.
+    /// Its action is tu update a mod's Audio entry.
     /// </summary>
     
     public class AudioConfig

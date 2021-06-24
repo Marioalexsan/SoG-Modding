@@ -6,11 +6,13 @@ namespace SoG.Modding
 {
     public partial class BaseScript
     {
+        internal readonly int _audioID;
+
+        internal readonly ModLibrary ModLib = new ModLibrary();
+
         public ContentManager CustomAssets { get; private set; }
 
         protected ConsoleLogger Logger { get; private set; }
-
-        internal readonly int _audioID;
 
         protected BaseScript() 
         {

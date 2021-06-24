@@ -228,5 +228,14 @@ namespace SoG.Modding
 
             return false;
         }
+
+        /// <summary>
+        /// Splits message in words, removing any empty results
+        /// </summary>
+
+        public static string[] GetArgs(string message)
+        {
+            return message == null ? new string[0] : message.Split(new char[] { ' ' }, options: StringSplitOptions.RemoveEmptyEntries);
+        }
     }
 }

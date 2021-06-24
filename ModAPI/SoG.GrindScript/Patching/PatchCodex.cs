@@ -1,11 +1,14 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
+using WeaponAssets;
 
 namespace SoG.Modding
 {
     /// <summary>
     /// Factory class used for retrieving Harmony patches via an enum.
     /// </summary>
+
     public static class PatchCodex
     {
         public enum Patches
@@ -51,12 +54,21 @@ namespace SoG.Modding
             SoundSystem_ReadySongInCue,
             SoundSystem_PlaySong,
             SoundSystem_PlayMixCues,
-            SoundSystem_ChangeSongRegionIfNecessary
+            SoundSystem_ChangeSongRegionIfNecessary,
+
+            // Saving patches
+            Game1_Saving_SaveCharacterToFile,
+            Game1_Saving_SaveWorldToFile,
+            Game1_Saving_SaveRogueToFile,
+            Game1_Loading_LoadCharacterFromFile,
+            Game1_Loading_LoadWorldFromFile,
+            Game1_Loading_LoadRogueFile
         }
 
         /// <summary>
         /// Describes a Harmony patch as a collection of MethodInfo.
         /// </summary>
+
         public class PatchDescription
         {
             public MethodInfo Target;
@@ -67,152 +79,182 @@ namespace SoG.Modding
 
         public static PatchDescription GetPatch(Patches which)
         {
-            TypeInfo Methods = typeof(PatchMethods).GetTypeInfo(); // Commonly used
+            Type Transpilers = typeof(Transpilers); // Commonly used
+            Type Callbacks = typeof(Callbacks); // Commonly used
             TypeInfo Game1 = GrindScript.GetGameType("SoG.Game1"); // Commonly used
             TypeInfo SoundSystem = GrindScript.GetGameType("SoG.SoundSystem"); // SoundSystem patching
 
-            PatchDescription patch = new PatchDescription();
+            MethodInfo Target = null, Prefix = null, Postfix = null, Transpiler = null;
             switch (which)
             {
                 case Patches.Game1_Initialize:
-                    patch.Target = Game1.GetMethod("Initialize", BindingFlags.Instance | BindingFlags.NonPublic);
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGame1Initialize");
+                    Target = Game1.GetPrivateInstanceMethod("Initialize");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGame1Initialize");
                     break;
                 case Patches.Game1_StartupThreadExecute:
-                    patch.Target = Game1.GetMethod("__StartupThreadExecute", BindingFlags.Instance | BindingFlags.Public);
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("StartupThreadExecute_Transpiler");
+                    Target = Game1.GetMethod("__StartupThreadExecute");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("StartupTranspiler");
                     break;
                 case Patches.Game1_FinalDraw:
-                    patch.Target = Game1.GetPublicInstanceMethod("FinalDraw");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnFinalDrawPrefix");
+                    Target = Game1.GetPublicInstanceMethod("FinalDraw");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnFinalDrawPrefix");
                     break;
                 case Patches.Game1_Player_TakeDamage:
-                    patch.Target = Game1.GetPublicInstanceMethod("_Player_TakeDamage");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnPlayerTakeDamagePrefix");
+                    Target = Game1.GetPublicInstanceMethod("_Player_TakeDamage");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnPlayerTakeDamagePrefix");
                     break;
                 case Patches.Game1_Player_KillPlayer:
-                    patch.Target = Game1.GetMethods(BindingFlags.Instance | BindingFlags.Public).First(m => m.Name == "_Player_KillPlayer" && m.GetParameters().Count() > 1);
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnPlayerKilledPrefix");
+                    Target = Game1.GetMethod("_Player_KillPlayer", new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) });
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnPlayerKilledPrefix");
                     break;
                 case Patches.Game1_Player_ApplyLvUpBonus:
-                    patch.Target = Game1.GetPublicInstanceMethod("_Player_ApplyLvUpBonus");
-                    patch.Postfix = Methods.GetPrivateStaticMethod("PostPlayerLevelUp");
+                    Target = Game1.GetPublicInstanceMethod("_Player_ApplyLvUpBonus");
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostPlayerLevelUp");
                     break;
                 case Patches.Game1_Enemy_TakeDamage:
-                    patch.Target = Game1.GetPublicInstanceMethod("_Enemy_TakeDamage");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnEnemyTakeDamagePrefix");
+                    Target = Game1.GetPublicInstanceMethod("_Enemy_TakeDamage");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnEnemyTakeDamagePrefix");
                     break;
                 case Patches.Game1_NPC_TakeDamage:
-                    patch.Target = Game1.GetPublicInstanceMethod("_NPC_TakeDamage");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnNPCTakeDamagePrefix");
+                    Target = Game1.GetPublicInstanceMethod("_NPC_TakeDamage");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnNPCTakeDamagePrefix");
                     break;
                 case Patches.Game1_NPC_Interact:
-                    patch.Target = Game1.GetPublicInstanceMethod("_NPC_Interact");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnNPCInteractionPrefix");
+                    Target = Game1.GetPublicInstanceMethod("_NPC_Interact");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnNPCInteractionPrefix");
                     break;
                 case Patches.Game1_LevelLoading_DoStuff_Arcadia:
-                    patch.Target = Game1.GetPublicInstanceMethod("_LevelLoading_DoStuff_Arcadia");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnArcadiaLoadPrefix");
+                    Target = Game1.GetPublicInstanceMethod("_LevelLoading_DoStuff_Arcadia");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnArcadiaLoadPrefix");
                     break;
                 case Patches.Game1_Chat_ParseCommand:
-                    patch.Target = Game1.GetPublicInstanceMethod("_Chat_ParseCommand");
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("Chat_ParseCommandTranspiler");
+                    Target = Game1.GetPublicInstanceMethod("_Chat_ParseCommand");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("CommandTranspiler");
                     break;
                 case Patches.Game1_Item_Use:
-                    patch.Target = Game1.GetDeclaredMethods("_Item_Use").ElementAt(1);
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnItemUsePrefix");
+                    Target = Game1.GetDeclaredMethods("_Item_Use").ElementAt(1);
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnItemUsePrefix");
                     break;
                 case Patches.ItemCodex_GetItemDescription:
-                    patch.Target = typeof(ItemCodex).GetMethod("GetItemDescription");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetItemDescription");
+                    Target = typeof(ItemCodex).GetMethod("GetItemDescription");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetItemDescription");
                     break;
                 case Patches.ItemCodex_GetItemInstance:
-                    patch.Target = typeof(ItemCodex).GetMethod("GetItemInstance");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetItemInstance");
+                    Target = typeof(ItemCodex).GetMethod("GetItemInstance");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetItemInstance");
                     break;
                 case Patches.EquipmentCodex_GetArmorInfo:
-                    patch.Target = typeof(EquipmentCodex).GetMethod("GetArmorInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    Target = typeof(EquipmentCodex).GetMethod("GetArmorInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetEquipmentInfo");
                     break;
                 case Patches.EquipmentCodex_GetAccessoryInfo:
-                    patch.Target = typeof(EquipmentCodex).GetMethod("GetAccessoryInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    Target = typeof(EquipmentCodex).GetMethod("GetAccessoryInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetEquipmentInfo");
                     break;
                 case Patches.EquipmentCodex_GetShieldInfo:
-                    patch.Target = typeof(EquipmentCodex).GetMethod("GetShieldInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    Target = typeof(EquipmentCodex).GetMethod("GetShieldInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetEquipmentInfo");
                     break;
                 case Patches.EquipmentCodex_GetShoesInfo:
-                    patch.Target = typeof(EquipmentCodex).GetMethod("GetShoesInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetEquipmentInfo");
+                    Target = typeof(EquipmentCodex).GetMethod("GetShoesInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetEquipmentInfo");
                     break;
                 case Patches.FacegearCodex_GetHatInfo:
-                    patch.Target = typeof(FacegearCodex).GetMethod("GetHatInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetFacegearInfo");
+                    Target = typeof(FacegearCodex).GetMethod("GetHatInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetFacegearInfo");
                     break;
                 case Patches.HatCodex_GetHatInfo:
-                    patch.Target = typeof(HatCodex).GetMethod("GetHatInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetHatInfo");
+                    Target = typeof(HatCodex).GetMethod("GetHatInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetHatInfo");
                     break;
                 case Patches.WeaponCodex_GetWeaponInfo:
-                    patch.Target = typeof(WeaponCodex).GetMethod("GetWeaponInfo");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetWeaponInfo");
+                    Target = typeof(WeaponCodex).GetMethod("GetWeaponInfo");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetWeaponInfo");
                     break;
                 case Patches.WeaponContentManager_LoadBatch:
-                    patch.Target = typeof(WeaponAssets.WeaponContentManager).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnLoadBatch");
+                    Target = typeof(WeaponContentManager).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnLoadBatch");
                     break;
                 case Patches.Game1_Animations_GetAnimationSet:
-                    patch.Target = Game1.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnGetAnimationSet");
+                    Target = Game1.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnGetAnimationSet");
                     break;
                 case Patches.SoundSystem_PlayInterfaceCue:
-                    patch.Target = SoundSystem.GetMethod("PlayInterfaceCue");
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("PlayEffectCueTranspiler");
+                    Target = SoundSystem.GetMethod("PlayInterfaceCue");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("PlayEffectTranspiler");
                     break;
                 case Patches.SoundSystem_PlayTrackableInterfaceCue:
-                    patch.Target = SoundSystem.GetMethod("PlayTrackableInterfaceCue");
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    Target = SoundSystem.GetMethod("PlayTrackableInterfaceCue");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetEffectTranspiler");
                     break;
                 case Patches.SoundSystem_PlayCue1:
-                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(0);
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(0);
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetEffectTranspiler");
                     break;
                 case Patches.SoundSystem_PlayCue2:
-                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(1);
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(1);
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetEffectTranspiler");
                     break;
                 case Patches.SoundSystem_PlayCue3:
-                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(2);
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(2);
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetEffectTranspiler");
                     break;
                 case Patches.SoundSystem_PlayCue4:
-                    patch.Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(3);
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetEffectCueTranspiler");
+                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(3);
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetEffectTranspiler");
                     break;
                 case Patches.SoundSystem_ReadySongInCue:
-                    patch.Target = SoundSystem.GetMethod("ReadySongInCue");
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetMusicCueTranspiler");
+                    Target = SoundSystem.GetMethod("ReadySongInCue");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetMusicTranspiler");
                     break;
                 case Patches.SoundSystem_PlaySong:
-                    patch.Target = SoundSystem.GetMethod("PlaySong");
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("GetMusicCueTranspiler");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnPlaySong");
+                    Target = SoundSystem.GetMethod("PlaySong");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("GetMusicTranspiler");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnPlaySong");
                     break;
                 case Patches.SoundSystem_PlayMixCues:
-                    patch.Target = SoundSystem.GetMethod("PlayMixCues");
-                    patch.Transpiler = Methods.GetPrivateStaticMethod("PlayMixCuesTranspiler");
+                    Target = SoundSystem.GetMethod("PlayMixCues");
+                    Transpiler = Transpilers.GetPrivateStaticMethod("PlayMixTranspiler");
                     break;
                 case Patches.SoundSystem_ChangeSongRegionIfNecessary:
-                    patch.Target = SoundSystem.GetMethod("ChangeSongRegionIfNecessary");
-                    patch.Prefix = Methods.GetPrivateStaticMethod("OnChangeSongRegionIfNecessary");
+                    Target = SoundSystem.GetMethod("ChangeSongRegionIfNecessary");
+                    Prefix = Callbacks.GetPrivateStaticMethod("OnChangeSongRegionIfNecessary");
+                    break;
+                case Patches.Game1_Saving_SaveCharacterToFile:
+                    Target = Game1.GetMethod("_Saving_SaveCharacterToFile");
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostCharacterSave");
+                    break;
+                case Patches.Game1_Saving_SaveWorldToFile:
+                    Target = Game1.GetMethod("_Saving_SaveWorldToFile");
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostWorldSave");
+                    break;
+                case Patches.Game1_Saving_SaveRogueToFile:
+                    Target = Game1.GetMethods().Where(item => item.Name == "_Saving_SaveRogueToFile" && item.GetParameters().Count() == 1).First();
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostArcadiaSave");
+                    break;
+                case Patches.Game1_Loading_LoadCharacterFromFile:
+                    Target = Game1.GetMethod("_Loading_LoadCharacterFromFile");
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostCharacterLoad");
+                    break;
+                case Patches.Game1_Loading_LoadWorldFromFile:
+                    Target = Game1.GetMethod("_Loading_LoadWorldFromFile");
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostWorldLoad");
+                    break;
+                case Patches.Game1_Loading_LoadRogueFile:
+                    Target = Game1.GetMethod("_Loading_LoadRogueFile");
+                    Postfix = Callbacks.GetPrivateStaticMethod("PostArcadiaLoad");
                     break;
                 default:
-                    patch = null;
                     break;
             }
 
-            return patch;
+            return new PatchDescription()
+            {
+                Target = Target,
+                Prefix = Prefix,
+                Postfix = Postfix,
+                Transpiler = Transpiler
+            };
         }
     }
 }

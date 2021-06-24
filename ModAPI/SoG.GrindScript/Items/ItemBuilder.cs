@@ -24,12 +24,13 @@ namespace SoG.Modding
         private ContentManager _managerToUse;
         private ItemCodex.ItemCategories[] _categories = new ItemCodex.ItemCategories[0];
 
-        public ItemBuilder() { }
+        /// <summary>
+        /// Creates a new item builder. The unique string ID is used to identify an item for saving / loading purposes. <para/>
+        /// You should make sure that items inside a mod don't share unique string IDs. <para/>
+        /// For example: "_Accessory_MyEpicModAccessory", or "_Item0001".
+        /// </summary>
 
-        public ItemBuilder(string name, string description)
-        {
-            Texts(name, description);
-        }
+        public ItemBuilder() {}
 
         public ItemBuilder Texts(string name, string description)
         {
@@ -85,8 +86,8 @@ namespace SoG.Modding
             {
                 sFullName = _name,
                 sDescription = _description,
-                sNameLibraryHandle = entry + "_Name",
-                sDescriptionLibraryHandle = entry + "_Description",
+                sNameLibraryHandle = "???",
+                sDescriptionLibraryHandle = "???",
                 sCategory = "",
                 iInternalLevel = _levelForBestSort,
                 byFancyness = Math.Min((byte)1, Math.Max(_fancyness, (byte)3)),

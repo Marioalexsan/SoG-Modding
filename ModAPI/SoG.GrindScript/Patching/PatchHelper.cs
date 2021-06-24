@@ -3,11 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
 
 namespace SoG.Modding
 {
+    /// <summary>
+    /// Provides various helper methods for transpiling the game.
+    /// Throughout the code, CodeList is a shortcut for IEnumerable of CodeInstructions.
+    /// </summary>
+
     public static class PatchHelper
     {
+        // How the stack changes based on a StackBehavior (in terms of objects)
         private static readonly Dictionary<StackBehaviour, int> __stackDeltas = new Dictionary<StackBehaviour, int>
         {
             { StackBehaviour.Pop0, 0 },
@@ -43,7 +50,7 @@ namespace SoG.Modding
 
         /// <summary>
         /// <para> Transpiles the given instruction set by inserting code instructions after the target method. </para>
-        /// <para> If there are multiple calls of the target method, whichMethod will specify the one to pick. whichMethod = 1 will insert after the first occurence, for example. </para>
+        /// <para> If there are multiple calls of the target method, you can specify which one to insert after using methodIndex (zero-indexed). </para>
         /// <para> 
         /// If the target method has a return value that is being used by subsquent code, you can specify ignoreLackOfPop = true to force the insertion.
         /// This is useful if you also use other insertions to create a ternary operator.
@@ -51,14 +58,13 @@ namespace SoG.Modding
         /// </summary>
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to the described incompatibilities. </exception>
-        /// 
 
-        public static IEnumerable<CodeInstruction> InsertAfterMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert, int whichMethod, bool missingPopIsOk = false)
+        public static CodeList InsertAfterMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, bool missingPopIsOk = false, bool logCode = false)
         {
-            int counter = whichMethod;
+            int counter = methodIndex + 1;
             var noReturnValue = target.ReturnType == typeof(void);
             int stage = 0;
-            foreach (CodeInstruction ins in instructions)
+            foreach (CodeInstruction ins in code)
             {
                 if (stage == 0)
                 {
@@ -74,7 +80,7 @@ namespace SoG.Modding
 
                     if (ins.opcode == OpCodes.Pop) 
                         yield return ins;
-                    foreach (CodeInstruction newIns in codeToInsert) 
+                    foreach (CodeInstruction newIns in insert) 
                         yield return newIns;
                     if (ins.opcode == OpCodes.Pop)
                         continue;
@@ -82,23 +88,26 @@ namespace SoG.Modding
                 yield return ins;
             }
             if (stage != 2) throw new Exception("Transpile failed: couldn't find target!");
+
+            if (logCode)
+                GrindScript.Logger.InspectCode(code, target);
         }
 
         /// <summary> 
         /// <para> Transpiles the given instruction set by inserting code instructions before the target method. </para>
-        /// <para> If there are multiple calls of the target method, whichMethod will specify the one to pick. whichMethod = 1 will insert before the first occurence, for example. </para>
+        /// <para> If there are multiple calls of the target method, you can specify which one to insert before of using methodIndex (zero-indexed). </para>
         /// </summary>
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to failing to find the target method, or if a suitable insertion point wasn't spotted. </exception>
 
-        public static IEnumerable<CodeInstruction> InsertBeforeMethod(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodInfo target, IEnumerable<CodeInstruction> codeToInsert, int whichMethod)
+        public static CodeList InsertBeforeMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, bool logCode = false)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();
-            int counter = whichMethod;
+            int counter = methodIndex + 1;
             int stage = 0;
 
-            foreach (CodeInstruction ins in instructions)
+            foreach (CodeInstruction ins in code)
             {
                 if (stage == 0 && ins.Calls(target) && --counter == 0) stage = 1;
                 if (stage == 0) codeStore.Add(ins);
@@ -135,7 +144,7 @@ namespace SoG.Modding
             {
                 if (index == insertIndex)
                 {
-                    foreach (CodeInstruction ins in codeToInsert)
+                    foreach (CodeInstruction ins in insert)
                         yield return ins;
                 }
                 yield return codeStore[index];
@@ -143,12 +152,15 @@ namespace SoG.Modding
 
             if (insertIndex == codeStore.Count)
             {
-                foreach (CodeInstruction ins in codeToInsert)
+                foreach (CodeInstruction ins in insert)
                     yield return ins;
             }
 
             foreach (CodeInstruction ins in leftoverCode)
                 yield return ins;
+
+            if (logCode)
+                GrindScript.Logger.InspectCode(code, target);
         }
     }
 
@@ -157,7 +169,7 @@ namespace SoG.Modding
         /// <summary>
         /// Creates patches by specifying a PatchDescription.
         /// </summary>
-        /// <returns> The replacement method that was created to patch the original method.</returns>
+
         public static MethodInfo Patch(this Harmony harmony, PatchCodex.PatchDescription patch)
         {
             if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))

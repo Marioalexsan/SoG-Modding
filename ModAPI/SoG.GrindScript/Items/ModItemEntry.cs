@@ -11,6 +11,8 @@ namespace SoG.Modding
     {
         public BaseScript owner;
 
+        public string uniqueID;
+
         public ItemCodex.ItemTypes type;
 
         public ModItem itemInfo;

@@ -80,6 +80,7 @@
     <Compile Include="Items\ItemExtensions.cs" />
     <Compile Include="Items\EquipBuilder.cs" />
     <Compile Include="Items\ItemBuilder.cs" />
+    <Compile Include="ModAPI\Callbacks.cs" />
     <Compile Include="ModAPI\ConsoleLogger.cs" />
     <Compile Include="ModAPI\Delegates.cs" />
     <Compile Include="ModAPI\BaseScript.cs" />
@@ -89,10 +90,11 @@
     <Compile Include="ModAPI\ModAllocator.cs" />
     <Compile Include="ModAPI\ModLibrary.cs" />
     <Compile Include="ModAPI\ModContent.cs" />
+    <Compile Include="ModAPI\ModSaveLoad.cs" />
     <Compile Include="ModAPI\NetworkMethods.cs" />
     <Compile Include="Patching\PatchCodex.cs" />
     <Compile Include="Patching\PatchHelper.cs" />
-    <Compile Include="Patching\PatchMethods.cs" />
+    <Compile Include="Patching\Transpilers.cs" />
     <Compile Include="Patching\TypeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ModAPI\UI.cs" />

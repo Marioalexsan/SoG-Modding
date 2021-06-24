@@ -35,32 +35,32 @@ namespace SoG.FeatureExample
             {
                 Logger.Info("Creating Items...");
 
-                modShield = ModContent.CreateItem(this,
+                modShield = ModContent.CreateItem(this, "_Mod_Item0001",
                     new ItemBuilder().Texts("Shield Example", "This is a custom shield!").Resources(CustomAssets, "WoodenShield"),
                     new EquipBuilder(EquipType.Shield).Stats(ShldHP: 1337).Resource(CustomAssets, "Wooden")
                     );
 
-                modAccessory = ModContent.CreateItem(this,
+                modAccessory = ModContent.CreateItem(this, "_Mod_Item0002",
                     new ItemBuilder().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(CustomAssets, "WoodenShield"),
                     new EquipBuilder(EquipType.Accessory).Stats(ATK: 1337).Resource(CustomAssets, "Wooden")
                     );
 
-                modHat = ModContent.CreateItem(this,
+                modHat = ModContent.CreateItem(this, "_Mod_Item0003",
                     new ItemBuilder().Texts("Hat Example", "This is a custom hat!").Resources(CustomAssets, "Slimeus"),
                     new EquipBuilder(EquipType.Hat).Stats(ATK: 1111).Resource(CustomAssets, "Slimeus").HatOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f))
                     );
 
-                modFacegear = ModContent.CreateItem(this,
+                modFacegear = ModContent.CreateItem(this, "_Mod_Item0004",
                     new ItemBuilder().Texts("Facegear Example", "This is a custom facegear!").Resources(CustomAssets, "Flybold"),
                     new EquipBuilder(EquipType.Facegear).Stats(ATK: 1234).Resource(CustomAssets, "Flybold").FacegearOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f))
                     );
 
-                modOneHandedWeapon = ModContent.CreateItem(this,
+                modOneHandedWeapon = ModContent.CreateItem(this, "_Mod_Item0005",
                     new ItemBuilder().Texts("OneHandedMelee Example", "This is a custom 1H weapon! It has custom animations for downward basic attacks.").Resources(CustomAssets, "Crowbar"),
                     new EquipBuilder(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.OneHanded, false).Stats(ATK: 1555).Resource(CustomAssets, "IronSword")
                     );
 
-                modTwoHandedWeapon = ModContent.CreateItem(this,
+                modTwoHandedWeapon = ModContent.CreateItem(this, "_Mod_Item0006",
                     new ItemBuilder().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(CustomAssets, "Claymore"),
                     new EquipBuilder(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.TwoHanded, true).Stats(ATK: 776).Resource(CustomAssets, "Claymore")
                     );
@@ -97,8 +97,6 @@ namespace SoG.FeatureExample
 
                 ModContent.RedirectVanillaMusic("BossBattle01", audioClash);
                 ModContent.RedirectVanillaMusic("BishopBattle", audioRipped);
-
-                Logger.Info($"Music IDs: Intro - {audioIntro}, Destiny - {audioDestiny}, Ripped - {audioRipped}");
 
                 Logger.Info("Done with sounds!");
 
@@ -206,6 +204,17 @@ namespace SoG.FeatureExample
                     if (music.TryGetValue(args[0], out string ID))
                         GrindScript.Game.xSoundSystem.PlaySong(ID, true);
                     else CAS.AddChatMessage("Unknown mod music!");
+                },
+
+                ["TellIDs"] = (argList, _) =>
+                {
+                    Inventory inv = GrindScript.Game.xLocalPlayer.xInventory;
+                    CAS.AddChatMessage("Shield:" + (int)modShield + ", count: " + inv.GetAmount(modShield));
+                    CAS.AddChatMessage("Accessory:" + (int)modAccessory + ", count: " + inv.GetAmount(modAccessory));
+                    CAS.AddChatMessage("Hat:" + (int)modHat + ", count: " + inv.GetAmount(modHat));
+                    CAS.AddChatMessage("Facegear:" + (int)modFacegear + ", count: " + inv.GetAmount(modFacegear));
+                    CAS.AddChatMessage("One Handed:" + (int)modOneHandedWeapon + ", count: " + inv.GetAmount(modOneHandedWeapon));
+                    CAS.AddChatMessage("Two Handed:" + (int)modTwoHandedWeapon + ", count: " + inv.GetAmount(modTwoHandedWeapon));
                 }
             };
 
