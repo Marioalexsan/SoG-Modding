@@ -1,6 +1,6 @@
 ﻿namespace SoG.Modding
 {
-    public static class ModNetworking
+    public static class NetUtils
     {
         public static bool IsLocalOrServer => GrindScript.Game.xNetworkInfo.enCurrentRole != NetworkHelperInterface.NetworkRole.Client;
 

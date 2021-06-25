@@ -6,22 +6,13 @@ namespace SoG.Modding
     public static class ModContent
     {
         /// <summary> 
-        /// Creates a new item using the provided builder. Shorthand for CreateItem(owner, item, null). 
-        /// </summary>
-
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, string uniqueID, ItemBuilder item)
-        {
-            return CreateItem(owner, uniqueID, item, null);
-        }
-
-        /// <summary> 
         /// Creates a new item using the provided item and equipment builder. <para/>
         /// The uniqueID should not be identical to other IDs inside this mod. <para/>
         /// The equipment builder can be null, in which case the item will act as a non-equippable item.
         /// </summary>
         /// <returns> The new item's ItemTypes ID. If creation failed, ItemCodex.ItemTypes.Null is returned. </returns>
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, string uniqueID, ItemBuilder itemBuilder, EquipBuilder equipBuilder)
+        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, string uniqueID, ItemConfig itemBuilder, EquipConfig equipBuilder = null)
         {
             if (itemBuilder == null || owner == null)
             {
@@ -29,7 +20,7 @@ namespace SoG.Modding
                 return ItemCodex.ItemTypes.Null;
             }
 
-            ItemCodex.ItemTypes allocatedType = ModAllocator.AllocateItemType();
+            ItemCodex.ItemTypes allocatedType = IDAllocator.AllocateItemType();
 
             // ModItem entry and ItemDescription need to be created before the respective EquipmentInfo
             ModItemEntry newEntry = ModLibrary.Global.ModItems[allocatedType] = new ModItemEntry()
@@ -92,10 +83,37 @@ namespace SoG.Modding
             itemInfo.sNameLibraryHandle = uniqueID + "_Name";
             itemInfo.sDescriptionLibraryHandle = uniqueID + "_sDescription";
 
-            Ui.AddMiscText("Items", itemInfo.sNameLibraryHandle, itemInfo.sFullName, MiscTextTypes.GenericItemName);
-            Ui.AddMiscText("Items", itemInfo.sDescriptionLibraryHandle, itemInfo.sDescription, MiscTextTypes.GenericItemDescription);
+            TextHelper.AddMiscText("Items", itemInfo.sNameLibraryHandle, itemInfo.sFullName, MiscTextTypes.GenericItemName);
+            TextHelper.AddMiscText("Items", itemInfo.sDescriptionLibraryHandle, itemInfo.sDescription, MiscTextTypes.GenericItemDescription);
 
             return allocatedType;
+        }
+
+        /// <summary>
+        /// Adds a new crafting recipe.
+        /// </summary>
+
+        public static void AddRecipe(ItemCodex.ItemTypes result, Dictionary<ItemCodex.ItemTypes, ushort> ingredients)
+        {
+            if (ingredients == null)
+            {
+                GrindScript.Logger.Warn("Can't add recipe because ingredient dictionary is null!");
+                return;
+            }
+
+            if (!Crafting.CraftSystem.RecipeCollection.ContainsKey(result))
+            {
+                var kvps = new KeyValuePair<ItemDescription, ushort>[ingredients.Count];
+
+                int index = 0;
+                foreach (var kvp in ingredients)
+                    kvps[index++] = new KeyValuePair<ItemDescription, ushort>(ItemCodex.GetItemDescription(kvp.Key), kvp.Value);
+
+                ItemDescription description = ItemCodex.GetItemDescription(result);
+                Crafting.CraftSystem.RecipeCollection.Add(result, new Crafting.CraftSystem.CraftingRecipe(description, kvps));
+            }
+
+            GrindScript.Logger.Info($"Added recipe for item {result}!");
         }
 
         /// <summary>

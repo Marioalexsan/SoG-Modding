@@ -2,9 +2,8 @@
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
-using System.Reflection;
 using System.IO;
-using System;
+using System.Reflection;
 
 namespace SoG.Modding
 {
@@ -12,7 +11,7 @@ namespace SoG.Modding
     /// Contains methods that act as prefix and postfix patches.
     /// </summary>
 
-    public static class Callbacks
+    internal static class Callbacks
     {
         //
         // Mod callbacks
@@ -406,91 +405,54 @@ namespace SoG.Modding
 
         private static void PostCharacterSave(int iFileSlot)
         {
-            // This portion is copied from vanilla, with some file name modifications
+            string ext = ModSaveLoad.ModExt;
 
-            Game1 Game = GrindScript.Game;
+            PlayerView player = GrindScript.Game.xLocalPlayer;
+            string appData = GrindScript.Game.sAppData;
 
-            string sBackupDirectory = "";
-            string sAppData = Game.sAppData;
-            int carouselToUse = Game.xLocalPlayer.iSaveCarousel - 1;
-            if (carouselToUse < 0)
-                carouselToUse += 5;
+            int carousel = player.iSaveCarousel - 1;
+            if (carousel < 0) 
+                carousel += 5;
 
-            if (File.Exists(sAppData + "Characters/" + iFileSlot + ".mod.cha"))
+            string backupPath = "";
+
+            string chrFile = $"{appData}Characters/" + $"{iFileSlot}.cha{ext}";
+            
+            if (File.Exists(chrFile))
             {
-                if (Game.xLocalPlayer.sSaveableName == "")
+                if (player.sSaveableName == "")
                 {
-                    Game.xLocalPlayer.sSaveableName = Game.xLocalPlayer.sNetworkNickname;
-                    string invalid = new string(Path.GetInvalidFileNameChars());
-                    string text = invalid;
-                    foreach (char c in text)
-                    {
-                        Game.xLocalPlayer.sSaveableName = Game.xLocalPlayer.sSaveableName.Replace(c.ToString(), "");
-                    }
+                    player.sSaveableName = player.sNetworkNickname;
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                        player.sSaveableName = player.sSaveableName.Replace(c, ' ');
                 }
-                string sFolderPath = sAppData + "Backups/" + Game.xLocalPlayer.sSaveableName + "_" + Game.xLocalPlayer.xJournalInfo.iCollectorID + iFileSlot;
-                if (!Directory.Exists(sFolderPath))
+
+                backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
+                Utils.TryCreateDirectory(backupPath);
+
+                File.Copy(chrFile, backupPath + $"auto{carousel}.cha{ext}", overwrite: true);
+
+                string wldFile = $"{appData}Worlds/" + $"{iFileSlot}.wld{ext}";
+                if (File.Exists(wldFile))
                 {
-                    Directory.CreateDirectory(sFolderPath);
-                }
-                sFolderPath += "/";
-                sBackupDirectory = sFolderPath;
-                uint iTimeSinceSave = Game.xLocalPlayer.iTimePlayed - Game.xLocalPlayer.iLastAutoSaveAt;
-                if (iTimeSinceSave > 216000)
-                {
-                    int iHoursPlayed = (int)(Game.xLocalPlayer.iTimePlayed / 216000u);
-                    string sHoursPlayed = iHoursPlayed.ToString();
-                    while (sHoursPlayed.Length < 3)
-                    {
-                        sHoursPlayed = "0" + sHoursPlayed;
-                    }
-                    File.Copy(sAppData + "Characters/" + iFileSlot + ".mod.cha", sFolderPath + sHoursPlayed + "h.mod.cha", overwrite: true);
-                    if (File.Exists(sAppData + "Worlds/" + iFileSlot + ".wld"))
-                    {
-                        File.Copy(sAppData + "Worlds/" + iFileSlot + ".mod.wld", sFolderPath + sHoursPlayed + "h.mod.wld", overwrite: true);
-                    }
-                    iHoursPlayed -= 10;
-                    if (iHoursPlayed > 0)
-                    {
-                        sHoursPlayed = iHoursPlayed.ToString();
-                        while (sHoursPlayed.Length < 3)
-                        {
-                            sHoursPlayed = "0" + sHoursPlayed;
-                        }
-                        if (File.Exists(sFolderPath + sHoursPlayed + "h.mod.cha"))
-                        {
-                            File.Delete(sFolderPath + sHoursPlayed + "h.mod.cha");
-                        }
-                        if (File.Exists(sFolderPath + sHoursPlayed + "h.mod.wld"))
-                        {
-                            File.Delete(sFolderPath + sHoursPlayed + "h.mod.wld");
-                        }
-                    }
-                    Game.xLocalPlayer.iLastAutoSaveAt = Game.xLocalPlayer.iTimePlayed;
-                }
-                File.Copy(sAppData + "Characters/" + iFileSlot + ".mod.cha", sFolderPath + "auto" + carouselToUse + ".mod.cha", overwrite: true);
-                if (File.Exists(sAppData + "Worlds/" + iFileSlot + ".wld"))
-                {
-                    File.Copy(sAppData + "Worlds/" + iFileSlot + ".mod.wld", sFolderPath + "auto" + carouselToUse + ".mod.wld", overwrite: true);
+                    File.Copy(wldFile, backupPath + $"auto{carousel}.wld{ext}", overwrite: true);
                 }
             }
 
-            FileStream writeStream = new FileStream(sAppData + "Characters/" + iFileSlot + ".mod.cha.temp", FileMode.Create, FileAccess.Write);
-            BinaryWriter bw = new BinaryWriter(writeStream);
-
-            // Do the save
-            GrindScript.Logger.Info($"Saving mod character {iFileSlot}...");
-            ModSaveLoad.SaveModCharacter(bw);
-
-            bw.Close();
+            using (BinaryWriter bw = new BinaryWriter(new FileStream($"{chrFile}.temp", FileMode.Create, FileAccess.Write)))
+            {
+                GrindScript.Logger.Info($"Saving mod character {iFileSlot}...");
+                ModSaveLoad.SaveModCharacter(bw);
+            }
+                
             try
             {
-                File.Copy(sAppData + "Characters/" + iFileSlot + ".mod.cha.temp", sAppData + "Characters/" + iFileSlot + ".mod.cha", overwrite: true);
-                if (sBackupDirectory != "")
+                File.Copy($"{chrFile}.temp", chrFile, overwrite: true);
+                if (backupPath != "")
                 {
-                    File.Copy(sAppData + "Characters/" + iFileSlot + ".mod.cha.temp", sBackupDirectory + "latest.mod.cha", overwrite: true);
+                    File.Copy($"{chrFile}.temp", backupPath + $"latest.cha{ext}", overwrite: true);
                 }
-                File.Delete(sAppData + "Characters/" + iFileSlot + ".mod.cha.temp");
+                File.Delete($"{chrFile}.temp");
             }
             catch { }
         }
@@ -501,47 +463,42 @@ namespace SoG.Modding
 
         private static void PostWorldSave(int iFileSlot)
         {
-            Game1 Game = GrindScript.Game;
+            string ext = ModSaveLoad.ModExt;
 
-            string sBackupDirectory = "";
-            string sAppData = Game.sAppData;
+            PlayerView player = GrindScript.Game.xLocalPlayer;
+            string appData = GrindScript.Game.sAppData;
 
-            if (File.Exists(sAppData + "Characters/" + iFileSlot + ".mod.cha"))
+            string backupPath = "";
+            string chrFile = $"{appData}Characters/" + $"{iFileSlot}.cha{ext}";
+            string wldFile = $"{appData}Worlds/" + $"{iFileSlot}.wld{ext}";
+
+            if (File.Exists(chrFile))
             {
-                if (Game.xLocalPlayer.sSaveableName == "")
+                if (player.sSaveableName == "")
                 {
-                    Game.xLocalPlayer.sSaveableName = Game.xLocalPlayer.sNetworkNickname;
-                    string invalid = new string(Path.GetInvalidFileNameChars());
-                    string text = invalid;
-                    foreach (char c in text)
-                    {
-                        Game.xLocalPlayer.sSaveableName = Game.xLocalPlayer.sSaveableName.Replace(c.ToString(), "");
-                    }
+                    player.sSaveableName = player.sNetworkNickname;
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                        player.sSaveableName = player.sSaveableName.Replace(c, ' ');
                 }
-                string sFolderPath = sAppData + "Backups/" + Game.xLocalPlayer.sSaveableName + "_" + Game.xLocalPlayer.xJournalInfo.iCollectorID + iFileSlot;
-                if (!Directory.Exists(sFolderPath))
-                {
-                    Directory.CreateDirectory(sFolderPath);
-                }
-                sFolderPath += "/";
-                sBackupDirectory = sFolderPath;
+
+                backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
+                Utils.TryCreateDirectory(backupPath);
             }
-            FileStream writeStream = new FileStream(sAppData + "Worlds/" + iFileSlot + ".mod.wld.temp", FileMode.Create, FileAccess.Write);
-            BinaryWriter bw = new BinaryWriter(writeStream);
 
-            // Do the save
-            GrindScript.Logger.Info($"Saving mod world {iFileSlot}...");
-            ModSaveLoad.SaveModWorld(bw);
-
-            bw.Close();
+            using (BinaryWriter bw = new BinaryWriter(new FileStream($"{wldFile}.temp", FileMode.Create, FileAccess.Write)))
+            {
+                GrindScript.Logger.Info($"Saving mod world {iFileSlot}...");
+                ModSaveLoad.SaveModWorld(bw);
+            }
+            
             try
             {
-                File.Copy(sAppData + "Worlds/" + iFileSlot + ".mod.wld.temp", sAppData + "Worlds/" + iFileSlot + ".mod.wld", overwrite: true);
-                if (sBackupDirectory != "" && iFileSlot != 100)
+                File.Copy($"{wldFile}.temp", wldFile, overwrite: true);
+                if (backupPath != "" && iFileSlot != 100)
                 {
-                    File.Copy(sAppData + "Worlds/" + iFileSlot + ".mod.wld.temp", sBackupDirectory + "latest.mod.wld", overwrite: true);
+                    File.Copy($"{wldFile}.temp", backupPath + $"latest.wld{ext}", overwrite: true);
                 }
-                File.Delete(sAppData + "Worlds/" + iFileSlot + ".mod.wld.temp");
+                File.Delete($"{wldFile}.temp");
             }
             catch { }
         }
@@ -550,25 +507,21 @@ namespace SoG.Modding
         /// Runs after <see cref="Game1._Saving_SaveRogueToFile(string)"/>
         /// </summary>
 
-        private static void PostArcadiaSave()
+        private static void PostArcadeSave()
         {
-            string sFileNameToUse = "arcademode.mod.sav";
-            string sAppData = GrindScript.Game.sAppData;
+            string ext = ModSaveLoad.ModExt;
 
-            if (CAS.IsDebugFlagSet("OtherArcadeMode"))
+            bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
+            string savFile = GrindScript.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
+
+            using (BinaryWriter bw = new BinaryWriter(new FileStream($"{savFile}.temp", FileMode.Create, FileAccess.Write)))
             {
-                sFileNameToUse = "arcademode_other.mod.sav";
+                GrindScript.Logger.Info($"Saving mod arcade...");
+                ModSaveLoad.SaveModArcade(bw);
             }
-            FileStream writeStream = new FileStream(sAppData + sFileNameToUse + ".temp", FileMode.Create, FileAccess.Write);
-            BinaryWriter bw = new BinaryWriter(writeStream);
 
-            // Do the save
-            GrindScript.Logger.Info($"Saving mod arcade...");
-            ModSaveLoad.SaveModArcade(bw);
-
-            bw.Close();
-            File.Copy(sAppData + sFileNameToUse + ".temp", sAppData + sFileNameToUse, overwrite: true);
-            File.Delete(sAppData + sFileNameToUse + ".temp");
+            File.Copy($"{savFile}.temp", savFile, overwrite: true);
+            File.Delete($"{savFile}.temp");
         }
 
         /// <summary>
@@ -577,19 +530,17 @@ namespace SoG.Modding
 
         private static void PostCharacterLoad(int iFileSlot, bool bAppearanceOnly)
         {
-            string sAppData = GrindScript.Game.sAppData;
-            if (!File.Exists(sAppData + "Characters/" + iFileSlot + ".mod.cha"))
+            string ext = ModSaveLoad.ModExt;
+
+            string chrFile = GrindScript.Game.sAppData + "Characters/" + $"{iFileSlot}.cha{ext}";
+
+            if (!File.Exists(chrFile)) return;
+
+            using (BinaryReader br = new BinaryReader(new FileStream(chrFile, FileMode.Open, FileAccess.Read)))
             {
-                return;
+                GrindScript.Logger.Info($"Loading mod character {iFileSlot}...");
+                ModSaveLoad.LoadModCharacter(br);
             }
-            FileStream readStream = new FileStream(sAppData + "Characters/" + iFileSlot + ".mod.cha", FileMode.Open, FileAccess.Read);
-            BinaryReader br = new BinaryReader(readStream);
-
-            // Do the load
-            GrindScript.Logger.Info($"Loading mod character {iFileSlot}...");
-            ModSaveLoad.LoadModCharacter(br);
-
-            br.Close();
         }
 
         /// <summary>
@@ -598,50 +549,39 @@ namespace SoG.Modding
 
         private static void PostWorldLoad(int iFileSlot)
         {
-            string sAppData = GrindScript.Game.sAppData;
-            if (!File.Exists(sAppData + "Worlds/" + iFileSlot + ".mod.wld"))
+            string ext = ModSaveLoad.ModExt;
+
+            string wldFile = GrindScript.Game.sAppData + "Worlds/" + $"{iFileSlot}.wld{ext}";
+
+            if (!File.Exists(wldFile)) return;
+
+            using (BinaryReader br = new BinaryReader(new FileStream(wldFile, FileMode.Open, FileAccess.Read)))
             {
-                return;
+                GrindScript.Logger.Info($"Loading mod world {iFileSlot}...");
+                ModSaveLoad.LoadModWorld(br);
             }
-            FileStream readStream = new FileStream(sAppData + "Worlds/" + iFileSlot + ".mod.wld", FileMode.Open, FileAccess.Read);
-            BinaryReader br = new BinaryReader(readStream);
-
-            // Do the load
-            GrindScript.Logger.Info($"Loading mod world {iFileSlot}...");
-            ModSaveLoad.LoadModWorld(br);
-
-            br.Close();
         }
 
         /// <summary>
         /// Runs after <see cref="Game1._Loading_LoadRogueFile(string)"/>
         /// </summary>
 
-        private static void PostArcadiaLoad()
+        private static void PostArcadeLoad()
         {
-            string sAppData = GrindScript.Game.sAppData;
-            string sFileNameToUse = "arcademode.mod.sav";
+            string ext = ModSaveLoad.ModExt;
 
-            if (RogueLikeMode.LockedOutDueToHigherVersionSaveFile)
-            {
-                return;
-            }
-            if (CAS.IsDebugFlagSet("OtherArcadeMode"))
-            {
-                sFileNameToUse = "arcademode_other.mod.sav";
-            }
-            if (!File.Exists(sAppData + sFileNameToUse))
-            {
-                return;
-            }
-            FileStream readStream = new FileStream(sAppData + sFileNameToUse, FileMode.Open, FileAccess.Read);
-            BinaryReader br = new BinaryReader(readStream);
+            if (RogueLikeMode.LockedOutDueToHigherVersionSaveFile) return;
 
-            // Do the load
-            GrindScript.Logger.Info($"Loading mod arcade...");
-            ModSaveLoad.LoadModArcade(br);
+            bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
+            string savFile = GrindScript.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
 
-            br.Close();
+            if (!File.Exists(savFile)) return;
+
+            using (BinaryReader br = new BinaryReader(new FileStream(savFile, FileMode.Open, FileAccess.Read)))
+            {
+                GrindScript.Logger.Info($"Loading mod arcade...");
+                ModSaveLoad.LoadModArcade(br);
+            }
         }
     }
 }

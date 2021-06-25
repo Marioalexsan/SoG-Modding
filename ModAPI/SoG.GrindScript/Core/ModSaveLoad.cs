@@ -1,31 +1,62 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoG.Modding
 {
     internal static class ModSaveLoad
     {
-        private static readonly int VanillaVersion = 109;
         private static readonly int GrindScriptVersion = 1;
+        public static readonly string ModExt = ".gs";
 
         // Identifier methods
 
+        /// <summary>
+        /// Converts items from one type to another. <para/>
+        /// This affects inventory, crafted items, discovered items, etc. <para/>
+        /// This does not
+        /// </summary>
+
         private static void ShuffleItem(ItemCodex.ItemTypes from, ItemCodex.ItemTypes to)
         {
+            if (from.IsSoGItem())
+                GrindScript.Logger.Warn($"Item {from} is a SoG item! Shuffling may cause issues.", source: "ShuffleItem");
+
+            if (to.IsSoGItem())
+                GrindScript.Logger.Warn($"Item {to} is a SoG item! Shuffling may cause issues.", source: "ShuffleItem");
+
             Game1 Game = GrindScript.Game;
 
             PlayerView player = Game.xLocalPlayer;
-            Inventory inv = player.xInventory;
-            Equipment equip = player.xEquipment;
+            Inventory inventory = player.xInventory;
+            Journal journal = player.xJournalInfo;
 
-            if (inv.denxInventory.ContainsKey(from))
+            // Shuffle inventory
+            if (inventory.denxInventory.ContainsKey(from))
             {
-                inv.denxInventory[to] = new Inventory.DisplayItem(inv.denxInventory[from].iAmount, inv.denxInventory[from].iPickupNumber, ItemCodex.GetItemDescription(to));
-                inv.denxInventory.Remove(from);
+                inventory.denxInventory[to] = new Inventory.DisplayItem(inventory.denxInventory[from].iAmount, inventory.denxInventory[from].iPickupNumber, ItemCodex.GetItemDescription(to));
+                inventory.denxInventory.Remove(from);
+            }
+
+            // Shuffle discovered items
+            if (journal.henUniqueDiscoveredItems.Contains(from))
+            {
+                journal.henUniqueDiscoveredItems.Remove(from);
+                journal.henUniqueDiscoveredItems.Add(to);
+            }
+
+            // Shuffle crafted items
+            if (journal.henUniqueCraftedItems.Contains(from))
+            {
+                journal.henUniqueCraftedItems.Remove(from);
+                journal.henUniqueCraftedItems.Add(to);
+            }
+
+            // Shuffle fishes
+            if (journal.henUniqueFishies.Contains(from))
+            {
+                journal.henUniqueFishies.Remove(from);
+                journal.henUniqueFishies.Add(to);
             }
         }
 
@@ -38,35 +69,39 @@ namespace SoG.Modding
             {
                 var saveItem = savedItems.First();
 
-                bool shuffled = false;
+                sbyte shuffleStatus = -1;
 
                 foreach (var modItem in target.ModLib.ModItems.Values)
                 {
-                    if (saveItem.Value == modItem.uniqueID && saveItem.Key != (int)modItem.type)
+                    if (saveItem.Value == modItem.uniqueID)
                     {
-                        // If there is a conflict, shuffle it to a temporary ID
-
-                        if (savedItems.ContainsKey((int)modItem.type))
+                        if (saveItem.Key != (int)modItem.type)
                         {
-                            GrindScript.Logger.Debug($"{savedItems[(int)modItem.type]}: {(int)modItem.type} -> {(int)shuffleIndex} (conflict)", source: "IdentifyItems");
-                            ShuffleItem(modItem.type, shuffleIndex);
+                            // If there is a conflict, shuffle it to a temporary ID
 
-                            savedItems.Add((int)shuffleIndex, savedItems[(int)modItem.type]);
-                            savedItems.Remove((int)modItem.type);
-                            shuffleIndex++;
+                            if (savedItems.ContainsKey((int)modItem.type))
+                            {
+                                GrindScript.Logger.Debug($"{savedItems[(int)modItem.type]}: {(int)modItem.type} -> {(int)shuffleIndex} (conflict)", source: "IdentifyItems");
+                                ShuffleItem(modItem.type, shuffleIndex);
+
+                                savedItems.Add((int)shuffleIndex, savedItems[(int)modItem.type]);
+                                savedItems.Remove((int)modItem.type);
+                                shuffleIndex++;
+                            }
+
+                            // Shuffle save ID to mod ID
+
+                            GrindScript.Logger.Debug($"{saveItem.Value}: {saveItem.Key} -> {(int)modItem.type}", source: "IdentifyItems");
+                            ShuffleItem((ItemCodex.ItemTypes)saveItem.Key, modItem.type);
+
+                            shuffleStatus = 1;
                         }
-
-                        // Shuffle save ID to mod ID
-
-                        GrindScript.Logger.Debug($"{saveItem.Value}: {saveItem.Key} -> {(int)modItem.type}", source: "IdentifyItems");
-                        ShuffleItem((ItemCodex.ItemTypes)saveItem.Key, modItem.type);
-
-                        shuffled = true;
+                        else shuffleStatus = 0;
                         break;
                     }
                 }
 
-                if (!shuffled)
+                if (shuffleStatus == -1)
                     GrindScript.Logger.Warn($"{saveItem.Value} couldn't be identified!", source: "IdentifyItems");
 
                 savedItems.Remove(saveItem.Key);
@@ -100,7 +135,7 @@ namespace SoG.Modding
 
         public static void LoadGrindScriptInfo(BinaryReader file, bool items = true)
         {
-            var itemShuffleIndex = ModAllocator.ItemTypes_ShuffleStart;
+            var itemShuffleIndex = IDAllocator.ItemTypes_ShuffleStart;
 
             int GSVersion = file.ReadInt32();
 
@@ -139,30 +174,32 @@ namespace SoG.Modding
 
         public static void SaveModCharacter(BinaryWriter file)
         {
-            SaveGrindScriptInfo(file);
+            SaveGrindScriptInfo(file, items: true);
         }
 
         public static void LoadModCharacter(BinaryReader file)
         {
-            LoadGrindScriptInfo(file);
+            LoadGrindScriptInfo(file, items: true);
         }
 
         public static void SaveModWorld(BinaryWriter file)
         {
+            // TODO
         }
 
         public static void LoadModWorld(BinaryReader file)
         {
+            // TODO
         }
 
         public static void SaveModArcade(BinaryWriter file)
         {
-            SaveGrindScriptInfo(file);
+            SaveGrindScriptInfo(file, items: true);
         }
 
         public static void LoadModArcade(BinaryReader file)
         {
-            LoadGrindScriptInfo(file);
+            LoadGrindScriptInfo(file, items: true);
         }
     }
 }

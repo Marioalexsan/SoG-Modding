@@ -74,31 +74,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Audio\AudioConfig.cs" />
-    <Compile Include="Audio\ModAudioEntry.cs" />
+    <Compile Include="Content\AudioConfig.cs" />
+    <Compile Include="Extensions\HarmonyExtension.cs" />
+    <Compile Include="Core\LibraryEntries.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Items\ItemExtensions.cs" />
-    <Compile Include="Items\EquipBuilder.cs" />
-    <Compile Include="Items\ItemBuilder.cs" />
-    <Compile Include="ModAPI\Callbacks.cs" />
-    <Compile Include="ModAPI\ConsoleLogger.cs" />
-    <Compile Include="ModAPI\Delegates.cs" />
-    <Compile Include="ModAPI\BaseScript.cs" />
-    <Compile Include="ModAPI\Enums.cs" />
-    <Compile Include="ModAPI\GrindScript.cs" />
-    <Compile Include="Items\ModItemEntry.cs" />
-    <Compile Include="ModAPI\ModAllocator.cs" />
-    <Compile Include="ModAPI\ModLibrary.cs" />
-    <Compile Include="ModAPI\ModContent.cs" />
-    <Compile Include="ModAPI\ModSaveLoad.cs" />
-    <Compile Include="ModAPI\NetworkMethods.cs" />
+    <Compile Include="Extensions\ItemExtension.cs" />
+    <Compile Include="Content\EquipConfig.cs" />
+    <Compile Include="Content\ItemConfig.cs" />
+    <Compile Include="Core\Callbacks.cs" />
+    <Compile Include="Tools\ConsoleLogger.cs" />
+    <Compile Include="Core\Delegates.cs" />
+    <Compile Include="Core\BaseScript.cs" />
+    <Compile Include="Core\Enums.cs" />
+    <Compile Include="Core\GrindScript.cs" />
+    <Compile Include="Core\IDAllocator.cs" />
+    <Compile Include="Core\ModLibrary.cs" />
+    <Compile Include="Content\ModContent.cs" />
+    <Compile Include="Core\ModSaveLoad.cs" />
+    <Compile Include="Tools\NetUtils.cs" />
     <Compile Include="Patching\PatchCodex.cs" />
-    <Compile Include="Patching\PatchHelper.cs" />
+    <Compile Include="Tools\PatchUtils.cs" />
     <Compile Include="Patching\Transpilers.cs" />
-    <Compile Include="Patching\TypeExtension.cs" />
+    <Compile Include="Extensions\TypeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ModAPI\UI.cs" />
-    <Compile Include="ModAPI\Utils.cs" />
+    <Compile Include="Content\TextHelper.cs" />
+    <Compile Include="Tools\Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

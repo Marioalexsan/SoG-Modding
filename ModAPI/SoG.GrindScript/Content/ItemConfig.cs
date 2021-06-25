@@ -7,7 +7,7 @@ namespace SoG.Modding
     /// Used to define a custom item's basic properties, such as its name, value, item categories, and other things.
     /// </summary>
 
-    public class ItemBuilder
+    public class ItemConfig
     {
         private string _name = "Unknown Mod Item";
         private string _description = "It's all mysterious and stuff!";
@@ -30,21 +30,21 @@ namespace SoG.Modding
         /// For example: "_Accessory_MyEpicModAccessory", or "_Item0001".
         /// </summary>
 
-        public ItemBuilder() {}
+        public ItemConfig() {}
 
-        public ItemBuilder Texts(string name, string description)
+        public ItemConfig Texts(string name, string description)
         {
             _name = name;
             _description = description;
             return this;
         }
 
-        public ItemBuilder Resources(ContentManager manager, string displayTexPath)
+        public ItemConfig Resources(ContentManager manager, string displayTexPath)
         {
             return Resources(manager, displayTexPath, _shadowTexPath);
         }
 
-        public ItemBuilder Resources(ContentManager manager, string displayTexPath, string shadowTexPath)
+        public ItemConfig Resources(ContentManager manager, string displayTexPath, string shadowTexPath)
         {
             _managerToUse = manager;
             _displayTexPath = displayTexPath;
@@ -52,13 +52,13 @@ namespace SoG.Modding
             return this;
         }
 
-        public ItemBuilder Categories(params ItemCodex.ItemCategories[] categories)
+        public ItemConfig Categories(params ItemCodex.ItemCategories[] categories)
         {
             _categories = categories;
             return this;
         }
 
-        public ItemBuilder Value(int value, float arcadeModifier = 1f, int bloodCost = 0)
+        public ItemConfig Value(int value, float arcadeModifier = 1f, int bloodCost = 0)
         {
             _value = value;
             _arcadeValueMod = arcadeModifier;
@@ -66,13 +66,13 @@ namespace SoG.Modding
             return this;
         }
 
-        public ItemBuilder Level(ushort levelForBestSort)
+        public ItemConfig Level(ushort levelForBestSort)
         {
             _levelForBestSort = levelForBestSort;
             return this;
         }
 
-        public ItemBuilder Fancyness(byte fancyness)
+        public ItemConfig Fancyness(byte fancyness)
         {
             _fancyness = fancyness;
             return this;

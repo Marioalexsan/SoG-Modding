@@ -2,9 +2,9 @@
 
 namespace SoG.Modding
 {
-	/// <summary>
-	/// Holds state used for modded content.
-	/// </summary>
+    /// <summary>
+    /// Holds state used for modded content.
+    /// </summary>
 
     internal class ModLibrary
 	{

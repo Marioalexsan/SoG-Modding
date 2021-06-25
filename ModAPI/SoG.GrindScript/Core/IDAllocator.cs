@@ -6,7 +6,7 @@ namespace SoG.Modding
     /// Allocates IDs and other things.
     /// </summary>
 
-    internal static class ModAllocator
+    internal static class IDAllocator
     {
 		public const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)400000;
 		public static ItemCodex.ItemTypes ItemTypesNext { get; private set; } = ItemTypesStart;

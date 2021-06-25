@@ -12,7 +12,7 @@ namespace SoG.Modding
     /// Throughout the code, CodeList is a shortcut for IEnumerable of CodeInstructions.
     /// </summary>
 
-    public static class PatchHelper
+    public static class PatchUtils
     {
         // How the stack changes based on a StackBehavior (in terms of objects)
         private static readonly Dictionary<StackBehaviour, int> __stackDeltas = new Dictionary<StackBehaviour, int>
@@ -161,27 +161,6 @@ namespace SoG.Modding
 
             if (logCode)
                 GrindScript.Logger.InspectCode(code, target);
-        }
-    }
-
-    public static class PatchExtension
-    {
-        /// <summary>
-        /// Creates patches by specifying a PatchDescription.
-        /// </summary>
-
-        public static MethodInfo Patch(this Harmony harmony, PatchCodex.PatchDescription patch)
-        {
-            if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))
-            {
-                Console.WriteLine("A patch provided is likely invalid!");
-            }
-
-            return harmony.Patch(patch.Target,
-                patch.Prefix != null ? new HarmonyMethod(patch.Prefix) : null,
-                patch.Postfix != null ? new HarmonyMethod(patch.Postfix) : null,
-                patch.Transpiler != null ? new HarmonyMethod(patch.Transpiler) : null,
-                null);
         }
     }
 }

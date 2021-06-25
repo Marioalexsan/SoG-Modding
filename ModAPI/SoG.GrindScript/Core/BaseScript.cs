@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace SoG.Modding
 {
-    public partial class BaseScript
+    public class BaseScript
     {
         internal readonly int _audioID;
 
@@ -22,14 +22,14 @@ namespace SoG.Modding
             Logger.Info($"ContentManager path set as {CustomAssets.RootDirectory}");
 
             var allAudio = ModLibrary.Global.ModAudio;
-            if (allAudio.ContainsKey(ModAllocator.AudioIDNext))
+            if (allAudio.ContainsKey(IDAllocator.AudioIDNext))
             {
-                _audioID = ModAllocator.AudioIDNext;
+                _audioID = IDAllocator.AudioIDNext;
                 Logger.Warn($"An existing audio entry ({_audioID}) was found while trying to create one for mod {GetType().Name}!");
             }
             else
             {
-                _audioID = ModAllocator.AllocateAudioEntry();
+                _audioID = IDAllocator.AllocateAudioEntry();
                 allAudio.Add(_audioID, new ModAudioEntry() { allocatedID = _audioID, owner = this });
                 Logger.Info($"AudioID set as {_audioID}");
             }

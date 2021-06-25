@@ -1,9 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Reflection;
 
 namespace SoG.Modding
@@ -12,7 +9,7 @@ namespace SoG.Modding
     /// Used to define custom audio added by a mod.
     /// Its action is tu update a mod's Audio entry.
     /// </summary>
-    
+
     public class AudioConfig
     {
         readonly HashSet<string> effectCues = new HashSet<string>();

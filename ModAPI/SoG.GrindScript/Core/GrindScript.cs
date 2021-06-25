@@ -100,7 +100,7 @@ namespace SoG.Modding
         /// Loads a mod and instantiates its BaseScript derived class (if any).
         /// </summary>
 
-        private static bool LoadMod(string name)
+        private static void LoadMod(string name)
         {
             Utils.TryCreateDirectory("Mods");
             Utils.TryCreateDirectory("ModContent");
@@ -115,12 +115,10 @@ namespace SoG.Modding
                 _loadedScripts.Add(script);
 
                 Logger.Info("Loaded mod " + name);
-                return true;
             }
             catch (Exception e)
             {
                 Logger.Error($"Failed to load mod {name}. Exception message: {e.Message}");
-                return false;
             }
         }
 
@@ -128,7 +126,7 @@ namespace SoG.Modding
         /// Loads all mods found in the "/Mods" directory
         /// </summary>
 
-        private static bool LoadMods()
+        private static void LoadMods()
         {
             var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
 
@@ -136,8 +134,6 @@ namespace SoG.Modding
             {
                 LoadMod(file);
             }
-
-            return true;
         }
 
         /// <summary>

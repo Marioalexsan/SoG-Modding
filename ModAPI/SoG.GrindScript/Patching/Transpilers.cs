@@ -22,14 +22,14 @@ namespace SoG.Modding
 
         private static CodeList StartupTranspiler(CodeList code, ILGenerator gen)
         {
-            MethodInfo target = GrindScript.GetGameType("SoG.DialogueCharacterLoading").GetMethod("Init");
+            MethodInfo target = typeof(DialogueCharacterLoading).GetMethod("Init");
 
             List<CodeInstruction> insert = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Call, typeof(Callbacks).GetPrivateStaticMethod("OnContentLoad"))
             };
 
-            return PatchHelper.InsertAfterMethod(code, target, insert);
+            return PatchUtils.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
 
-            return PatchHelper.InsertAfterMethod(code, target, insert);
+            return PatchUtils.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
@@ -92,8 +92,8 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            code = PatchHelper.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            return PatchHelper.InsertBeforeMethod(code, target, insertBefore); 
+            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertBeforeMethod(code, target, insertBefore); 
         }
 
         /// <summary>
@@ -131,8 +131,8 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            code = PatchHelper.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            return PatchHelper.InsertBeforeMethod(code, target, insertBefore);
+            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertBeforeMethod(code, target, insertBefore);
         }
 
         /// <summary>
@@ -170,8 +170,8 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            code = PatchHelper.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            return PatchHelper.InsertBeforeMethod(code, target, insertBefore);
+            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertBeforeMethod(code, target, insertBefore);
         }
 
         /// <summary>
@@ -208,13 +208,13 @@ namespace SoG.Modding
 
             // First method, index 0
 
-            code = PatchHelper.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            code = PatchHelper.InsertBeforeMethod(code, target, insertBefore);
+            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            code = PatchUtils.InsertBeforeMethod(code, target, insertBefore);
 
             // Second method. Since we inserted the same method we search for, the actual index is 2, not 1
 
-            code = PatchHelper.InsertAfterMethod(code, target, insertAfter, methodIndex: 2, missingPopIsOk: true);
-            return PatchHelper.InsertBeforeMethod(code, target, insertBefore, methodIndex: 2);
+            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, methodIndex: 2, missingPopIsOk: true);
+            return PatchUtils.InsertBeforeMethod(code, target, insertBefore, methodIndex: 2);
         }
     }
 }

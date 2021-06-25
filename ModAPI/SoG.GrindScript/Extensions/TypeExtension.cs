@@ -6,6 +6,13 @@ namespace SoG.Modding
 {
     public static class TypeExtension
     {
+        // Quick, fast, dirty and easy "just give me the private stuff"
+
+        public static MethodInfo GetPrivateMethod(this Type t, string name)
+        {
+            return t.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+        }
+
         // Instance methods
 
         public static MethodInfo GetPublicInstanceMethod(this Type t, string name)

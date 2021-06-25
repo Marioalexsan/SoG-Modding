@@ -10,7 +10,7 @@ namespace SoG.Modding
     /// Used to define a custom item's equipment stats, such as slot used, ATK, DEF, special effects, render options, and other things.
     /// </summary>
 
-    public class EquipBuilder
+    public class EquipConfig
     {
         // Fields shared by all EquipmentInfos
 
@@ -72,21 +72,21 @@ namespace SoG.Modding
 
         // Methods shared by all EquipmentInfos
 
-        public EquipBuilder() { }
+        public EquipConfig() { }
 
-        public EquipBuilder(EquipType type)
+        public EquipConfig(EquipType type)
         {
             EquipmentType(type);
         }
 
-        public EquipBuilder Resource(ContentManager manager, string resource)
+        public EquipConfig Resource(ContentManager manager, string resource)
         {
             _manager = manager;
             _resource = resource;
             return this;
         }
 
-        public EquipBuilder Stats(int HP = 0, int EP = 0, int ATK = 0, int MATK = 0, int DEF = 0, int ASPD = 0, int CSPD = 0, int Crit = 0, int CritDMG = 0, int ShldHP = 0, int EPRegen = 0, int ShldRegen = 0)
+        public EquipConfig Stats(int HP = 0, int EP = 0, int ATK = 0, int MATK = 0, int DEF = 0, int ASPD = 0, int CSPD = 0, int Crit = 0, int CritDMG = 0, int ShldHP = 0, int EPRegen = 0, int ShldRegen = 0)
         {
             int[] statValueArray = { HP, EP, ATK, MATK, DEF, ASPD, CSPD, Crit, CritDMG, ShldHP, EPRegen, ShldRegen };
 
@@ -99,13 +99,13 @@ namespace SoG.Modding
             return this;
         }
 
-        public EquipBuilder SpecialEffects(params EquipmentInfo.SpecialEffect[] effects)
+        public EquipConfig SpecialEffects(params EquipmentInfo.SpecialEffect[] effects)
         {
             _effects = effects;
             return this;
         }
 
-        public EquipBuilder EquipmentType(EquipType type)
+        public EquipConfig EquipmentType(EquipType type)
         {
             _type = type;
             return this;
@@ -113,19 +113,19 @@ namespace SoG.Modding
 
         // Methods specific to FacegearInfo
 
-        public EquipBuilder FacegearOverHair(bool up, bool right, bool down, bool left)
+        public EquipConfig FacegearOverHair(bool up, bool right, bool down, bool left)
         {
             _sortsOverHair = new bool[] { up, right, down, left };
             return this;
         }
 
-        public EquipBuilder FacegearOverHat(bool up, bool right, bool down, bool left)
+        public EquipConfig FacegearOverHat(bool up, bool right, bool down, bool left)
         {
             _sortsOverHat = new bool[] { up, right, down, left };
             return this;
         }
 
-        public EquipBuilder FacegearOffsets(Vector2 up, Vector2 right, Vector2 down, Vector2 left)
+        public EquipConfig FacegearOffsets(Vector2 up, Vector2 right, Vector2 down, Vector2 left)
         {
             _renderOffsets = new Vector2[] {
                 new Vector2(up.X, up.Y), new Vector2(right.X, right.Y), new Vector2(down.X, down.Y), new Vector2(left.X, left.Y)
@@ -135,42 +135,42 @@ namespace SoG.Modding
 
         // Methods specific to HatInfo
 
-        public EquipBuilder HatIsMask(bool doubleSlot)
+        public EquipConfig HatIsMask(bool doubleSlot)
         {
             _doubleSlot = doubleSlot;
             return this;
         }
 
-        public EquipBuilder HatUnderHair(bool up, bool right, bool down, bool left)
+        public EquipConfig HatUnderHair(bool up, bool right, bool down, bool left)
         {
             return HatUnderHair(ItemCodex.ItemTypes.Null, up, right, down, left); ;
         }
 
-        public EquipBuilder HatUnderHair(ItemCodex.ItemTypes hairdoAltSet, bool up, bool right, bool down, bool left)
+        public EquipConfig HatUnderHair(ItemCodex.ItemTypes hairdoAltSet, bool up, bool right, bool down, bool left)
         {
             VSetInfo setToUse = GetOrCreateSet(hairdoAltSet);
             setToUse._sortsUnderHair = new bool[] { up, right, down, left };
             return this;
         }
 
-        public EquipBuilder HatBehindPlayer(bool up, bool right, bool down, bool left)
+        public EquipConfig HatBehindPlayer(bool up, bool right, bool down, bool left)
         {
             return HatBehindPlayer(ItemCodex.ItemTypes.Null, up, right, down, left); ;
         }
 
-        public EquipBuilder HatBehindPlayer(ItemCodex.ItemTypes hairdoAltSet, bool up, bool right, bool down, bool left)
+        public EquipConfig HatBehindPlayer(ItemCodex.ItemTypes hairdoAltSet, bool up, bool right, bool down, bool left)
         {
             VSetInfo setToUse = GetOrCreateSet(hairdoAltSet);
             setToUse._sortsBehindChar = new bool[] { up, right, down, left };
             return this;
         }
 
-        public EquipBuilder HatOffsets(Vector2 up, Vector2 right, Vector2 down, Vector2 left)
+        public EquipConfig HatOffsets(Vector2 up, Vector2 right, Vector2 down, Vector2 left)
         {
             return HatOffsets(ItemCodex.ItemTypes.Null, up, right, down, left);
         }
 
-        public EquipBuilder HatOffsets(ItemCodex.ItemTypes hairdoAltSet, Vector2 up, Vector2 right, Vector2 down, Vector2 left)
+        public EquipConfig HatOffsets(ItemCodex.ItemTypes hairdoAltSet, Vector2 up, Vector2 right, Vector2 down, Vector2 left)
         {
             VSetInfo setToUse = GetOrCreateSet(hairdoAltSet);
             setToUse._renderOffsets = new Vector2[] {
@@ -179,12 +179,12 @@ namespace SoG.Modding
             return this;
         }
 
-        public EquipBuilder HatHairObstruction(bool sides, bool top, bool bottom)
+        public EquipConfig HatHairObstruction(bool sides, bool top, bool bottom)
         {
             return HatHairObstruction(ItemCodex.ItemTypes.Null, sides, top, bottom);
         }
 
-        public EquipBuilder HatHairObstruction(ItemCodex.ItemTypes hairdoAltSet, bool sides, bool top, bool bottom)
+        public EquipConfig HatHairObstruction(ItemCodex.ItemTypes hairdoAltSet, bool sides, bool top, bool bottom)
         {
             VSetInfo setToUse = GetOrCreateSet(hairdoAltSet);
             setToUse._obstructSides = sides;
@@ -193,7 +193,7 @@ namespace SoG.Modding
             return this;
         }
 
-        public EquipBuilder HatAltSetResource(ItemCodex.ItemTypes hairdoAltSet, string resource)
+        public EquipConfig HatAltSetResource(ItemCodex.ItemTypes hairdoAltSet, string resource)
         {
             _altSetResources[hairdoAltSet] = resource;
             return this;
@@ -201,7 +201,7 @@ namespace SoG.Modding
 
         // Methods specific to WeaponInfo
 
-        public EquipBuilder WeaponType(WeaponInfo.WeaponCategory hands, bool magic)
+        public EquipConfig WeaponType(WeaponInfo.WeaponCategory hands, bool magic)
         {
             _hands = hands;
             _isMagic = magic;

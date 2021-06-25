@@ -2,7 +2,7 @@
 
 namespace SoG.Modding
 {
-    public class Ui
+    public class TextHelper
     {
         public static void AddMiscText(string sCategory, string sEntry, string sText, MiscTextTypes enType = MiscTextTypes.Default)
         {

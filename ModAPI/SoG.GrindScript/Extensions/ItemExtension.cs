@@ -3,7 +3,7 @@ using System;
 
 namespace SoG.Modding
 {
-    public static class ItemExtensions
+    public static class ItemExtension
     {
         /// <summary>
         /// Spawns an item at the target PlayerView's position.
@@ -42,7 +42,7 @@ namespace SoG.Modding
 
         public static bool IsModItem(this ItemCodex.ItemTypes enType)
         {
-            return enType >= ModAllocator.ItemTypesStart && enType < ModAllocator.ItemTypesNext;
+            return enType >= IDAllocator.ItemTypesStart && enType < IDAllocator.ItemTypesNext;
         }
     }
 }
