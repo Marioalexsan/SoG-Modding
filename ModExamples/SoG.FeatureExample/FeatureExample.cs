@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SoG.FeatureExample
 {
@@ -26,57 +28,52 @@ namespace SoG.FeatureExample
         string audioClash = "";
         string audioDeafSilence = "";
 
-        public FeatureExample()
-        {
-            Logger.Info("FeatureExample is an example mod that tests GrindScript functionality.");
-        }
-
         public override void LoadContent()
         {
-            Logger.Info("Loading....");
+            Logger.Info("Loading FeatureExample mod....");
             try
             {
                 Logger.Info("Creating Items...");
 
-                modShield = ModContent.CreateItem(this, "_Mod_Item0001",
-                    new ItemConfig().Texts("Shield Example", "This is a custom shield!").Resources(CustomAssets, "WoodenShield"),
-                    new EquipConfig(EquipType.Shield).Stats(ShldHP: 1337).Resource(CustomAssets, "Wooden")
+                modShield = ModElements.CreateItem(this, "_Mod_Item0001",
+                    new ItemConfig().Texts("Shield Example", "This is a custom shield!").Resources(ModContent, ModPath + "Items/ModShield/Icon"),
+                    new EquipConfig(EquipType.Shield).Stats(ShldHP: 1337).Resource(ModContent, ModPath + "Items/ModShield")
                     );
 
-                modAccessory = ModContent.CreateItem(this, "_Mod_Item0002",
-                    new ItemConfig().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(CustomAssets, "WoodenShield"),
-                    new EquipConfig(EquipType.Accessory).Stats(ATK: 1337).Resource(CustomAssets, "Wooden")
+                modAccessory = ModElements.CreateItem(this, "_Mod_Item0002",
+                    new ItemConfig().Texts("Accessory Example", "This is a custom accessory that mimics a shield due to lazyness!").Resources(ModContent, ModPath + "Items/Common/Icon"),
+                    new EquipConfig(EquipType.Accessory).Stats(ATK: 1337)
                     );
 
-                modHat = ModContent.CreateItem(this, "_Mod_Item0003",
-                    new ItemConfig().Texts("Hat Example", "This is a custom hat!").Resources(CustomAssets, "Slimeus"),
-                    new EquipConfig(EquipType.Hat).Stats(ATK: 1111).Resource(CustomAssets, "Slimeus").HatOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f))
+                modHat = ModElements.CreateItem(this, "_Mod_Item0003",
+                    new ItemConfig().Texts("Hat Example", "This is a custom hat!").Resources(ModContent, ModPath + "Items/ModHat/Icon"),
+                    new EquipConfig(EquipType.Hat).Stats(ATK: 1111).Resource(ModContent, ModPath + "Items/ModHat").HatOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f))
                     );
 
-                modFacegear = ModContent.CreateItem(this, "_Mod_Item0004",
-                    new ItemConfig().Texts("Facegear Example", "This is a custom facegear!").Resources(CustomAssets, "Flybold"),
-                    new EquipConfig(EquipType.Facegear).Stats(ATK: 1234).Resource(CustomAssets, "Flybold").FacegearOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f))
+                modFacegear = ModElements.CreateItem(this, "_Mod_Item0004",
+                    new ItemConfig().Texts("Facegear Example", "This is a custom facegear!").Resources(ModContent, ModPath + "Items/ModFacegear/Icon"),
+                    new EquipConfig(EquipType.Facegear).Stats(ATK: 1234).Resource(ModContent, ModPath + "Items/ModFacegear").FacegearOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f))
                     );
 
-                modOneHandedWeapon = ModContent.CreateItem(this, "_Mod_Item0005",
-                    new ItemConfig().Texts("OneHandedMelee Example", "This is a custom 1H weapon! It has custom animations for downward basic attacks.").Resources(CustomAssets, "Crowbar"),
-                    new EquipConfig(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.OneHanded, false).Stats(ATK: 1555).Resource(CustomAssets, "IronSword")
+                modOneHandedWeapon = ModElements.CreateItem(this, "_Mod_Item0005",
+                    new ItemConfig().Texts("OneHandedMelee Example", "This is a custom 1H weapon! It has cool animations for downward attacks.").Resources(ModContent, ModPath + "Items/Mod1H/Icon"),
+                    new EquipConfig(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.OneHanded, false).Stats(ATK: 1555).Resource(ModContent, ModPath + "Items/Mod1H")
                     );
 
-                modTwoHandedWeapon = ModContent.CreateItem(this, "_Mod_Item0006",
-                    new ItemConfig().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(CustomAssets, "Claymore"),
-                    new EquipConfig(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.TwoHanded, true).Stats(ATK: 776).Resource(CustomAssets, "Claymore")
+                modTwoHandedWeapon = ModElements.CreateItem(this, "_Mod_Item0006",
+                    new ItemConfig().Texts("TwoHandedMagic Example", "This is a custom 2H weapon!").Resources(ModContent, ModPath + "Items/Mod2H/Icon"),
+                    new EquipConfig(EquipType.Weapon).WeaponType(WeaponInfo.WeaponCategory.TwoHanded, true).Stats(ATK: 776).Resource(ModContent, ModPath + "Items/Mod2H")
                     );
 
-                modMisc1 = ModContent.CreateItem(this, "_Mod_Item0007",
-                    new ItemConfig().Texts("Mod Misc 1", "This is a custom miscellaneous item!").Resources(CustomAssets, "WoodenShield").Categories(ItemCodex.ItemCategories.Misc)
+                modMisc1 = ModElements.CreateItem(this, "_Mod_Item0007",
+                    new ItemConfig().Texts("Mod Misc 1", "This is a custom miscellaneous item!").Resources(ModContent, ModPath + "Items/Common/Icon").Categories(ItemCodex.ItemCategories.Misc)
                     );
 
-                modMisc2 = ModContent.CreateItem(this, "_Mod_Item0008",
-                    new ItemConfig().Texts("Mod Misc 2", "This is another custom misc item!").Resources(CustomAssets, "WoodenShield").Categories(ItemCodex.ItemCategories.Misc)
+                modMisc2 = ModElements.CreateItem(this, "_Mod_Item0008",
+                    new ItemConfig().Texts("Mod Misc 2", "This is another custom misc item!").Resources(ModContent, ModPath + "Items/Common/Icon").Categories(ItemCodex.ItemCategories.Misc)
                     );
 
-                ModContent.AddRecipe(modOneHandedWeapon, new Dictionary<ItemCodex.ItemTypes, ushort>
+                ModElements.AddRecipe(modOneHandedWeapon, new Dictionary<ItemCodex.ItemTypes, ushort>
                 {
                     [modMisc1] = 5,
                     [modMisc2] = 10,
@@ -87,34 +84,34 @@ namespace SoG.FeatureExample
 
                 Logger.Info("Building sounds...");
 
-                ModContent.ConfigureModAudio(this,
+                ModElements.ConfigureModAudio(this,
                     new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny")
                     );
 
-                audioIntro = ModContent.GetMusicID(this, "Intro");
-                audioDestiny = ModContent.GetMusicID(this, "Destiny");
-                audioRipped = ModContent.GetMusicID(this, "Ripped");
-                audioClash = ModContent.GetMusicID(this, "Clash");
-                audioDeafSilence = ModContent.GetMusicID(this, "DeafSilence");
+                audioIntro = ModElements.GetMusicID(this, "Intro");
+                audioDestiny = ModElements.GetMusicID(this, "Destiny");
+                audioRipped = ModElements.GetMusicID(this, "Ripped");
+                audioClash = ModElements.GetMusicID(this, "Clash");
+                audioDeafSilence = ModElements.GetMusicID(this, "DeafSilence");
 
                 // Testing the song redirects in a bit more detail
 
                 Logger.Info("Testing sound redirects...");
 
-                ModContent.RedirectVanillaMusic("BossBattle01", "BishopBattle"); // Redirect is invalid
-                ModContent.RedirectVanillaMusic("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
-                ModContent.RedirectVanillaMusic("GS_1337_M1337", audioClash); // Vanilla is invalid
+                ModElements.RedirectVanillaMusic("BossBattle01", "BishopBattle"); // Redirect is invalid
+                ModElements.RedirectVanillaMusic("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
+                ModElements.RedirectVanillaMusic("GS_1337_M1337", audioClash); // Vanilla is invalid
 
-                ModContent.RedirectVanillaMusic("BossBattle01", audioClash); // Sets a redirect
-                ModContent.RedirectVanillaMusic("BossBattle01", audioRipped); // Overrides the redirect
-                ModContent.RedirectVanillaMusic("BossBattle01", ""); // Clears the redirect
+                ModElements.RedirectVanillaMusic("BossBattle01", audioClash); // Sets a redirect
+                ModElements.RedirectVanillaMusic("BossBattle01", audioRipped); // Overrides the redirect
+                ModElements.RedirectVanillaMusic("BossBattle01", ""); // Clears the redirect
 
                 Logger.Info("Redirect tests done!");
 
                 // Doing the actual redirects
 
-                ModContent.RedirectVanillaMusic("BossBattle01", audioClash);
-                ModContent.RedirectVanillaMusic("BishopBattle", audioRipped);
+                ModElements.RedirectVanillaMusic("BossBattle01", audioClash);
+                ModElements.RedirectVanillaMusic("BishopBattle", audioRipped);
 
                 Logger.Info("Done with sounds!");
 
@@ -249,7 +246,7 @@ namespace SoG.FeatureExample
                 }
             };
 
-            ModContent.ConfigureCommandsFrom(this, parsers);
+            ModElements.ConfigureCommandsFrom(this, parsers);
         }
 
         public override void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)

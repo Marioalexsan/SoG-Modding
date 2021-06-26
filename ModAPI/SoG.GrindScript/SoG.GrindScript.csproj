@@ -74,6 +74,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Content\LevelConfig.cs" />
+    <Compile Include="Extensions\LevelExtension.cs" />
+    <Compile Include="Patches\CoreCallbacks.cs" />
     <Compile Include="Content\AudioConfig.cs" />
     <Compile Include="Extensions\HarmonyExtension.cs" />
     <Compile Include="Core\LibraryEntries.cs" />
@@ -81,7 +84,8 @@
     <Compile Include="Extensions\ItemExtension.cs" />
     <Compile Include="Content\EquipConfig.cs" />
     <Compile Include="Content\ItemConfig.cs" />
-    <Compile Include="Core\Callbacks.cs" />
+    <Compile Include="Patches\BaseScriptCallbacks.cs" />
+    <Compile Include="Patches\Transpilers.cs" />
     <Compile Include="Tools\ConsoleLogger.cs" />
     <Compile Include="Core\Delegates.cs" />
     <Compile Include="Core\BaseScript.cs" />
@@ -89,12 +93,11 @@
     <Compile Include="Core\GrindScript.cs" />
     <Compile Include="Core\IDAllocator.cs" />
     <Compile Include="Core\ModLibrary.cs" />
-    <Compile Include="Content\ModContent.cs" />
+    <Compile Include="Content\ModElements.cs" />
     <Compile Include="Core\ModSaveLoad.cs" />
     <Compile Include="Tools\NetUtils.cs" />
-    <Compile Include="Patching\PatchCodex.cs" />
+    <Compile Include="Core\PatchCodex.cs" />
     <Compile Include="Tools\PatchUtils.cs" />
-    <Compile Include="Patching\Transpilers.cs" />
     <Compile Include="Extensions\TypeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Content\TextHelper.cs" />

@@ -29,9 +29,9 @@ namespace SoG.Modding
     {
         public ItemDescription vanilla;
 
-        public string shadowToUse = "";
+        public string shadowPath = "";
 
-        public string resourceToUse = "";
+        public string resourcePath = "";
 
         public ContentManager managerToUse;
     }
@@ -44,7 +44,7 @@ namespace SoG.Modding
     {
         public EquipmentInfo vanilla;
 
-        public string resourceToUse = "";
+        public string resourcePath = "";
 
         public ContentManager managerToUse;
 

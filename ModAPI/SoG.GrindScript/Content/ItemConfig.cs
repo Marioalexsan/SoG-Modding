@@ -103,9 +103,9 @@ namespace SoG.Modding
             return new ModItem()
             {
                 vanilla = itemInfo,
-                shadowToUse = _shadowTexPath,
+                shadowPath = _shadowTexPath,
                 managerToUse = _managerToUse,
-                resourceToUse = _displayTexPath
+                resourcePath = _displayTexPath
             };
         }
     }

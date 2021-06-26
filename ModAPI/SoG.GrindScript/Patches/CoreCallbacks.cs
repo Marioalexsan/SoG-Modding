@@ -7,77 +7,8 @@ using System.Reflection;
 
 namespace SoG.Modding
 {
-    /// <summary>
-    /// Contains methods that act as prefix and postfix patches.
-    /// </summary>
-
-    internal static class Callbacks
+    internal static partial class Patches
     {
-        //
-        // Mod callbacks
-        //
-
-        private static void OnContentLoad()
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.LoadContent();
-        }
-
-        private static void OnFinalDrawPrefix()
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnDraw();
-        }
-
-        private static void OnPlayerTakeDamagePrefix(ref int iInDamage, ref byte byType)
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnPlayerDamaged(ref iInDamage, ref byType);
-        }
-
-        private static void OnPlayerKilledPrefix()
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnPlayerKilled();
-        }
-
-        private static void PostPlayerLevelUp(PlayerView xView)
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.PostPlayerLevelUp(xView);
-        }
-
-        private static void OnEnemyTakeDamagePrefix(Enemy xEnemy, ref int iDamage, ref byte byType)
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnEnemyDamaged(xEnemy, ref iDamage, ref byType);
-        }
-
-        private static void OnNPCTakeDamagePrefix(NPC xEnemy, ref int iDamage, ref byte byType)
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnNPCDamaged(xEnemy, ref iDamage, ref byType);
-        }
-
-        private static void OnNPCInteractionPrefix(PlayerView xView, NPC xNPC)
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnNPCInteraction(xNPC);
-        }
-
-        private static void OnArcadiaLoadPrefix()
-        {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnArcadiaLoad();
-
-            // Just in case it didn't get set before
-            GrindScript.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
-        }
-
-        //
-        // API Functionality
-        //
-
         private static void OnGame1Initialize()
         {
             typeof(GrindScript).GetTypeInfo().GetPrivateStaticMethod("Initialize").Invoke(null, new object[0]);
@@ -99,6 +30,12 @@ namespace SoG.Modding
             }
             if (!parsers.TryGetValue(trueCommand, out var parser))
             {
+                if (trueCommand == "Help")
+                {
+                    OnChatParseCommand("GScript:Help", target, connection);
+                    return true;
+                }
+
                 CAS.AddChatMessage($"[{target}] Unknown command!");
                 return true;
             }
@@ -109,13 +46,6 @@ namespace SoG.Modding
             return true;
         }
 
-        private static void OnItemUsePrefix(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
-        {
-            if (xView.xViewStats.bIsDead) return;
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnItemUse(enItem, xView, ref bSend);
-        }
-
         private static bool OnGetItemDescription(ref ItemDescription __result, ItemCodex.ItemTypes enType)
         {
             if (!enType.IsModItem())
@@ -123,7 +53,7 @@ namespace SoG.Modding
 
             ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
             __result = details.vanilla;
-            __result.txDisplayImage = Utils.TryLoadTex("Items/DropAppearance/" + details.resourceToUse, details.managerToUse);
+            __result.txDisplayImage = Utils.TryLoadTex(details.resourcePath, details.managerToUse);
 
             return false;
         }
@@ -134,7 +64,7 @@ namespace SoG.Modding
                 return true;
 
             ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
-            string trueShadowTex = details.shadowToUse != "" ? details.shadowToUse : "hartass02";
+            string trueShadowTex = details.shadowPath != "" ? details.shadowPath : BaseScript.SoGPath + "Items/DropAppearance/hartass02";
             ItemDescription xDesc = details.vanilla;
 
             __result = new Item()
@@ -144,8 +74,8 @@ namespace SoG.Modding
                 bGiveToServer = xDesc.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer)
             };
 
-            __result.xRenderComponent.txTexture = Utils.TryLoadTex("Items/DropAppearance/" + details.resourceToUse, details.managerToUse);
-            __result.xRenderComponent.txShadowTexture = Utils.TryLoadTex("Items/DropAppearance/" + trueShadowTex, details.managerToUse);
+            __result.xRenderComponent.txTexture = Utils.TryLoadTex(details.resourcePath, details.managerToUse);
+            __result.xRenderComponent.txShadowTexture = Utils.TryLoadTex(trueShadowTex, details.managerToUse);
             __result.xCollisionComponent.xMovementCollider = new SphereCollider(10f, Vector2.Zero, __result.xTransform, 1f, __result) { bCollideWithFlat = true };
 
             return false;
@@ -175,14 +105,13 @@ namespace SoG.Modding
                 return true;
 
             ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
-            string hatPath = "Sprites/Equipment/Facegear/" + modEquip.resourceToUse + "/";
             ContentManager manager = modEquip.managerToUse;
 
             __result = modEquip.vanilla as FacegearInfo;
-            __result.atxTextures[0] = Utils.TryLoadTex(hatPath + "Up", manager);
-            __result.atxTextures[1] = Utils.TryLoadTex(hatPath + "Right", manager);
-            __result.atxTextures[2] = Utils.TryLoadTex(hatPath + "Down", manager);
-            __result.atxTextures[3] = Utils.TryLoadTex(hatPath + "Left", manager);
+            __result.atxTextures[0] = Utils.TryLoadTex(modEquip.resourcePath + "/Up", manager);
+            __result.atxTextures[1] = Utils.TryLoadTex(modEquip.resourcePath + "/Right", manager);
+            __result.atxTextures[2] = Utils.TryLoadTex(modEquip.resourcePath + "/Down", manager);
+            __result.atxTextures[3] = Utils.TryLoadTex(modEquip.resourcePath + "/Left", manager);
 
             return false;
         }
@@ -197,21 +126,20 @@ namespace SoG.Modding
                 return true;
 
             ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
-            string hatPath = "Sprites/Equipment/Hats/" + modEquip.resourceToUse + "/";
             ContentManager manager = modEquip.managerToUse;
 
             __result = modEquip.vanilla as HatInfo;
-            __result.xDefaultSet.atxTextures[0] = Utils.TryLoadTex(hatPath + "Up", manager);
-            __result.xDefaultSet.atxTextures[1] = Utils.TryLoadTex(hatPath + "Right", manager);
-            __result.xDefaultSet.atxTextures[2] = Utils.TryLoadTex(hatPath + "Down", manager);
-            __result.xDefaultSet.atxTextures[3] = Utils.TryLoadTex(hatPath + "Left", manager);
+            __result.xDefaultSet.atxTextures[0] = Utils.TryLoadTex(modEquip.resourcePath + "/Up", manager);
+            __result.xDefaultSet.atxTextures[1] = Utils.TryLoadTex(modEquip.resourcePath + "/Right", manager);
+            __result.xDefaultSet.atxTextures[2] = Utils.TryLoadTex(modEquip.resourcePath + "/Down", manager);
+            __result.xDefaultSet.atxTextures[3] = Utils.TryLoadTex(modEquip.resourcePath + "/Left", manager);
             foreach (var kvp in __result.denxAlternateVisualSets)
             {
-                string altPath = hatPath + modEquip.hatAltSetResources[kvp.Key] + "/";
-                kvp.Value.atxTextures[0] = Utils.TryLoadTex(altPath + "Up", manager);
-                kvp.Value.atxTextures[1] = Utils.TryLoadTex(altPath + "Right", manager);
-                kvp.Value.atxTextures[2] = Utils.TryLoadTex(altPath + "Down", manager);
-                kvp.Value.atxTextures[3] = Utils.TryLoadTex(altPath + "Left", manager);
+                string altPath = modEquip.resourcePath + "/" + modEquip.hatAltSetResources[kvp.Key] + "/";
+                kvp.Value.atxTextures[0] = Utils.TryLoadTex(altPath + "/Up", manager);
+                kvp.Value.atxTextures[1] = Utils.TryLoadTex(altPath + "/Right", manager);
+                kvp.Value.atxTextures[2] = Utils.TryLoadTex(altPath + "/Down", manager);
+                kvp.Value.atxTextures[3] = Utils.TryLoadTex(altPath + "/Left", manager);
             }
 
             return false;
@@ -246,7 +174,20 @@ namespace SoG.Modding
                 __instance.contWeaponContent.RootDirectory = managerToUse.RootDirectory;
 
             foreach (KeyValuePair<ushort, string> kvp in dis)
-                __instance.ditxWeaponTextures.Add(kvp.Key, Utils.TryLoadTex(kvp.Value.Replace("Weapons/", ""), __instance.contWeaponContent));
+            {
+                int start = kvp.Value.IndexOf('<') + 1;
+                int end = kvp.Value.IndexOf('>');
+                string resourcePath = kvp.Value.Substring(start, end - start);
+
+                string texPath = kvp.Value;
+                texPath = texPath.Replace($"Weapons/<{resourcePath}>/", "");
+                texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
+                texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
+                texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
+                texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
+
+                __instance.ditxWeaponTextures.Add(kvp.Key, Utils.TryLoadTex(texPath, __instance.contWeaponContent));
+            }
 
             return false;
         }
@@ -271,10 +212,18 @@ namespace SoG.Modding
                 var enType = xPlayerView.xEquipment.DisplayShield.enItemType;
                 bool modItem = enType.IsModItem();
 
-                var managerToUse = modItem ? ModLibrary.Global.ModItems[enType].equipInfo.managerToUse : VanillaContent;
-                string path = $"Sprites/Heroes/{sAnimation}" + (modItem ? "" : "/Shields") + $"/{resource}/{sDirection}";
-
-                __result.txShield = Utils.TryLoadTex(path, managerToUse);
+                if (modItem)
+                {
+                    var managerToUse = ModLibrary.Global.ModItems[enType].equipInfo.managerToUse;
+                    string path = $"{resource}/{sAnimation}/{sDirection}";
+                    __result.txShield = Utils.TryLoadTex(path, managerToUse);
+                }
+                else
+                {
+                    var managerToUse = VanillaContent;
+                    string path = $"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}";
+                    __result.txShield = Utils.TryLoadTex(path, managerToUse);
+                }
             }
 
             if (bWithWeapon)
@@ -364,7 +313,7 @@ namespace SoG.Modding
                 {
                     WaveBank newBank;
                     if (currentIsModded)
-                        newBank = new WaveBank(audioEngine, $"{entry.owner.CustomAssets.RootDirectory}/Sound/{modBank}.xwb");
+                        newBank = new WaveBank(audioEngine, $"{entry.owner.ModContent.RootDirectory}/Sound/{modBank}.xwb");
                     else
                         newBank = new WaveBank(audioEngine, $"{GrindScript.Game.Content.RootDirectory}/Sound/{soundSystem.sCurrentMusicWaveBank}.xwb");
 
@@ -386,7 +335,7 @@ namespace SoG.Modding
 
                 WaveBank newBank;
                 if (currentIsModded)
-                    newBank = new WaveBank(audioEngine, $"{entry.owner.CustomAssets.RootDirectory}/Sound/{modBank}.xwb");
+                    newBank = new WaveBank(audioEngine, $"{entry.owner.ModContent.RootDirectory}/Sound/{modBank}.xwb");
                 else
                     newBank = new WaveBank(audioEngine, $"{GrindScript.Game.Content.RootDirectory}/Sound/{soundSystem.sCurrentMusicWaveBank}.xwb");
 
@@ -411,13 +360,13 @@ namespace SoG.Modding
             string appData = GrindScript.Game.sAppData;
 
             int carousel = player.iSaveCarousel - 1;
-            if (carousel < 0) 
+            if (carousel < 0)
                 carousel += 5;
 
             string backupPath = "";
 
             string chrFile = $"{appData}Characters/" + $"{iFileSlot}.cha{ext}";
-            
+
             if (File.Exists(chrFile))
             {
                 if (player.sSaveableName == "")
@@ -444,7 +393,7 @@ namespace SoG.Modding
                 GrindScript.Logger.Info($"Saving mod character {iFileSlot}...");
                 ModSaveLoad.SaveModCharacter(bw);
             }
-                
+
             try
             {
                 File.Copy($"{chrFile}.temp", chrFile, overwrite: true);
@@ -490,7 +439,7 @@ namespace SoG.Modding
                 GrindScript.Logger.Info($"Saving mod world {iFileSlot}...");
                 ModSaveLoad.SaveModWorld(bw);
             }
-            
+
             try
             {
                 File.Copy($"{wldFile}.temp", wldFile, overwrite: true);

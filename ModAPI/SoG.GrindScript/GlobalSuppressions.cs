@@ -5,11 +5,11 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Transpilers")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Transpilers")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Callbacks")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Callbacks")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
+[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
+[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
 [assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.GrindScript.Prepare")]
 [assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.GrindScript.Initialize")]
 
-[assembly: SuppressMessage("Style", "IDE0060", Justification = "Part of the original method's argument list", Scope = "type", Target = "~T:SoG.Modding.Transpilers")]
+[assembly: SuppressMessage("Style", "IDE0060", Justification = "Part of the original method's argument list", Scope = "type", Target = "~T:SoG.Modding.Patches")]

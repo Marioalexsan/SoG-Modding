@@ -8,15 +8,10 @@ using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstructi
 
 namespace SoG.Modding
 {
-    /// <summary>
-    /// Contains transpiling methods used to modify vanilla code in more detail.
-    /// Throughout the code, CodeList is a shortcut for IEnumerable of CodeInstructions.
-    /// </summary>
-
-    public static class Transpilers
+    internal static partial class Patches
     {
         /// <summary>
-        /// Inserts <see cref="Callbacks.OnContentLoad"/> in <see cref="Game1.__StartupThreadExecute"/>.
+        /// Inserts <see cref="OnContentLoad"/> in <see cref="Game1.__StartupThreadExecute"/>.
         /// Insertion is done before <see cref="DialogueCharacterLoading.Init"/>.
         /// </summary>
 
@@ -26,14 +21,14 @@ namespace SoG.Modding
 
             List<CodeInstruction> insert = new List<CodeInstruction>
             {
-                new CodeInstruction(OpCodes.Call, typeof(Callbacks).GetPrivateStaticMethod("OnContentLoad"))
+                new CodeInstruction(OpCodes.Call, typeof(Patches).GetPrivateStaticMethod("OnContentLoad"))
             };
 
             return PatchUtils.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
-        /// Inserts <see cref="Callbacks.OnChatParseCommand"/> in <see cref="Game1._Chat_ParseCommand"/>.
+        /// Inserts <see cref="OnChatParseCommand"/> in <see cref="Game1._Chat_ParseCommand"/>.
         /// If a mod command runs, vanilla commands are skipped.
         /// </summary>
 
@@ -48,7 +43,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Ldloc_S, 2),
                 new CodeInstruction(OpCodes.Ldarg_S, 1),
                 new CodeInstruction(OpCodes.Ldarg_S, 2),
-                new CodeInstruction(OpCodes.Call, typeof(Callbacks).GetPrivateStaticMethod("OnChatParseCommand")),
+                new CodeInstruction(OpCodes.Call, typeof(Patches).GetPrivateStaticMethod("OnChatParseCommand")),
                 new CodeInstruction(OpCodes.Brfalse, afterRet),
                 new CodeInstruction(OpCodes.Ret),
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
@@ -81,7 +76,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -120,7 +115,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -159,7 +154,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -195,7 +190,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModContent).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)

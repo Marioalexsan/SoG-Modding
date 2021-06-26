@@ -83,7 +83,7 @@ namespace SoG.Modding
             Logger.Info("Applying Patches...");
             try
             {
-                foreach (PatchCodex.Patches id in Enum.GetValues(typeof(PatchCodex.Patches)))
+                foreach (PatchCodex.PatchID id in Enum.GetValues(typeof(PatchCodex.PatchID)))
                 {
                     Logger.Info("Patch: " + id);
                     _harmony.Patch(PatchCodex.GetPatch(id));

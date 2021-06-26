@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace SoG.Modding
 {
-    public static class ModContent
+    public static class ModElements
     {
         /// <summary> 
         /// Creates a new item using the provided item and equipment builder. <para/>
@@ -128,7 +128,7 @@ namespace SoG.Modding
                 GrindScript.Logger.Warn("Can't create audio due to owner or builder being null!");
                 return;
             }
-            audio.UpdateExistingEntry(owner.CustomAssets.RootDirectory, owner._audioID);
+            audio.UpdateExistingEntry(owner.ModPath, owner._audioID);
         }
 
         /// <summary>
@@ -295,6 +295,20 @@ namespace SoG.Modding
             {
                 ConfigureCommand(owner, kvp.Key, kvp.Value);
             }
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+
+        public static Level.ZoneEnum CreateLevel()
+        {
+            return Level.ZoneEnum.None;
+        }
+
+        public static Level.WorldRegion CreateWorldRegion()
+        {
+            return Level.WorldRegion.NotLoaded;
         }
     }
 }

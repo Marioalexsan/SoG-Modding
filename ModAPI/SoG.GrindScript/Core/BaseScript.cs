@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Content;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SoG.Modding
 {
@@ -10,7 +11,11 @@ namespace SoG.Modding
 
         internal readonly ModLibrary ModLib = new ModLibrary();
 
-        public ContentManager CustomAssets { get; private set; }
+        public ContentManager ModContent { get; private set; }
+
+        public string ModPath { get; private set; }
+
+        public static readonly string SoGPath = "Content/";
 
         protected ConsoleLogger Logger { get; private set; }
 
@@ -18,8 +23,11 @@ namespace SoG.Modding
         {
             Logger = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, GetType().Name) { SourceColor = ConsoleColor.Yellow };
 
-            CustomAssets = new ContentManager(GrindScript.Game.Content.ServiceProvider, "ModContent/" + GetType().Name);
-            Logger.Info($"ContentManager path set as {CustomAssets.RootDirectory}");
+            ModContent = new ContentManager(GrindScript.Game.Content.ServiceProvider, Directory.GetCurrentDirectory());
+
+            ModPath = $"ModContent/{GetType().Name}/";
+
+            Logger.Info($"ModPath set as {ModPath}");
 
             var allAudio = ModLibrary.Global.ModAudio;
             if (allAudio.ContainsKey(IDAllocator.AudioIDNext))

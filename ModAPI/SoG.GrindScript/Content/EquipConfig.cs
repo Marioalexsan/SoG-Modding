@@ -235,7 +235,7 @@ namespace SoG.Modding
 
             return new ModEquip()
             {
-                resourceToUse = _resource,
+                resourcePath = _resource,
                 managerToUse = _manager,
                 equipType = typeToUse,
                 vanilla = info,
@@ -268,7 +268,7 @@ namespace SoG.Modding
         private WeaponInfo BuildWeapon(ItemCodex.ItemTypes allocatedType)
         {
             // TODO add custom palette support
-            WeaponInfo equipInfo = new WeaponInfo(_resource, allocatedType, _hands)
+            WeaponInfo equipInfo = new WeaponInfo($"<{_resource}>", allocatedType, _hands)
             {
                 enWeaponCategory = _hands,
                 enAutoAttackSpell = WeaponInfo.AutoAttackSpell.None
