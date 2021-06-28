@@ -211,5 +211,19 @@ namespace SoG.Modding
             code = PatchUtils.InsertAfterMethod(code, target, insertAfter, methodIndex: 2, missingPopIsOk: true);
             return PatchUtils.InsertBeforeMethod(code, target, insertBefore, methodIndex: 2);
         }
+
+        private static CodeList LevelDoStuffTranspiler(CodeList code, ILGenerator gen)
+        {
+            MethodInfo target = typeof(Quests.QuestLog).GetMethod("UpdateCheck_PlaceVisited");
+
+            List<CodeInstruction> insert = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldarg_S, 1),
+                new CodeInstruction(OpCodes.Ldarg_S, 2),
+                new CodeInstruction(OpCodes.Call, typeof(Patches).GetPrivateStaticMethod("OnLevelLoadDoStuff"))
+            };
+
+            return PatchUtils.InsertBeforeMethod(code, target, insert);
+        }
     }
 }

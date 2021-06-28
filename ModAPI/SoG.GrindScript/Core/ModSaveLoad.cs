@@ -71,7 +71,7 @@ namespace SoG.Modding
 
                 sbyte shuffleStatus = -1;
 
-                foreach (var modItem in target.ModLib.ModItems.Values)
+                foreach (var modItem in target.ModLib.Items.Values)
                 {
                     if (saveItem.Value == modItem.uniqueID)
                     {
@@ -123,8 +123,8 @@ namespace SoG.Modding
                 if (items)
                 {
                     // Items which were defined by this mod during this session
-                    file.Write(mod.ModLib.ModItems.Count);
-                    foreach (var item in mod.ModLib.ModItems.Values)
+                    file.Write(mod.ModLib.Items.Count);
+                    foreach (var item in mod.ModLib.Items.Values)
                     {
                         file.Write((int)item.type);
                         file.Write(item.uniqueID);

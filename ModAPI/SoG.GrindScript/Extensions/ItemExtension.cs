@@ -42,7 +42,7 @@ namespace SoG.Modding
 
         public static bool IsModItem(this ItemCodex.ItemTypes enType)
         {
-            return enType >= IDAllocator.ItemTypesStart && enType < IDAllocator.ItemTypesNext;
+            return enType >= IDAllocator.ItemTypesStart && enType < IDAllocator.ItemTypesEnd;
         }
     }
 }

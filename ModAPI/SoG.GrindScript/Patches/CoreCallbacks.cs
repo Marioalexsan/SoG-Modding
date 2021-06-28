@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System;
 
 namespace SoG.Modding
 {
@@ -23,7 +24,7 @@ namespace SoG.Modding
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            if (!ModLibrary.Global.ModCommands.TryGetValue(target, out var parsers))
+            if (!ModLibrary.Global.Commands.TryGetValue(target, out var parsers))
             {
                 CAS.AddChatMessage("[GrindScript] Unknown mod!");
                 return true;
@@ -44,152 +45,6 @@ namespace SoG.Modding
             parser(message, connection);
 
             return true;
-        }
-
-        private static bool OnGetItemDescription(ref ItemDescription __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsModItem())
-                return true;
-
-            ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
-            __result = details.vanilla;
-            __result.txDisplayImage = Utils.TryLoadTex(details.resourcePath, details.managerToUse);
-
-            return false;
-        }
-
-        private static bool OnGetItemInstance(ref Item __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsModItem())
-                return true;
-
-            ModItem details = ModLibrary.Global.ModItems[enType].itemInfo;
-            string trueShadowTex = details.shadowPath != "" ? details.shadowPath : BaseScript.SoGPath + "Items/DropAppearance/hartass02";
-            ItemDescription xDesc = details.vanilla;
-
-            __result = new Item()
-            {
-                enType = enType,
-                sFullName = xDesc.sFullName,
-                bGiveToServer = xDesc.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer)
-            };
-
-            __result.xRenderComponent.txTexture = Utils.TryLoadTex(details.resourcePath, details.managerToUse);
-            __result.xRenderComponent.txShadowTexture = Utils.TryLoadTex(trueShadowTex, details.managerToUse);
-            __result.xCollisionComponent.xMovementCollider = new SphereCollider(10f, Vector2.Zero, __result.xTransform, 1f, __result) { bCollideWithFlat = true };
-
-            return false;
-        }
-
-        /// <summary>
-        /// For modded equipment, allows retrieving EquipmentInfo from GrindScript's internals.
-        /// </summary>
-
-        private static bool OnGetEquipmentInfo(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsModItem())
-                return true;
-
-            __result = ModLibrary.Global.ModItems[enType].equipInfo.vanilla;
-
-            return false;
-        }
-
-        /// <summary>
-        /// For modded facegear, allows retrieving FacegearInfo from GrindScript's internals.
-        /// </summary>
-
-        private static bool OnGetFacegearInfo(ref FacegearInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsModItem())
-                return true;
-
-            ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
-            ContentManager manager = modEquip.managerToUse;
-
-            __result = modEquip.vanilla as FacegearInfo;
-            __result.atxTextures[0] = Utils.TryLoadTex(modEquip.resourcePath + "/Up", manager);
-            __result.atxTextures[1] = Utils.TryLoadTex(modEquip.resourcePath + "/Right", manager);
-            __result.atxTextures[2] = Utils.TryLoadTex(modEquip.resourcePath + "/Down", manager);
-            __result.atxTextures[3] = Utils.TryLoadTex(modEquip.resourcePath + "/Left", manager);
-
-            return false;
-        }
-
-        /// <summary>
-        /// For modded hats, allows retrieving HatInfo from GrindScript's internals.
-        /// </summary>
-
-        private static bool OnGetHatInfo(ref HatInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsModItem())
-                return true;
-
-            ModEquip modEquip = ModLibrary.Global.ModItems[enType].equipInfo;
-            ContentManager manager = modEquip.managerToUse;
-
-            __result = modEquip.vanilla as HatInfo;
-            __result.xDefaultSet.atxTextures[0] = Utils.TryLoadTex(modEquip.resourcePath + "/Up", manager);
-            __result.xDefaultSet.atxTextures[1] = Utils.TryLoadTex(modEquip.resourcePath + "/Right", manager);
-            __result.xDefaultSet.atxTextures[2] = Utils.TryLoadTex(modEquip.resourcePath + "/Down", manager);
-            __result.xDefaultSet.atxTextures[3] = Utils.TryLoadTex(modEquip.resourcePath + "/Left", manager);
-            foreach (var kvp in __result.denxAlternateVisualSets)
-            {
-                string altPath = modEquip.resourcePath + "/" + modEquip.hatAltSetResources[kvp.Key] + "/";
-                kvp.Value.atxTextures[0] = Utils.TryLoadTex(altPath + "/Up", manager);
-                kvp.Value.atxTextures[1] = Utils.TryLoadTex(altPath + "/Right", manager);
-                kvp.Value.atxTextures[2] = Utils.TryLoadTex(altPath + "/Down", manager);
-                kvp.Value.atxTextures[3] = Utils.TryLoadTex(altPath + "/Left", manager);
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// For modded weapons, allows retrieving WeaponInfo from GrindScript's internals.
-        /// </summary>
-
-        private static bool OnGetWeaponInfo(ref WeaponInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsModItem())
-                return true;
-
-            __result = ModLibrary.Global.ModItems[enType].equipInfo.vanilla as WeaponInfo;
-
-            return false;
-        }
-
-        /// <summary>
-        /// Patches <see cref="WeaponAssets.WeaponContentManager.LoadBatch(Dictionary{ushort, string})"/>.
-        /// Allows use of modded assets. Modded weapons have shorter asset paths ("/Weapons" is removed).
-        /// </summary>
-
-        private static bool OnLoadBatch(ref Dictionary<ushort, string> dis, WeaponAssets.WeaponContentManager __instance)
-        {
-            if (!__instance.enType.IsModItem())
-                return true;
-
-            ContentManager managerToUse = ModLibrary.Global.ModItems[__instance.enType].equipInfo.managerToUse;
-            if (managerToUse != null)
-                __instance.contWeaponContent.RootDirectory = managerToUse.RootDirectory;
-
-            foreach (KeyValuePair<ushort, string> kvp in dis)
-            {
-                int start = kvp.Value.IndexOf('<') + 1;
-                int end = kvp.Value.IndexOf('>');
-                string resourcePath = kvp.Value.Substring(start, end - start);
-
-                string texPath = kvp.Value;
-                texPath = texPath.Replace($"Weapons/<{resourcePath}>/", "");
-                texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
-                texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
-                texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
-                texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
-
-                __instance.ditxWeaponTextures.Add(kvp.Key, Utils.TryLoadTex(texPath, __instance.contWeaponContent));
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -214,7 +69,7 @@ namespace SoG.Modding
 
                 if (modItem)
                 {
-                    var managerToUse = ModLibrary.Global.ModItems[enType].equipInfo.managerToUse;
+                    var managerToUse = ModLibrary.Global.Items[enType].equipInfo.managerToUse;
                     string path = $"{resource}/{sAnimation}/{sDirection}";
                     __result.txShield = Utils.TryLoadTex(path, managerToUse);
                 }
@@ -276,7 +131,7 @@ namespace SoG.Modding
             AudioEngine audioEngine = (AudioEngine)audioEngineField.GetValue(GrindScript.Game.xSoundSystem);
             WaveBank vanillaUniversalMusic = (WaveBank)vanillaUniversalMusicField.GetValue(soundSystem);
 
-            ModAudioEntry entry = currentIsModded ? ModLibrary.Global.ModAudio[entryID] : null;
+            ModAudioEntry entry = currentIsModded ? ModLibrary.Global.Audio[entryID] : null;
             string cueName = currentIsModded ? entry.musicIDToName[cueID] : sSongName;
             string modBank = currentIsModded ? entry.musicNameToBank[cueName] : dssSongRegionMap[sSongName];
 
@@ -346,191 +201,6 @@ namespace SoG.Modding
             }
 
             return false; // Never returns control to original
-        }
-
-        /// <summary>
-        /// Runs after <see cref="Game1._Saving_SaveCharacterToFile(int)"/>.
-        /// </summary>
-
-        private static void PostCharacterSave(int iFileSlot)
-        {
-            string ext = ModSaveLoad.ModExt;
-
-            PlayerView player = GrindScript.Game.xLocalPlayer;
-            string appData = GrindScript.Game.sAppData;
-
-            int carousel = player.iSaveCarousel - 1;
-            if (carousel < 0)
-                carousel += 5;
-
-            string backupPath = "";
-
-            string chrFile = $"{appData}Characters/" + $"{iFileSlot}.cha{ext}";
-
-            if (File.Exists(chrFile))
-            {
-                if (player.sSaveableName == "")
-                {
-                    player.sSaveableName = player.sNetworkNickname;
-                    foreach (char c in Path.GetInvalidFileNameChars())
-                        player.sSaveableName = player.sSaveableName.Replace(c, ' ');
-                }
-
-                backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
-                Utils.TryCreateDirectory(backupPath);
-
-                File.Copy(chrFile, backupPath + $"auto{carousel}.cha{ext}", overwrite: true);
-
-                string wldFile = $"{appData}Worlds/" + $"{iFileSlot}.wld{ext}";
-                if (File.Exists(wldFile))
-                {
-                    File.Copy(wldFile, backupPath + $"auto{carousel}.wld{ext}", overwrite: true);
-                }
-            }
-
-            using (BinaryWriter bw = new BinaryWriter(new FileStream($"{chrFile}.temp", FileMode.Create, FileAccess.Write)))
-            {
-                GrindScript.Logger.Info($"Saving mod character {iFileSlot}...");
-                ModSaveLoad.SaveModCharacter(bw);
-            }
-
-            try
-            {
-                File.Copy($"{chrFile}.temp", chrFile, overwrite: true);
-                if (backupPath != "")
-                {
-                    File.Copy($"{chrFile}.temp", backupPath + $"latest.cha{ext}", overwrite: true);
-                }
-                File.Delete($"{chrFile}.temp");
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Runs after <see cref="Game1._Saving_SaveWorldToFile(int)"/>.
-        /// </summary>
-
-        private static void PostWorldSave(int iFileSlot)
-        {
-            string ext = ModSaveLoad.ModExt;
-
-            PlayerView player = GrindScript.Game.xLocalPlayer;
-            string appData = GrindScript.Game.sAppData;
-
-            string backupPath = "";
-            string chrFile = $"{appData}Characters/" + $"{iFileSlot}.cha{ext}";
-            string wldFile = $"{appData}Worlds/" + $"{iFileSlot}.wld{ext}";
-
-            if (File.Exists(chrFile))
-            {
-                if (player.sSaveableName == "")
-                {
-                    player.sSaveableName = player.sNetworkNickname;
-                    foreach (char c in Path.GetInvalidFileNameChars())
-                        player.sSaveableName = player.sSaveableName.Replace(c, ' ');
-                }
-
-                backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
-                Utils.TryCreateDirectory(backupPath);
-            }
-
-            using (BinaryWriter bw = new BinaryWriter(new FileStream($"{wldFile}.temp", FileMode.Create, FileAccess.Write)))
-            {
-                GrindScript.Logger.Info($"Saving mod world {iFileSlot}...");
-                ModSaveLoad.SaveModWorld(bw);
-            }
-
-            try
-            {
-                File.Copy($"{wldFile}.temp", wldFile, overwrite: true);
-                if (backupPath != "" && iFileSlot != 100)
-                {
-                    File.Copy($"{wldFile}.temp", backupPath + $"latest.wld{ext}", overwrite: true);
-                }
-                File.Delete($"{wldFile}.temp");
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Runs after <see cref="Game1._Saving_SaveRogueToFile(string)"/>
-        /// </summary>
-
-        private static void PostArcadeSave()
-        {
-            string ext = ModSaveLoad.ModExt;
-
-            bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
-            string savFile = GrindScript.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
-
-            using (BinaryWriter bw = new BinaryWriter(new FileStream($"{savFile}.temp", FileMode.Create, FileAccess.Write)))
-            {
-                GrindScript.Logger.Info($"Saving mod arcade...");
-                ModSaveLoad.SaveModArcade(bw);
-            }
-
-            File.Copy($"{savFile}.temp", savFile, overwrite: true);
-            File.Delete($"{savFile}.temp");
-        }
-
-        /// <summary>
-        /// Runs after <see cref="Game1._Loading_LoadCharacterFromFile(int, bool)"/>
-        /// </summary>
-
-        private static void PostCharacterLoad(int iFileSlot, bool bAppearanceOnly)
-        {
-            string ext = ModSaveLoad.ModExt;
-
-            string chrFile = GrindScript.Game.sAppData + "Characters/" + $"{iFileSlot}.cha{ext}";
-
-            if (!File.Exists(chrFile)) return;
-
-            using (BinaryReader br = new BinaryReader(new FileStream(chrFile, FileMode.Open, FileAccess.Read)))
-            {
-                GrindScript.Logger.Info($"Loading mod character {iFileSlot}...");
-                ModSaveLoad.LoadModCharacter(br);
-            }
-        }
-
-        /// <summary>
-        /// Runs after <see cref="Game1._Loading_LoadWorldFromFile(int)"/>
-        /// </summary>
-
-        private static void PostWorldLoad(int iFileSlot)
-        {
-            string ext = ModSaveLoad.ModExt;
-
-            string wldFile = GrindScript.Game.sAppData + "Worlds/" + $"{iFileSlot}.wld{ext}";
-
-            if (!File.Exists(wldFile)) return;
-
-            using (BinaryReader br = new BinaryReader(new FileStream(wldFile, FileMode.Open, FileAccess.Read)))
-            {
-                GrindScript.Logger.Info($"Loading mod world {iFileSlot}...");
-                ModSaveLoad.LoadModWorld(br);
-            }
-        }
-
-        /// <summary>
-        /// Runs after <see cref="Game1._Loading_LoadRogueFile(string)"/>
-        /// </summary>
-
-        private static void PostArcadeLoad()
-        {
-            string ext = ModSaveLoad.ModExt;
-
-            if (RogueLikeMode.LockedOutDueToHigherVersionSaveFile) return;
-
-            bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
-            string savFile = GrindScript.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
-
-            if (!File.Exists(savFile)) return;
-
-            using (BinaryReader br = new BinaryReader(new FileStream(savFile, FileMode.Open, FileAccess.Read)))
-            {
-                GrindScript.Logger.Info($"Loading mod arcade...");
-                ModSaveLoad.LoadModArcade(br);
-            }
         }
     }
 }

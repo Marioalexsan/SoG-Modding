@@ -79,4 +79,33 @@ namespace SoG.Modding
 
         public Dictionary<string, string> musicNameToBank = new Dictionary<string, string>();
     }
+
+    internal class WorldRegionEntry
+    {
+        public Level.WorldRegion targetRegion;
+
+        public ContentManager modRegionContent;
+    }
+    
+    internal class ModLevelEntry
+    {
+        public BaseScript owner;
+
+        public Level.ZoneEnum type;
+
+        public ModLevel levelInfo;
+    }
+
+    internal class ModLevel
+    {
+        public LevelBuilder builder;
+
+        public LevelLoader loader;
+
+        public string defaultMusic;
+
+        public Level.WorldRegion region;
+
+        public Level.ZoneEnum type;
+    }
 }

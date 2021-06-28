@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.Modding
 {
@@ -13,6 +14,8 @@ namespace SoG.Modding
 
     public static class GrindScript
     {
+        internal static Texture2D MissingTex { get; private set; }
+
         private static readonly Harmony _harmony = new Harmony("GrindScriptPatcher");
 
         internal static readonly List<BaseScript> _loadedScripts = new List<BaseScript>();
@@ -62,6 +65,9 @@ namespace SoG.Modding
             // It is not a good idea for modded runs to submit scores.
             Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
 
+            // Set up a cooler null tex for missing assets
+            MissingTex = Utils.TryLoadTex("ModContent/GrindScript/NullTexGS", GrindScript.Game.Content);
+            
             LoadMods();
         }
 
@@ -103,7 +109,7 @@ namespace SoG.Modding
         private static void LoadMod(string name)
         {
             Utils.TryCreateDirectory("Mods");
-            Utils.TryCreateDirectory("ModContent");
+            Utils.TryCreateDirectory("Content/ModContent");
 
             Logger.Info("Loading mod " + name);
             try
@@ -142,7 +148,7 @@ namespace SoG.Modding
 
         private static void SetupCommands()
         {
-            var parsers = ModLibrary.Global.ModCommands["GScript"] = new Dictionary<string, CommandParser>();
+            var parsers = ModLibrary.Global.Commands["GScript"] = new Dictionary<string, CommandParser>();
 
             parsers["ModList"] = (_1, _2) =>
             {
@@ -173,9 +179,9 @@ namespace SoG.Modding
                 var args = Utils.GetArgs(message);
                 if (args.Length == 0)
                 {
-                    commandList = ModLibrary.Global.ModCommands["GScript"];
+                    commandList = ModLibrary.Global.Commands["GScript"];
                 }
-                else if(!ModLibrary.Global.ModCommands.TryGetValue(args[0], out commandList))
+                else if(!ModLibrary.Global.Commands.TryGetValue(args[0], out commandList))
                 {
                     CAS.AddChatMessage("[GrindScript] Unknown mod!");
                     return;
@@ -198,6 +204,13 @@ namespace SoG.Modding
 
                 foreach (var line in messages)
                     CAS.AddChatMessage(line);
+            };
+
+            parsers["PlayerPos"] = (_1, _2) =>
+            {
+                var local = Game.xLocalPlayer.xEntity.xTransform.v2Pos;
+
+                CAS.AddChatMessage($"[GrindScript] Player position: {(int)local.X}, {(int)local.Y}");
             };
         }
     }

@@ -20,10 +20,10 @@ namespace SoG.Modding
                 return ItemCodex.ItemTypes.Null;
             }
 
-            ItemCodex.ItemTypes allocatedType = IDAllocator.AllocateItemType();
+            ItemCodex.ItemTypes allocatedType = IDAllocator.NewItemType();
 
             // ModItem entry and ItemDescription need to be created before the respective EquipmentInfo
-            ModItemEntry newEntry = ModLibrary.Global.ModItems[allocatedType] = new ModItemEntry()
+            ModItemEntry newEntry = ModLibrary.Global.Items[allocatedType] = new ModItemEntry()
             {
                 uniqueID = uniqueID,
                 owner = owner,
@@ -33,9 +33,9 @@ namespace SoG.Modding
             newEntry.equipInfo = equipBuilder?.Build(allocatedType);
 
             // Also add to the Mod's list, for Load / Save
-            owner.ModLib.ModItems[allocatedType] = newEntry;
+            owner.ModLib.Items[allocatedType] = newEntry;
 
-            foreach (var existing in owner.ModLib.ModItems.Values)
+            foreach (var existing in owner.ModLib.Items.Values)
             {
                 if (existing != newEntry && existing.uniqueID == uniqueID)
                 {
@@ -146,7 +146,7 @@ namespace SoG.Modding
             }
 
             bool isModded = Utils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
-            var entry = ModLibrary.Global.ModAudio.ContainsKey(entryID) ? ModLibrary.Global.ModAudio[entryID] : null;
+            var entry = ModLibrary.Global.Audio.ContainsKey(entryID) ? ModLibrary.Global.Audio[entryID] : null;
             string cueName = entry != null && entry.musicIDToName.ContainsKey(cueID) ? entry.musicIDToName[cueID] : null;
 
             if ((!isModded || !isMusic || cueName == null) && !(redirect == ""))
@@ -192,7 +192,7 @@ namespace SoG.Modding
 
         public static string GetEffectID(int audioEntryID, string cueName)
         {
-            var effects = ModLibrary.Global.ModAudio[audioEntryID].effectIDToName;
+            var effects = ModLibrary.Global.Audio[audioEntryID].effectIDToName;
             foreach (var kvp in effects)
             {
                 if (kvp.Value == cueName)
@@ -225,7 +225,7 @@ namespace SoG.Modding
 
         public static string GetMusicID(int audioEntryID, string cueName)
         {
-            var music = ModLibrary.Global.ModAudio[audioEntryID].musicIDToName;
+            var music = ModLibrary.Global.Audio[audioEntryID].musicIDToName;
             foreach (var kvp in music)
             {
                 if (kvp.Value == cueName)
@@ -242,7 +242,7 @@ namespace SoG.Modding
         {
             if (!Utils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
-            ModAudioEntry entry = ModLibrary.Global.ModAudio[entryID];
+            ModAudioEntry entry = ModLibrary.Global.Audio[entryID];
             return isMusic ? entry.musicIDToName[cueID] : entry.effectIDToName[cueID];
         }
 
@@ -261,7 +261,7 @@ namespace SoG.Modding
 
             string name = owner.GetType().Name;
 
-            if (!ModLibrary.Global.ModCommands.TryGetValue(name, out var parsers))
+            if (!ModLibrary.Global.Commands.TryGetValue(name, out var parsers))
             {
                 GrindScript.Logger.Error($"Couldn't retrieve command table for mod {name}!");
                 return;
@@ -295,20 +295,6 @@ namespace SoG.Modding
             {
                 ConfigureCommand(owner, kvp.Key, kvp.Value);
             }
-        }
-
-        /// <summary>
-        /// TODO
-        /// </summary>
-
-        public static Level.ZoneEnum CreateLevel()
-        {
-            return Level.ZoneEnum.None;
-        }
-
-        public static Level.WorldRegion CreateWorldRegion()
-        {
-            return Level.WorldRegion.NotLoaded;
         }
     }
 }

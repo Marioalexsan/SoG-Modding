@@ -32,7 +32,7 @@ namespace SoG.Modding
 
         internal void UpdateExistingEntry(string assetPath, int ID)
         {
-            ModAudioEntry entry = ModLibrary.Global.ModAudio[ID];
+            ModAudioEntry entry = ModLibrary.Global.Audio[ID];
 
             AudioEngine audioEngine;
             try

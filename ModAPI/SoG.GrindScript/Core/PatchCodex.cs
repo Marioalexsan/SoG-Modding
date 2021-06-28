@@ -63,7 +63,11 @@ namespace SoG.Modding
             Game1_Saving_SaveRogueToFile,
             Game1_Loading_LoadCharacterFromFile,
             Game1_Loading_LoadWorldFromFile,
-            Game1_Loading_LoadRogueFile
+            Game1_Loading_LoadRogueFile,
+
+            // Level patches
+            Game1_LevelLoading_DoStuff,
+            LevelBlueprint_GetBlueprint
         }
 
         /// <summary>
@@ -101,7 +105,7 @@ namespace SoG.Modding
             {
                 [PatchID.Game1_Initialize] = new PatchInfo()
                 {
-                    Target = Game1.GetPrivateMethod("Initialize"), 
+                    Target = Game1.GetPrivateMethod("Initialize"),
                     Prefix = Patches.GetPrivateMethod("OnGame1Initialize")
                 },
                 [PatchID.Game1_StartupThreadExecute] = new PatchInfo()
@@ -294,6 +298,16 @@ namespace SoG.Modding
                 {
                     Target = Game1.GetMethod("_Loading_LoadRogueFile"),
                     Postfix = Patches.GetPrivateMethod("PostArcadeLoad")
+                },
+                [PatchID.Game1_LevelLoading_DoStuff] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_LevelLoading_DoStuff"),
+                    Transpiler = Patches.GetPrivateMethod("LevelDoStuffTranspiler")
+                },
+                [PatchID.LevelBlueprint_GetBlueprint] = new PatchInfo()
+                {
+                    Target = typeof(LevelBlueprint).GetMethod("GetBlueprint"),
+                    Prefix = Patches.GetPrivateMethod("OnGetLevelBlueprint")
                 },
             };
         }

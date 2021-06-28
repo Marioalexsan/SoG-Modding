@@ -24,7 +24,7 @@ namespace SoG.Modding
 
         /// <summary>
         /// Tries to load a Texture2D using the provided ContentManager and AssetPath and returns it if successful.
-        /// If an exception is thrown during load, RenderMaster.txNullTex is returned.
+        /// If an exception is thrown during load, GrindScript.MissingTex or RenderMaster.txNullTex is returned.
         /// </summary>
 
         public static Texture2D TryLoadTex(string assetPath, ContentManager manager)
@@ -36,7 +36,7 @@ namespace SoG.Modding
             catch (Exception e)
             {
                 GrindScript.Logger.Warn($"Failed to load Texture2D. Exception message: {e.Message}", source: "TryLoadTex");
-                return RenderMaster.txNullTex;
+                return GrindScript.MissingTex ?? RenderMaster.txNullTex;
             }
         }
 
@@ -118,7 +118,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            var entry = ModLibrary.Global.ModAudio[entryID];
+            var entry = ModLibrary.Global.Audio[entryID];
             return entry.effectsSoundBank.GetCue(entry.effectIDToName[cueID]);
         }
 
@@ -132,7 +132,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            var entry = ModLibrary.Global.ModAudio[entryID];
+            var entry = ModLibrary.Global.Audio[entryID];
 
             if (entry == null)
                 return null;
@@ -150,7 +150,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            return ModLibrary.Global.ModAudio[entryID]?.effectsWaveBank;
+            return ModLibrary.Global.Audio[entryID]?.effectsWaveBank;
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace SoG.Modding
             if (!(success && isMusic))
                 return null;
 
-            return ModLibrary.Global.ModAudio[entryID]?.musicSoundBank;
+            return ModLibrary.Global.Audio[entryID]?.musicSoundBank;
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace SoG.Modding
             if (!(success && isMusic))
                 return null;
 
-            var entry = ModLibrary.Global.ModAudio[entryID];
+            var entry = ModLibrary.Global.Audio[entryID];
 
             if (!entry.musicIDToName.TryGetValue(cueID, out string cueName))
                 return null;
@@ -197,7 +197,7 @@ namespace SoG.Modding
             if (bank == "UniversalMusic")
                 return true;
 
-            foreach (var kvp in ModLibrary.Global.ModAudio)
+            foreach (var kvp in ModLibrary.Global.Audio)
             {
                 if (kvp.Value.owner.GetType().Name == bank)
                     return true;
@@ -216,7 +216,7 @@ namespace SoG.Modding
             if (bank == null)
                 return false;
 
-            foreach (var kvp in ModLibrary.Global.ModAudio)
+            foreach (var kvp in ModLibrary.Global.Audio)
             {
                 if (kvp.Value.universalMusicWaveBank == bank)
                     return true;

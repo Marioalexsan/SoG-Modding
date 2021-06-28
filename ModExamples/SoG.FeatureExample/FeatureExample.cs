@@ -22,6 +22,8 @@ namespace SoG.FeatureExample
         ItemCodex.ItemTypes modMisc1 = ItemCodex.ItemTypes.Null;
         ItemCodex.ItemTypes modMisc2 = ItemCodex.ItemTypes.Null;
 
+        Level.ZoneEnum modLevel = Level.ZoneEnum.None;
+
         string audioIntro = "";
         string audioRipped = "";
         string audioDestiny = "";
@@ -120,6 +122,12 @@ namespace SoG.FeatureExample
                 SetupCommands();
 
                 Logger.Info("Commands set up successfully!");
+
+                Logger.Info("Setting up levels...");
+
+                SetupLevels();
+
+                Logger.Info("Levels set up successfully!");
             }
             catch(Exception e)
             {
@@ -243,10 +251,25 @@ namespace SoG.FeatureExample
                         modMisc1.SpawnItem(localPlayer);
                         modMisc2.SpawnItem(localPlayer);
                     }
+                },
+
+                ["Yeet"] = (argList, _) =>
+                {
+                    GrindScript.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
                 }
             };
 
             ModElements.ConfigureCommandsFrom(this, parsers);
+        }
+
+        private void SetupLevels()
+        {
+            LevelConfig cfg = new LevelConfig();
+            cfg.WorldRegion(Level.WorldRegion.PillarMountains);
+
+            cfg.Builder(CaveLevelStuff.Build);
+
+            modLevel = LevelElements.CreateLevel(this, cfg);
         }
 
         public override void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)

@@ -11,11 +11,47 @@ using LevelLoading;
 namespace SoG.Modding
 {
 	/// <summary>
-	/// Extension methods for LevelBlueprint that expose some vanilla methods and add new ones.
+	/// Extension methods for Level-related stuff that expose some vanilla methods and add new ones.
 	/// </summary>
 
     public static class LevelExtension
     {
+		/// <summary>
+		/// Checks if the given region ID is a vanilla region (i.e. is present in the base game)
+		/// </summary>
+
+		public static bool IsSoGWorldRegion(this Level.WorldRegion level)
+		{
+			return Enum.IsDefined(typeof(Level.WorldRegion), level);
+		}
+
+		/// <summary>
+		/// Checks if the given region ID is a mod region (i.e. is allocated to a mod)
+		/// </summary>
+
+		public static bool IsModWorldRegion(this Level.WorldRegion level)
+		{
+			return IDAllocator.WorldRegionStart <= level && level < IDAllocator.WorldRegionEnd;
+		}
+
+		/// <summary>
+		/// Checks if the given level ID is a vanilla level (i.e. is present in the base game)
+		/// </summary>
+
+		public static bool IsSoGLevel(this Level.ZoneEnum level)
+        {
+			return Enum.IsDefined(typeof(Level.ZoneEnum), level);
+        }
+
+		/// <summary>
+		/// Checks if the given level ID is a mod level (i.e. is allocated to a mod)
+		/// </summary>
+
+		public static bool IsModLevel(this Level.ZoneEnum level)
+        {
+			return IDAllocator.ZoneEnumStart <= level && level < IDAllocator.ZoneEnumEnd;
+        }
+
 		/// <summary>
 		/// Adds a collider that acts as an invisible wall, and applies an offset to its position.
 		/// </summary>
@@ -123,21 +159,68 @@ namespace SoG.Modding
 		/// Adds a new spawnpoint in this level, and returns its index.
 		/// </summary>
 
-		public static int AddSpawnpoint(this LevelBlueprint blueprint, Vector2 spawnpoint, int layer)
+		public static int AddSpawnpoint(this LevelBlueprint blueprint, Vector2 spawnpoint, int layer = 0, int virtualHeight = 0)
         {
-			int nextIndex = blueprint.av2SpawnPoint.Length;
+			int newSize = 1;
 
-			Vector2[] newSP = new Vector2[nextIndex + 1];
-			newSP[nextIndex] = spawnpoint;
-			blueprint.av2SpawnPoint.CopyTo(newSP, 0);
-			blueprint.av2SpawnPoint = newSP;
+			if (blueprint.av2SpawnPoint != null)
+				newSize = blueprint.av2SpawnPoint.Length + 1;
 
-			int[] newSPL = new int[nextIndex + 1];
-			newSPL[nextIndex] = layer;
-			blueprint.aiSpawnColliderLayer.CopyTo(newSPL, 0);
-			blueprint.aiSpawnColliderLayer = newSPL;
+			Vector2[] oldSP = blueprint.av2SpawnPoint;
+			blueprint.av2SpawnPoint = new Vector2[newSize];
+			oldSP?.CopyTo(blueprint.av2SpawnPoint, 0);
 
-			return nextIndex;
+			int[] oldSPL = blueprint.aiSpawnColliderLayer;
+			blueprint.aiSpawnColliderLayer = new int[newSize];
+			oldSPL?.CopyTo(blueprint.aiSpawnColliderLayer, 0);
+
+			int[] oldSPH = blueprint.aiLayerDefaultHeight;
+			blueprint.aiLayerDefaultHeight = new int[newSize];
+			oldSPH?.CopyTo(blueprint.aiLayerDefaultHeight, 0);
+
+
+			blueprint.av2SpawnPoint[newSize - 1] = spawnpoint;
+			blueprint.aiSpawnColliderLayer[newSize - 1] = layer;
+			blueprint.aiLayerDefaultHeight[newSize - 1] = virtualHeight;
+
+			return newSize - 1;
+		}
+
+		public static void AddStaticObjects(this LevelBlueprint blueprint, params LevelBlueprint.LevelObjectBlueprint[] objects)
+        {
+			if (blueprint.lxStaticLevelObjects == null)
+				blueprint.lxStaticLevelObjects = new List<LevelBlueprint.LevelObjectBlueprint>();
+
+			foreach (var obj in objects)
+				blueprint.lxStaticLevelObjects.Add(obj);
+		}
+
+		public static void AddDynamicObjects(this LevelBlueprint blueprint, params LevelBlueprint.LevelObjectBlueprint[] objects)
+		{
+			if (blueprint.lxDynamicLevelObjects == null)
+				blueprint.lxDynamicLevelObjects = new List<LevelBlueprint.LevelObjectBlueprint>();
+
+			foreach (var obj in objects)
+				blueprint.lxDynamicLevelObjects.Add(obj);
+		}
+
+		public static void AddBackgroundSprites(this LevelBlueprint blueprint, params LevelBlueprint.BackgroundSpriteBP[] objects)
+		{
+			if (blueprint.lxBackgroundSprites == null)
+				blueprint.lxBackgroundSprites = new List<LevelBlueprint.BackgroundSpriteBP>();
+
+			foreach (var obj in objects)
+				blueprint.lxBackgroundSprites.Add(obj);
+		}
+
+		public static void SetLevelBounds(this LevelBlueprint blueprint, int x, int y, int width, int height)
+		{
+			blueprint.recLevelBounds = new Rectangle(x, y, width, height);
+		}
+
+		public static void AddLevelPartition(this LevelBlueprint blueprint, int x, int y, int width, int height)
+		{
+			blueprint.recLevelBounds = new Rectangle(x, y, width, height);
 		}
 	}
 }

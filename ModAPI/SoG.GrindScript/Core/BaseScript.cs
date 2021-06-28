@@ -23,13 +23,13 @@ namespace SoG.Modding
         {
             Logger = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, GetType().Name) { SourceColor = ConsoleColor.Yellow };
 
-            ModContent = new ContentManager(GrindScript.Game.Content.ServiceProvider, Directory.GetCurrentDirectory());
+            ModContent = new ContentManager(GrindScript.Game.Content.ServiceProvider, GrindScript.Game.Content.RootDirectory);
 
             ModPath = $"ModContent/{GetType().Name}/";
 
             Logger.Info($"ModPath set as {ModPath}");
 
-            var allAudio = ModLibrary.Global.ModAudio;
+            var allAudio = ModLibrary.Global.Audio;
             if (allAudio.ContainsKey(IDAllocator.AudioIDNext))
             {
                 _audioID = IDAllocator.AudioIDNext;
@@ -37,12 +37,12 @@ namespace SoG.Modding
             }
             else
             {
-                _audioID = IDAllocator.AllocateAudioEntry();
+                _audioID = IDAllocator.NewAudioEntry();
                 allAudio.Add(_audioID, new ModAudioEntry() { allocatedID = _audioID, owner = this });
                 Logger.Info($"AudioID set as {_audioID}");
             }
 
-            ModLibrary.Global.ModCommands[GetType().Name] = new Dictionary<string, CommandParser>();
+            ModLibrary.Global.Commands[GetType().Name] = new Dictionary<string, CommandParser>();
         }
 
         public virtual void LoadContent() { }
