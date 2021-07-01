@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace SoG.Modding
 {
@@ -16,7 +17,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModItem details = ModLibrary.Global.Items[enType].itemInfo;
+            ModItem details = ModLibrary.GlobalLib.Items[enType].itemInfo;
             __result = details.vanilla;
             __result.txDisplayImage = Utils.TryLoadTex(details.resourcePath, details.managerToUse);
 
@@ -28,8 +29,8 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModItem details = ModLibrary.Global.Items[enType].itemInfo;
-            string trueShadowTex = details.shadowPath != "" ? details.shadowPath : BaseScript.SoGPath + "Items/DropAppearance/hartass02";
+            ModItem details = ModLibrary.GlobalLib.Items[enType].itemInfo;
+            string trueShadowTex = details.shadowPath != "" ? details.shadowPath : "Items/DropAppearance/hartass02";
             ItemDescription xDesc = details.vanilla;
 
             __result = new Item()
@@ -55,7 +56,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            __result = ModLibrary.Global.Items[enType].equipInfo.vanilla;
+            __result = ModLibrary.GlobalLib.Items[enType].equipInfo.vanilla;
 
             return false;
         }
@@ -69,14 +70,15 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModEquip modEquip = ModLibrary.Global.Items[enType].equipInfo;
+            ModEquip modEquip = ModLibrary.GlobalLib.Items[enType].equipInfo;
             ContentManager manager = modEquip.managerToUse;
+            string path = modEquip.resourcePath;
 
             __result = modEquip.vanilla as FacegearInfo;
-            __result.atxTextures[0] = Utils.TryLoadTex(modEquip.resourcePath + "/Up", manager);
-            __result.atxTextures[1] = Utils.TryLoadTex(modEquip.resourcePath + "/Right", manager);
-            __result.atxTextures[2] = Utils.TryLoadTex(modEquip.resourcePath + "/Down", manager);
-            __result.atxTextures[3] = Utils.TryLoadTex(modEquip.resourcePath + "/Left", manager);
+            __result.atxTextures[0] = Utils.TryLoadTex(Path.Combine(path, "Up"), manager);
+            __result.atxTextures[1] = Utils.TryLoadTex(Path.Combine(path, "Right"), manager);
+            __result.atxTextures[2] = Utils.TryLoadTex(Path.Combine(path, "Down"), manager);
+            __result.atxTextures[3] = Utils.TryLoadTex(Path.Combine(path, "Left"), manager);
 
             return false;
         }
@@ -90,21 +92,22 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            ModEquip modEquip = ModLibrary.Global.Items[enType].equipInfo;
+            ModEquip modEquip = ModLibrary.GlobalLib.Items[enType].equipInfo;
             ContentManager manager = modEquip.managerToUse;
+            string path = modEquip.resourcePath;
 
             __result = modEquip.vanilla as HatInfo;
-            __result.xDefaultSet.atxTextures[0] = Utils.TryLoadTex(modEquip.resourcePath + "/Up", manager);
-            __result.xDefaultSet.atxTextures[1] = Utils.TryLoadTex(modEquip.resourcePath + "/Right", manager);
-            __result.xDefaultSet.atxTextures[2] = Utils.TryLoadTex(modEquip.resourcePath + "/Down", manager);
-            __result.xDefaultSet.atxTextures[3] = Utils.TryLoadTex(modEquip.resourcePath + "/Left", manager);
+            __result.xDefaultSet.atxTextures[0] = Utils.TryLoadTex(Path.Combine(path, "Up"), manager);
+            __result.xDefaultSet.atxTextures[1] = Utils.TryLoadTex(Path.Combine(path, "Right"), manager);
+            __result.xDefaultSet.atxTextures[2] = Utils.TryLoadTex(Path.Combine(path, "Down"), manager);
+            __result.xDefaultSet.atxTextures[3] = Utils.TryLoadTex(Path.Combine(path, "Left"), manager);
             foreach (var kvp in __result.denxAlternateVisualSets)
             {
-                string altPath = modEquip.resourcePath + "/" + modEquip.hatAltSetResources[kvp.Key] + "/";
-                kvp.Value.atxTextures[0] = Utils.TryLoadTex(altPath + "/Up", manager);
-                kvp.Value.atxTextures[1] = Utils.TryLoadTex(altPath + "/Right", manager);
-                kvp.Value.atxTextures[2] = Utils.TryLoadTex(altPath + "/Down", manager);
-                kvp.Value.atxTextures[3] = Utils.TryLoadTex(altPath + "/Left", manager);
+                string altPath = Path.Combine(path, modEquip.hatAltSetResources[kvp.Key]);
+                kvp.Value.atxTextures[0] = Utils.TryLoadTex(Path.Combine(altPath, "Up"), manager);
+                kvp.Value.atxTextures[1] = Utils.TryLoadTex(Path.Combine(altPath, "Right"), manager);
+                kvp.Value.atxTextures[2] = Utils.TryLoadTex(Path.Combine(altPath, "Down"), manager);
+                kvp.Value.atxTextures[3] = Utils.TryLoadTex(Path.Combine(altPath, "Left"), manager);
             }
 
             return false;
@@ -119,7 +122,7 @@ namespace SoG.Modding
             if (!enType.IsModItem())
                 return true;
 
-            __result = ModLibrary.Global.Items[enType].equipInfo.vanilla as WeaponInfo;
+            __result = ModLibrary.GlobalLib.Items[enType].equipInfo.vanilla as WeaponInfo;
 
             return false;
         }
@@ -131,25 +134,34 @@ namespace SoG.Modding
 
         private static bool OnLoadBatch(ref Dictionary<ushort, string> dis, WeaponAssets.WeaponContentManager __instance)
         {
-            if (!__instance.enType.IsModItem())
+            ItemCodex.ItemTypes type = __instance.enType;
+
+            if (!type.IsModItem())
                 return true;
 
-            ContentManager managerToUse = ModLibrary.Global.Items[__instance.enType].equipInfo.managerToUse;
-            if (managerToUse != null)
-                __instance.contWeaponContent.RootDirectory = managerToUse.RootDirectory;
+            ModEquip equipInfo = ModLibrary.GlobalLib.Items[type].equipInfo;
+            ContentManager manager = equipInfo.managerToUse;
+            bool oneHanded = (equipInfo.vanilla as WeaponInfo).enWeaponCategory == WeaponInfo.WeaponCategory.OneHanded;
+
+            if (manager != null)
+                __instance.contWeaponContent.RootDirectory = manager.RootDirectory;
 
             foreach (KeyValuePair<ushort, string> kvp in dis)
             {
-                int start = kvp.Value.IndexOf('<') + 1;
-                int end = kvp.Value.IndexOf('>');
-                string resourcePath = kvp.Value.Substring(start, end - start);
+                string resourcePath = ModLibrary.GlobalLib.Items[type].equipInfo.resourcePath;
 
                 string texPath = kvp.Value;
-                texPath = texPath.Replace($"Weapons/<{resourcePath}>/", "");
-                texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
-                texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
-                texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
-                texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
+                texPath = texPath.Replace($"Weapons/{resourcePath}/", "");
+                if (oneHanded)
+                {
+                    texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
+                    texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
+                }
+                else
+                {
+                    texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
+                    texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
+                }
 
                 __instance.ditxWeaponTextures.Add(kvp.Key, Utils.TryLoadTex(texPath, __instance.contWeaponContent));
             }

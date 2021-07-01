@@ -1,5 +1,8 @@
-﻿using Microsoft.Xna.Framework.Content;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using System;
+using System.Collections.Generic;
+using Stat = SoG.EquipmentInfo.StatEnum;
 
 namespace SoG.Modding
 {
@@ -9,104 +12,360 @@ namespace SoG.Modding
 
     public class ItemConfig
     {
-        private string _name = "Unknown Mod Item";
-        private string _description = "It's all mysterious and stuff!";
-        private string _displayTexPath;
-        private string _shadowTexPath;
+        public class VSetInfo
+        {
+            /// <summary> For hats, sets if it renders under hair (facing up, right, down, and left). </summary>
+            public bool[] HatUnderHair { get; } = new bool[] { false, false, false, false };
 
-        private int _value = 1;
-        private int _bloodValue = 0;
-        private float _arcadeValueMod = 1f;
+            /// <summary> For hats, sets if it renders behind the player (facing up, right, down, and left). </summary>
+            public bool[] HatBehindPlayer { get; } = new bool[] { false, false, false, false };
 
-        private ushort _levelForBestSort = 1;
-        private byte _fancyness = 1;
+            /// <summary> For hats, sets the render offsets (facing up, right, down, and left). </summary>
+            public Vector2[] HatOffsets { get; } = new Vector2[] { Vector2.Zero, Vector2.Zero, Vector2.Zero, Vector2.Zero };
 
-        private ContentManager _managerToUse;
-        private ItemCodex.ItemCategories[] _categories = new ItemCodex.ItemCategories[0];
+            /// <summary> For hats, sets whenever the hat hides hair sides. </summary>
+            public bool ObstructHairSides { get; set; } = true;
+
+            /// <summary> For hats, sets whenever the hat hides hair top. </summary>
+            public bool ObstructHairTop { get; set; } = true;
+
+            /// <summary> For hats, sets whenever the hat hides hair bottom. </summary>
+            public bool ObstructHairBottom { get; set; } = false;
+
+            /// <summary> The subfolder where the textures are for this style, relative to the hat textures folder. </summary>
+            public string Resource { get; set; } = "";
+        }
 
         /// <summary>
-        /// Creates a new item builder. The unique string ID is used to identify an item for saving / loading purposes. <para/>
-        /// You should make sure that items inside a mod don't share unique string IDs. <para/>
-        /// For example: "_Accessory_MyEpicModAccessory", or "_Item0001".
+        /// Creates a new ItemConfig. UniqueID must be unique between all other items in the same mod.
         /// </summary>
 
-        public ItemConfig() {}
-
-        public ItemConfig Texts(string name, string description)
+        public ItemConfig(string uniqueID)
         {
-            _name = name;
-            _description = description;
+            UniqueID = uniqueID;
+        }
+
+        // ItemDescription
+
+        /// <summary> An identifier that must be unique between all other items in the same mod. </summary>
+        public string UniqueID { get; set; } = "";
+
+        public string Name { get; set; } = "A Mod Item";
+
+        public string Description { get; set; } = "Description pending!";
+
+        /// <summary> The path to the drop appearance texture of an item, relative to "Content/", and without the ".xnb" extension. </summary>
+        public string IconPath { get; set; } = "";
+
+        /// <summary> The path to the drop shadow texture of an item, relative to "Content/", and without the ".xnb" extension. </summary>
+        public string ShadowPath { get; set; } = "";
+
+        /// <summary> Gold value of an item. For fresh players, this is identical to the buy price, and twice the sell price. </summary>
+        public int Value { get; set; } = 1;
+
+        /// <summary> Overrides the health cost of this item when bought from the Shadier Merchant. If set to 0, the game calculates it from the gold cost. </summary>
+        public int BloodValue { get; set; } = 0;
+
+        /// <summary> Gold value modifier for items when playing in Arcade Mode. </summary>
+        public float ArcadeValueModifier { get; set; } = 1f;
+
+        /// <summary> Used for sorting. Items with higher sorting values appear first when sorting by "Best". </summary>
+        public ushort SortingValue { get; set; } = 1;
+
+        /// <summary> Determines if item drops of this type have a special visual effect. Valid values are 1 (none), 2 (silver ring) and 3 (gold ring) </summary>
+        public byte Fancyness { get; set; } = 1;
+
+        /// <summary> The ContentManager to use for this item's textures. By default, Game1.Content is used. </summary>
+        public ContentManager Manager { get; set; } = GrindScript.Game.Content;
+
+        /// <summary> Item Categories to assign to this item. GrindScript automatically assigns certain categories for equipments. </summary>
+        public HashSet<ItemCodex.ItemCategories> Categories { get; } = new HashSet<ItemCodex.ItemCategories>();
+
+
+
+        /// <summary> 
+        /// Sets the categories for this item. 
+        /// </summary>
+
+        public ItemConfig SetCategories(params ItemCodex.ItemCategories[] categories)
+        {
+            Categories.Clear();
+            Categories.UnionWith(categories);
             return this;
         }
 
-        public ItemConfig Resources(ContentManager manager, string displayTexPath)
+        // EquipmentInfo - shared
+
+        /// <summary> The path to the folder containing the textures needed for the equipment. </summary>
+        public string EquipResourcePath { get; set; } = "";
+
+        /// <summary> The ContentManager to use for this equipment's textures. By default, Game1.Content is used. </summary>
+        public ContentManager EquipManager { get; set; } = GrindScript.Game.Content;
+
+        /// <summary> The stats that this equipment provides. The stat property shorthands modify this dictionary. </summary>
+        public Dictionary<Stat, int> Stats { get; } = new Dictionary<Stat, int>();
+
+        public int HP { get => Stats[Stat.HP]; set => Stats[Stat.HP] = value; }
+
+        public int EP { get => Stats[Stat.EP]; set => Stats[Stat.EP] = value; }
+
+        public int ATK { get => Stats[Stat.ATK]; set => Stats[Stat.ATK] = value; }
+
+        public int MATK { get => Stats[Stat.MATK]; set => Stats[Stat.MATK] = value; }
+
+        public int DEF { get => Stats[Stat.DEF]; set => Stats[Stat.DEF] = value; }
+
+        public int ASPD { get => Stats[Stat.ASPD]; set => Stats[Stat.ASPD] = value; }
+
+        public int CSPD { get => Stats[Stat.CSPD]; set => Stats[Stat.CSPD] = value; }
+
+        public int Crit { get => Stats[Stat.Crit]; set => Stats[Stat.Crit] = value; }
+
+        public int CritDMG { get => Stats[Stat.CritDMG]; set => Stats[Stat.CritDMG] = value; }
+
+        public int ShldHP { get => Stats[Stat.ShldHP]; set => Stats[Stat.ShldHP] = value; }
+
+        public int EPRegen { get => Stats[Stat.EPRegen]; set => Stats[Stat.EPRegen] = value; }
+
+        public int ShldRegen { get => Stats[Stat.ShldRegen]; set => Stats[Stat.ShldRegen] = value; }
+
+        /// <summary> 
+        /// The equipment type of this item.
+        /// Certain config settings are ignored depending on the EquipType (for example, hat appearance settings for weapons). <para/>
+        /// A value of EquipType.None will create a non-equipment item.
+        /// </summary>
+        public EquipType EquipType { get; set; } = EquipType.None;
+
+        /// <summary> The Special Effects that this equipment has. Multiple special effects can be added. </summary>
+        public HashSet<EquipmentInfo.SpecialEffect> Effects { get; } = new HashSet<EquipmentInfo.SpecialEffect>();
+
+        // FacegearInfo
+
+        /// <summary> For facegear, sets if it renders over hair (facing up, right, down, and left). </summary>
+        public bool[] FacegearOverHair { get; } = new bool[] { true, true, true, true };
+
+        /// <summary> For facegear, sets if it renders over the hat (facing up, right, down, and left). </summary>
+        public bool[] FacegearOverHat { get; } = new bool[] { true, true, true, true };
+
+        /// <summary> For facegear, sets the render offsets (facing up, right, down, and left). </summary>
+        public Vector2[] FacegearOffsets { get; } = new Vector2[] { Vector2.Zero, Vector2.Zero, Vector2.Zero, Vector2.Zero };
+
+        // HatInfo
+
+        /// <summary> For hats, sets the default visual appearance. </summary>
+        public VSetInfo DefaultSet { get; } = new VSetInfo();
+
+        /// <summary> For hats, sets the visual appearance when the player has a certain hair style. </summary>
+        public Dictionary<ItemCodex.ItemTypes, VSetInfo> AltSets { get; } = new Dictionary<ItemCodex.ItemTypes, VSetInfo>();
+
+        /// <summary> For hats, sets whenever it occupies both the hat and the facegear slot (i.e. it is not possible to equip a facegear alongside this hat). </summary>
+        public bool HatDoubleSlot { get; set; } = false;
+
+        // WeaponInfo
+
+        /// <summary> For weapons, sets the melee class (One-Handed or Two-Handed). </summary>
+        public WeaponInfo.WeaponCategory WeaponType { get; set; } = WeaponInfo.WeaponCategory.OneHanded;
+
+        /// <summary> For weapons, causes it to act as a magic weapon (i.e. basic attacks shoot projectiles and draw their damage from both ATK and MATK). </summary>
+        public bool MagicWeapon { get; set; } = false;
+
+        // Helper Methods
+
+        private VSetInfo GetOrCreateSet(ItemCodex.ItemTypes altSet)
         {
-            return Resources(manager, displayTexPath, _shadowTexPath);
+            if (altSet == ItemCodex.ItemTypes.Null)
+                return DefaultSet;
+
+            return AltSets.TryGetValue(altSet, out VSetInfo exists) ? exists : AltSets[altSet] = new VSetInfo();
         }
 
-        public ItemConfig Resources(ContentManager manager, string displayTexPath, string shadowTexPath)
+        private void InitializeSet(HatInfo.VisualSet set, VSetInfo desc)
         {
-            _managerToUse = manager;
-            _displayTexPath = displayTexPath;
-            _shadowTexPath = shadowTexPath;
+            Array.Copy(desc.HatUnderHair, set.abUnderHair, 4);
+            Array.Copy(desc.HatBehindPlayer, set.abBehindCharacter, 4);
+            Array.Copy(desc.HatOffsets, set.av2RenderOffsets, 4);
+            set.bObstructsSides = desc.ObstructHairSides;
+            set.bObstructsTop = desc.ObstructHairTop;
+            set.bObstructsBottom = desc.ObstructHairBottom;
+        }
+
+        // Methods shared by all EquipmentInfos
+
+        // Methods specific to FacegearInfo
+
+        public ItemConfig SetFacegearOverHair(bool up, bool right, bool down, bool left)
+        {
+            Array.Copy(new bool[] { up, right, down, left }, FacegearOverHair, 4);
             return this;
         }
 
-        public ItemConfig Categories(params ItemCodex.ItemCategories[] categories)
+        public ItemConfig SetFacegearOverHat(bool up, bool right, bool down, bool left)
         {
-            _categories = categories;
+            Array.Copy(new bool[] { up, right, down, left }, FacegearOverHat, 4);
             return this;
         }
 
-        public ItemConfig Value(int value, float arcadeModifier = 1f, int bloodCost = 0)
+        public ItemConfig SetFacegearOffsets(Vector2 up, Vector2 right, Vector2 down, Vector2 left)
         {
-            _value = value;
-            _arcadeValueMod = arcadeModifier;
-            _bloodValue = bloodCost;
+            Array.Copy(new Vector2[] { up, right, down, left }, FacegearOffsets, 4);
             return this;
         }
 
-        public ItemConfig Level(ushort levelForBestSort)
+        // Methods specific to HatInfo
+
+        public ItemConfig SetHatUnderHair(bool up, bool right, bool down, bool left, ItemCodex.ItemTypes targetHairStyle = ItemCodex.ItemTypes.Null)
         {
-            _levelForBestSort = levelForBestSort;
+            VSetInfo setToUse = GetOrCreateSet(targetHairStyle);
+            Array.Copy(new bool[] { up, right, down, left }, setToUse.HatUnderHair, 4);
             return this;
         }
 
-        public ItemConfig Fancyness(byte fancyness)
+        public ItemConfig SetHatBehindPlayer(bool up, bool right, bool down, bool left, ItemCodex.ItemTypes targetHairStyle = ItemCodex.ItemTypes.Null)
         {
-            _fancyness = fancyness;
+            VSetInfo setToUse = GetOrCreateSet(targetHairStyle);
+            Array.Copy(new bool[] { up, right, down, left }, setToUse.HatBehindPlayer, 4);
             return this;
         }
 
-        internal ModItem Build(ItemCodex.ItemTypes allocatedType)
+        public ItemConfig SetHatOffsets(Vector2 up, Vector2 right, Vector2 down, Vector2 left, ItemCodex.ItemTypes targetHairStyle = ItemCodex.ItemTypes.Null)
         {
-            string entry = _name.Replace(" ", "");
+            VSetInfo setToUse = GetOrCreateSet(targetHairStyle);
+            Array.Copy(new Vector2[] { up, right, down, left }, setToUse.HatOffsets, 4);
+            return this;
+        }
 
+        public ItemConfig SetHatHairObstruction(bool sides, bool top, bool bottom, ItemCodex.ItemTypes targetHairStyle = ItemCodex.ItemTypes.Null)
+        {
+            VSetInfo setToUse = GetOrCreateSet(targetHairStyle);
+            setToUse.ObstructHairSides = sides;
+            setToUse.ObstructHairTop = top;
+            setToUse.ObstructHairBottom = bottom;
+            return this;
+        }
+
+        public ItemConfig SetHatAltSetResource(ItemCodex.ItemTypes hairdoAltSet, string resource)
+        {
+            VSetInfo setToUse = GetOrCreateSet(hairdoAltSet);
+            if (setToUse != DefaultSet)
+                setToUse.Resource = resource;
+            return this;
+        }
+
+        //
+        // API Methods
+        //
+
+        internal ModItem CreateModItem(ItemCodex.ItemTypes allocatedType)
+        {
             ItemDescription itemInfo = new ItemDescription()
             {
-                sFullName = _name,
-                sDescription = _description,
+                sFullName = Name,
+                sDescription = Description,
                 sNameLibraryHandle = "???",
                 sDescriptionLibraryHandle = "???",
                 sCategory = "",
-                iInternalLevel = _levelForBestSort,
-                byFancyness = Math.Min((byte)1, Math.Max(_fancyness, (byte)3)),
-                iValue = _value,
-                iOverrideBloodValue = _bloodValue,
-                fArcadeModeCostModifier = _arcadeValueMod,
+                iInternalLevel = SortingValue,
+                byFancyness = Math.Min((byte)1, Math.Max(Fancyness, (byte)3)),
+                iValue = Value,
+                iOverrideBloodValue = BloodValue,
+                fArcadeModeCostModifier = ArcadeValueModifier,
                 enType = allocatedType
             };
 
-            foreach (var cat in _categories)
-                itemInfo.lenCategory.Add(cat);
+            itemInfo.lenCategory.UnionWith(Categories);
 
             return new ModItem()
             {
                 vanilla = itemInfo,
-                shadowPath = _shadowTexPath,
-                managerToUse = _managerToUse,
-                resourcePath = _displayTexPath
+                shadowPath = ShadowPath,
+                managerToUse = Manager,
+                resourcePath = IconPath
             };
+        }
+
+        internal ModEquip CreateEquipInfo(ItemCodex.ItemTypes allocatedType)
+        {
+            EquipType typeToUse = Enum.IsDefined(typeof(EquipType), EquipType) ? EquipType : EquipType.None;
+
+            if (EquipType == EquipType.None)
+                return null;
+
+            EquipmentInfo info;
+            switch (typeToUse)
+            {
+                case EquipType.Weapon:
+                    info = BuildWeapon(allocatedType); break;
+                case EquipType.Hat:
+                    info = BuildHat(allocatedType); break;
+                case EquipType.Facegear:
+                    info = BuildFacegear(allocatedType); break;
+                default:
+                    info = new EquipmentInfo(EquipResourcePath, allocatedType); break;
+            }
+
+            info.deniStatChanges = new Dictionary<Stat, int>(Stats);
+            info.lenSpecialEffects.AddRange(Effects);
+
+            var altResources = new Dictionary<ItemCodex.ItemTypes, string>();
+            foreach (var set in AltSets)
+                altResources.Add(set.Key, set.Value.Resource);
+
+            return new ModEquip()
+            {
+                resourcePath = EquipResourcePath,
+                managerToUse = EquipManager,
+                equipType = typeToUse,
+                vanilla = info,
+                hatAltSetResources = EquipType != EquipType.Hat ? null : altResources
+            };
+        }
+
+        private FacegearInfo BuildFacegear(ItemCodex.ItemTypes allocatedType)
+        {
+            FacegearInfo equipInfo = new FacegearInfo(allocatedType);
+
+            Array.Copy(FacegearOverHair, equipInfo.abOverHair, 4);
+            Array.Copy(FacegearOverHat, equipInfo.abOverHat, 4);
+            Array.Copy(FacegearOffsets, equipInfo.av2RenderOffsets, 4);
+
+            return equipInfo;
+        }
+
+        private HatInfo BuildHat(ItemCodex.ItemTypes allocatedType)
+        {
+            HatInfo equipInfo = new HatInfo(allocatedType) { bDoubleSlot = HatDoubleSlot };
+
+            InitializeSet(equipInfo.xDefaultSet, DefaultSet);
+
+            foreach (var kvp in AltSets)
+                InitializeSet(equipInfo.denxAlternateVisualSets[kvp.Key] = new HatInfo.VisualSet(), kvp.Value);
+
+            return equipInfo;
+        }
+
+        private WeaponInfo BuildWeapon(ItemCodex.ItemTypes allocatedType)
+        {
+            // TODO add custom palette support
+            WeaponInfo equipInfo = new WeaponInfo(EquipResourcePath, allocatedType, WeaponType)
+            {
+                enWeaponCategory = WeaponType,
+                enAutoAttackSpell = WeaponInfo.AutoAttackSpell.None
+            };
+
+            if (WeaponType == WeaponInfo.WeaponCategory.OneHanded)
+            {
+                equipInfo.iDamageMultiplier = 90;
+                if (MagicWeapon)
+                    equipInfo.enAutoAttackSpell = WeaponInfo.AutoAttackSpell.Generic1H;
+            }
+            else if (WeaponType == WeaponInfo.WeaponCategory.TwoHanded)
+            {
+                equipInfo.iDamageMultiplier = 125;
+                if (MagicWeapon)
+                    equipInfo.enAutoAttackSpell = WeaponInfo.AutoAttackSpell.Generic2H;
+            }
+
+            return equipInfo;
         }
     }
 }

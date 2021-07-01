@@ -15,8 +15,6 @@ namespace SoG.Modding
 
         public string ModPath { get; private set; }
 
-        public static readonly string SoGPath = "Content/";
-
         protected ConsoleLogger Logger { get; private set; }
 
         protected BaseScript() 
@@ -29,7 +27,7 @@ namespace SoG.Modding
 
             Logger.Info($"ModPath set as {ModPath}");
 
-            var allAudio = ModLibrary.Global.Audio;
+            var allAudio = ModLibrary.Audio;
             if (allAudio.ContainsKey(IDAllocator.AudioIDNext))
             {
                 _audioID = IDAllocator.AudioIDNext;
@@ -42,7 +40,7 @@ namespace SoG.Modding
                 Logger.Info($"AudioID set as {_audioID}");
             }
 
-            ModLibrary.Global.Commands[GetType().Name] = new Dictionary<string, CommandParser>();
+            ModLibrary.Commands[GetType().Name] = new Dictionary<string, CommandParser>();
         }
 
         public virtual void LoadContent() { }
@@ -53,7 +51,7 @@ namespace SoG.Modding
 
         public virtual void OnPlayerDamaged(ref int damage, ref byte type) { }
 
-        public virtual void OnPlayerKilled() { }
+        public virtual void OnPlayerKilled(PlayerView player) { }
 
         public virtual void PostPlayerLevelUp(PlayerView player) { }
 
@@ -66,5 +64,7 @@ namespace SoG.Modding
         public virtual void OnArcadiaLoad() { }
 
         public virtual void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend) { }
+    
+        public virtual void PostArcadeRoomStart(GameSessionData.RogueLikeSession session) { }
     }
 }

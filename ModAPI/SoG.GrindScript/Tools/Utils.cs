@@ -35,7 +35,7 @@ namespace SoG.Modding
             }
             catch (Exception e)
             {
-                GrindScript.Logger.Warn($"Failed to load Texture2D. Exception message: {e.Message}", source: "TryLoadTex");
+                GrindScript.Logger.Warn($"Load failed! {e.Message.Replace(Directory.GetCurrentDirectory(), "(SoG Root)")}", source: "TryLoadTex");
                 return GrindScript.MissingTex ?? RenderMaster.txNullTex;
             }
         }
@@ -53,7 +53,7 @@ namespace SoG.Modding
             }
             catch (Exception e)
             {
-                GrindScript.Logger.Warn($"Failed to load WaveBank. Exception message: {e.Message}", source: "TryLoadWaveBank");
+                GrindScript.Logger.Warn($"Load failed! {e.Message.Replace(Directory.GetCurrentDirectory(), "(SoG Root)")}", source: "TryLoadWaveBank");
                 return null;
             }
         }
@@ -71,7 +71,7 @@ namespace SoG.Modding
             }
             catch (Exception e)
             {
-                GrindScript.Logger.Warn($"Failed to load SoundBank. Exception message: {e.Message}", source: "TryLoadSoundBank");
+                GrindScript.Logger.Warn($"Load failed! {e.Message.Replace(Directory.GetCurrentDirectory(), "(SoG Root)")}", source: "TryLoadSoundBank");
                 return null;
             }
         }
@@ -118,7 +118,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            var entry = ModLibrary.Global.Audio[entryID];
+            var entry = ModLibrary.Audio[entryID];
             return entry.effectsSoundBank.GetCue(entry.effectIDToName[cueID]);
         }
 
@@ -132,7 +132,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            var entry = ModLibrary.Global.Audio[entryID];
+            var entry = ModLibrary.Audio[entryID];
 
             if (entry == null)
                 return null;
@@ -150,7 +150,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            return ModLibrary.Global.Audio[entryID]?.effectsWaveBank;
+            return ModLibrary.Audio[entryID]?.effectsWaveBank;
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace SoG.Modding
             if (!(success && isMusic))
                 return null;
 
-            return ModLibrary.Global.Audio[entryID]?.musicSoundBank;
+            return ModLibrary.Audio[entryID]?.musicSoundBank;
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace SoG.Modding
             if (!(success && isMusic))
                 return null;
 
-            var entry = ModLibrary.Global.Audio[entryID];
+            var entry = ModLibrary.Audio[entryID];
 
             if (!entry.musicIDToName.TryGetValue(cueID, out string cueName))
                 return null;
@@ -197,7 +197,7 @@ namespace SoG.Modding
             if (bank == "UniversalMusic")
                 return true;
 
-            foreach (var kvp in ModLibrary.Global.Audio)
+            foreach (var kvp in ModLibrary.Audio)
             {
                 if (kvp.Value.owner.GetType().Name == bank)
                     return true;
@@ -216,7 +216,7 @@ namespace SoG.Modding
             if (bank == null)
                 return false;
 
-            foreach (var kvp in ModLibrary.Global.Audio)
+            foreach (var kvp in ModLibrary.Audio)
             {
                 if (kvp.Value.universalMusicWaveBank == bank)
                     return true;

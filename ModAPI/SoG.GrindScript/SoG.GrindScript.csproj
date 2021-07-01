@@ -74,20 +74,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Content\AnimationConfig.cs" />
+    <Compile Include="Content\ItemModding.cs" />
     <Compile Include="Content\LevelConfig.cs" />
-    <Compile Include="Content\LevelElements.cs" />
+    <Compile Include="Content\LevelModding.cs" />
+    <Compile Include="Content\MiscModding.cs" />
+    <Compile Include="Content\RoguelikeMiscConfigs.cs" />
+    <Compile Include="Content\RoguelikeModding.cs" />
     <Compile Include="Extensions\LevelExtension.cs" />
+    <Compile Include="Extensions\RoguelikeExtension.cs" />
     <Compile Include="Patches\CoreCallbacks.cs" />
     <Compile Include="Content\AudioConfig.cs" />
     <Compile Include="Extensions\HarmonyExtension.cs" />
     <Compile Include="Core\LibraryEntries.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Extensions\ItemExtension.cs" />
-    <Compile Include="Content\EquipConfig.cs" />
     <Compile Include="Content\ItemConfig.cs" />
     <Compile Include="Patches\BaseScriptCallbacks.cs" />
     <Compile Include="Patches\ItemCallbacks.cs" />
     <Compile Include="Patches\LevelCallbacks.cs" />
+    <Compile Include="Patches\RoguelikeCallbacks.cs" />
     <Compile Include="Patches\SaveCallbacks.cs" />
     <Compile Include="Patches\Transpilers.cs" />
     <Compile Include="Tools\ConsoleLogger.cs" />
@@ -97,7 +103,7 @@
     <Compile Include="Core\GrindScript.cs" />
     <Compile Include="Core\IDAllocator.cs" />
     <Compile Include="Core\ModLibrary.cs" />
-    <Compile Include="Content\ModElements.cs" />
+    <Compile Include="Content\AudioModding.cs" />
     <Compile Include="Core\ModSaveLoad.cs" />
     <Compile Include="Tools\LevelUtils.cs" />
     <Compile Include="Tools\NetUtils.cs" />
@@ -105,7 +111,7 @@
     <Compile Include="Tools\PatchUtils.cs" />
     <Compile Include="Extensions\TypeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Content\TextHelper.cs" />
+    <Compile Include="Content\TextModding.cs" />
     <Compile Include="Tools\RareUtils.cs" />
     <Compile Include="Tools\Utils.cs" />
   </ItemGroup>

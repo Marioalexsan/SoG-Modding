@@ -26,6 +26,8 @@ namespace SoG.Modding
 
         public static Game1 Game { get; private set; }
 
+        internal static string GSCommand = "GrindScript";
+
         internal static ConsoleLogger Logger { get; private set; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
 
         /// <summary>
@@ -87,19 +89,58 @@ namespace SoG.Modding
         private static void ApplyPatches()
         {
             Logger.Info("Applying Patches...");
-            try
+
+            List<PatchCodex.PatchID> nullPatches = new List<PatchCodex.PatchID>();
+            int successCount = 0;
+            int totalCount = 0;
+            int nextProgressUpdate = 20;
+
+            var allPatches = Enum.GetValues(typeof(PatchCodex.PatchID));
+            foreach (PatchCodex.PatchID id in allPatches)
             {
-                foreach (PatchCodex.PatchID id in Enum.GetValues(typeof(PatchCodex.PatchID)))
+                PatchCodex.PatchInfo patch = PatchCodex.GetPatch(id);
+                totalCount++;
+
+                if (patch != null)
                 {
-                    Logger.Info("Patch: " + id);
-                    _harmony.Patch(PatchCodex.GetPatch(id));
+                    try
+                    {
+                        if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))
+                            GrindScript.Logger.Warn($"Patch {id} may be invalid!");
+
+                        _harmony.Patch(patch);
+                        successCount++;
+
+                        if (totalCount * 100 / allPatches.Length >= nextProgressUpdate)
+                        {
+                            Logger.Info($"{nextProgressUpdate}%...");
+                            nextProgressUpdate += 20;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error($"Patch {id} threw an exception! Message: {e.Message}");
+                    }
                 }
-                Logger.Info("Patches Applied!");
+                else nullPatches.Add(id);
             }
-            catch (Exception e)
+            
+            int nullCount = nullPatches.Count;
+            if (nullCount > 0)
             {
-                Logger.Fatal("Failed to apply patches!\n" + e);
+                Logger.Info($"{nullCount} null patches were encountered:");
+
+                int index = -1;
+                const int toDisplay = 3;
+
+                while (++index < toDisplay)
+                    Logger.Info("\t" + nullPatches[index]);
+
+                if (nullCount > toDisplay)
+                    Logger.Info($"\tand {nullCount - toDisplay} more...");
             }
+
+            Logger.Info($"Applied {successCount} patches successfully!");
         }
 
         /// <summary>
@@ -143,12 +184,12 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Prepares commands that come bundled with GrindScript. These can be accessed using "/GScript:{command}"
+        /// Prepares commands that come bundled with GrindScript. These can be accessed using "/GrindScript:{command}"
         /// </summary>
 
         private static void SetupCommands()
         {
-            var parsers = ModLibrary.Global.Commands["GScript"] = new Dictionary<string, CommandParser>();
+            var parsers = ModLibrary.Commands[GSCommand] = new Dictionary<string, CommandParser>();
 
             parsers["ModList"] = (_1, _2) =>
             {
@@ -179,14 +220,14 @@ namespace SoG.Modding
                 var args = Utils.GetArgs(message);
                 if (args.Length == 0)
                 {
-                    commandList = ModLibrary.Global.Commands["GScript"];
+                    commandList = ModLibrary.Commands[GSCommand];
                 }
-                else if(!ModLibrary.Global.Commands.TryGetValue(args[0], out commandList))
+                else if(!ModLibrary.Commands.TryGetValue(args[0], out commandList))
                 {
-                    CAS.AddChatMessage("[GrindScript] Unknown mod!");
+                    CAS.AddChatMessage($"[{GSCommand}] Unknown mod!");
                     return;
                 }
-                CAS.AddChatMessage($"[GrindScript] Command list{(args.Length == 0 ? "" : $" for {args[0]}" )}:");
+                CAS.AddChatMessage($"[{GSCommand}] Command list{(args.Length == 0 ? "" : $" for {args[0]}" )}:");
 
                 var messages = new List<string>();
                 var concated = "";
@@ -210,7 +251,32 @@ namespace SoG.Modding
             {
                 var local = Game.xLocalPlayer.xEntity.xTransform.v2Pos;
 
-                CAS.AddChatMessage($"[GrindScript] Player position: {(int)local.X}, {(int)local.Y}");
+                CAS.AddChatMessage($"[{GSCommand}] Player position: {(int)local.X}, {(int)local.Y}");
+            };
+
+            parsers["ModTotals"] = (message, _2) =>
+            {
+                var args = Utils.GetArgs(message);
+                if (args.Length != 1)
+                {
+                    CAS.AddChatMessage($"[{GSCommand}] Usage: /GrindScript:ModTotals <unique type>");
+                }
+
+                switch (args[0])
+                {
+                    case "Items":
+                        CAS.AddChatMessage($"[{GSCommand}] Items defined: " + ModLibrary.GlobalLib.Items.Count);
+                        break;
+                    case "Perks":
+                        CAS.AddChatMessage($"[{GSCommand}] Perks defined: " + ModLibrary.GlobalLib.Perks.Count);
+                        break;
+                    case "Treats":
+                        CAS.AddChatMessage($"[{GSCommand}] TreatsCurses defined: " + ModLibrary.GlobalLib.TreatsCurses.Count);
+                        break;
+                    default:
+                        CAS.AddChatMessage($"[{GSCommand}] Usage: /GrindScript:ModTotals <unique type>");
+                        break;
+                }
             };
         }
     }

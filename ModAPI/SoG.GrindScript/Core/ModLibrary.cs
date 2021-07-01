@@ -8,18 +8,28 @@ namespace SoG.Modding
 
     internal class ModLibrary
 	{
-		internal static ModLibrary Global { get; private set; } = new ModLibrary();
+		// Global variable
 
-		internal readonly Dictionary<ItemCodex.ItemTypes, ModItemEntry> Items = new Dictionary<ItemCodex.ItemTypes, ModItemEntry>();
-		
-		internal readonly Dictionary<int, ModAudioEntry> Audio = new Dictionary<int, ModAudioEntry>();
-		
-		internal readonly Dictionary<string, string> VanillaMusicRedirects = new Dictionary<string, string>(); // This can redirect vanilla songs, i.e. "BossFight" to "GS_1_M1" or something
+		internal static ModLibrary GlobalLib { get; } = new ModLibrary();
 
-		internal readonly Dictionary<string, Dictionary<string, CommandParser>> Commands = new Dictionary<string, Dictionary<string, CommandParser>>();
+		// Static Fields
 
-		internal readonly Dictionary<Level.WorldRegion, WorldRegionEntry> WorldRegions = new Dictionary<Level.WorldRegion, WorldRegionEntry>();
+		internal static Dictionary<int, ModAudioEntry> Audio { get; } = new Dictionary<int, ModAudioEntry>();
 
-		internal readonly Dictionary<Level.ZoneEnum, ModLevelEntry> Levels = new Dictionary<Level.ZoneEnum, ModLevelEntry>();
+		internal static Dictionary<string, string> VanillaMusicRedirects { get; } = new Dictionary<string, string>();
+
+		internal static Dictionary<string, Dictionary<string, CommandParser>> Commands { get; } = new Dictionary<string, Dictionary<string, CommandParser>>();
+
+		internal static Dictionary<Level.ZoneEnum, ModLevelEntry> Levels { get; } = new Dictionary<Level.ZoneEnum, ModLevelEntry>();
+
+		// Instance Fields
+		// GlobalLib contains instance objects for all mods.
+		// A specific mod's library contains its own defined things, and is used for Saving and Loading.
+
+		internal Dictionary<ItemCodex.ItemTypes, ModItemEntry> Items { get; } = new Dictionary<ItemCodex.ItemTypes, ModItemEntry>();
+
+		internal Dictionary<RogueLikeMode.TreatsCurses, ModCurseEntry> TreatsCurses { get; } = new Dictionary<RogueLikeMode.TreatsCurses, ModCurseEntry>();
+
+		internal Dictionary<RogueLikeMode.Perks, ModPerkEntry> Perks { get; } = new Dictionary<RogueLikeMode.Perks, ModPerkEntry>();
 	}
 }

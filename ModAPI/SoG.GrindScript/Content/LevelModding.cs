@@ -8,7 +8,7 @@ using System.IO;
 
 namespace SoG.Modding
 {
-    public class LevelElements
+    public class LevelModding
     {
         public static Level.WorldRegion CreateWorldRegion()
         {
@@ -16,22 +16,9 @@ namespace SoG.Modding
 
             var allocatedType = IDAllocator.NewWorldRegion();
 
-            var entry = ModLibrary.Global.WorldRegions[allocatedType] = new WorldRegionEntry()
-            {
-                targetRegion = allocatedType,
-                modRegionContent = new ContentManager(VanillaContent.ServiceProvider, Directory.GetCurrentDirectory())
-            };
-
             GrindScript.Game.xLevelMaster.denxRegionContent.Add(allocatedType, new ContentManager(VanillaContent.ServiceProvider, VanillaContent.RootDirectory));
+
             return allocatedType;
-        }
-
-        public static ContentManager GetWorldRegionModManager(Level.WorldRegion region)
-        {
-            if (!region.IsModWorldRegion()) 
-                return null;
-
-            return ModLibrary.Global.WorldRegions[region].modRegionContent;
         }
 
         public static Level.ZoneEnum CreateLevel(BaseScript owner, LevelConfig config)
@@ -44,9 +31,9 @@ namespace SoG.Modding
 
             Level.ZoneEnum allocatedType = IDAllocator.NewZoneEnum();
 
-            ModLevel baseEntry = config.CreateLevel(owner, allocatedType);
+            ModLevel baseEntry = config.CreateLevel(allocatedType);
 
-            ModLibrary.Global.Levels[allocatedType] = new ModLevelEntry()
+            ModLibrary.Levels[allocatedType] = new ModLevelEntry()
             {
                 owner = owner,
                 type = allocatedType,

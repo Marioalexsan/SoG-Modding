@@ -24,16 +24,16 @@ namespace SoG.Modding
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            if (!ModLibrary.Global.Commands.TryGetValue(target, out var parsers))
+            if (!ModLibrary.Commands.TryGetValue(target, out var parsers))
             {
-                CAS.AddChatMessage("[GrindScript] Unknown mod!");
+                CAS.AddChatMessage($"[{GrindScript.GSCommand}] Unknown mod!");
                 return true;
             }
             if (!parsers.TryGetValue(trueCommand, out var parser))
             {
                 if (trueCommand == "Help")
                 {
-                    OnChatParseCommand("GScript:Help", target, connection);
+                    OnChatParseCommand($"{GrindScript.GSCommand}:Help", target, connection);
                     return true;
                 }
 
@@ -41,7 +41,7 @@ namespace SoG.Modding
                 return true;
             }
 
-            GrindScript.Logger.Info($"Parsed command {target} : {trueCommand}, argument list: {message}");
+            GrindScript.Logger.Debug($"Parsed command {target} : {trueCommand}, argument list: {message}");
             parser(message, connection);
 
             return true;
@@ -49,35 +49,32 @@ namespace SoG.Modding
 
         /// <summary>
         /// Patches <see cref="Game1._Animations_GetAnimationSet(PlayerView, string, string, bool, bool, bool, bool)"/>.
-        /// Allows use of modded assets. Modded shields have shorter asset paths ("/Shields" is removed).
+        /// Allows use of modded assets. Modded shields have modified asset paths compared to Vanilla.
         /// </summary>
 
         private static bool OnGetAnimationSet(PlayerView xPlayerView, string sAnimation, string sDirection, bool bWithWeapon, bool bCustomHat, bool bWithShield, bool bWeaponOnTop, ref PlayerAnimationTextureSet __result)
         {
-            // sAttackPath = "" has been removed
-
-            __result = new PlayerAnimationTextureSet() { bWeaponOnTop = bWeaponOnTop };
-
             ContentManager VanillaContent = RenderMaster.contPlayerStuff;
-            __result.txBase = Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent);
 
-            string resource;
-            if (bWithShield && xPlayerView.xEquipment.DisplayShield != null && (resource = xPlayerView.xEquipment.DisplayShield.sResourceName) != "")
+            __result = new PlayerAnimationTextureSet() 
+            { 
+                bWeaponOnTop = bWeaponOnTop,
+                txBase = Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent)
+            };
+
+            string resource = xPlayerView.xEquipment.DisplayShield?.sResourceName ?? "";
+            if (bWithShield && resource != "")
             {
                 var enType = xPlayerView.xEquipment.DisplayShield.enItemType;
                 bool modItem = enType.IsModItem();
 
                 if (modItem)
                 {
-                    var managerToUse = ModLibrary.Global.Items[enType].equipInfo.managerToUse;
-                    string path = $"{resource}/{sAnimation}/{sDirection}";
-                    __result.txShield = Utils.TryLoadTex(path, managerToUse);
+                    __result.txShield = Utils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", ModLibrary.GlobalLib.Items[enType].equipInfo.managerToUse);
                 }
                 else
                 {
-                    var managerToUse = VanillaContent;
-                    string path = $"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}";
-                    __result.txShield = Utils.TryLoadTex(path, managerToUse);
+                    __result.txShield = Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent);
                 }
             }
 
@@ -94,9 +91,11 @@ namespace SoG.Modding
 
         private static void OnPlaySong(ref string sSongName, bool bFadeIn)
         {
+            var redirects = ModLibrary.VanillaMusicRedirects;
             string audioIDToUse = sSongName;
-            if (!audioIDToUse.StartsWith("GS_") && ModLibrary.Global.VanillaMusicRedirects.ContainsKey(audioIDToUse))
-                audioIDToUse = ModLibrary.Global.VanillaMusicRedirects[audioIDToUse];
+
+            if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
+                audioIDToUse = redirects[audioIDToUse];
 
             sSongName = audioIDToUse;
         }
@@ -110,92 +109,81 @@ namespace SoG.Modding
         {
             // This will probably cause you brain and eye damage if you read it
 
-            TypeInfo SoundType = typeof(SoundSystem).GetTypeInfo();
-
-            FieldInfo standbyWaveBanksField = SoundType.GetField("dsxStandbyWaveBanks", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo songRegionMapField = SoundType.GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo audioEngineField = SoundType.GetField("audioEngine", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo fieldMusicWaveBank = SoundType.GetField("musicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo vanillaUniversalMusicField = SoundType.GetField("universalMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo fieldLoadedMusicWaveBank = SoundType.GetField("loadedMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
-
             SoundSystem soundSystem = __instance;
+            TypeInfo soundType = typeof(SoundSystem).GetTypeInfo();
+
+            BindingFlags flag = BindingFlags.NonPublic | BindingFlags.Instance;
+
+            var f_musicWaveBank = soundType.GetField("musicWaveBank", flag);
+            var f_loadedMusicWaveBank = soundType.GetField("loadedMusicWaveBank", flag);
+
+            var dsxStandbyWaveBanks = soundType.GetField("dsxStandbyWaveBanks", flag).GetValue(soundSystem) as Dictionary<string, WaveBank>;
+            var dssSongRegionMap = soundType.GetField("dssSongRegionMap", flag).GetValue(soundSystem) as Dictionary<string, string>;
+            var universalMusic = soundType.GetField("universalMusicWaveBank", flag).GetValue(soundSystem) as WaveBank;
+            var audioEngine = soundType.GetField("audioEngine", flag).GetValue(soundSystem) as AudioEngine;
 
             bool currentIsModded = Utils.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
 
             if (currentIsModded && !isMusic)
                 GrindScript.Logger.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
 
-            var dsxStandbyWaveBanks = (Dictionary<string, WaveBank>)standbyWaveBanksField.GetValue(soundSystem);
-            var dssSongRegionMap = (Dictionary<string, string>)songRegionMapField.GetValue(soundSystem);
-            AudioEngine audioEngine = (AudioEngine)audioEngineField.GetValue(GrindScript.Game.xSoundSystem);
-            WaveBank vanillaUniversalMusic = (WaveBank)vanillaUniversalMusicField.GetValue(soundSystem);
-
-            ModAudioEntry entry = currentIsModded ? ModLibrary.Global.Audio[entryID] : null;
+            ModAudioEntry entry = currentIsModded ? ModLibrary.Audio[entryID] : null;
             string cueName = currentIsModded ? entry.musicIDToName[cueID] : sSongName;
-            string modBank = currentIsModded ? entry.musicNameToBank[cueName] : dssSongRegionMap[sSongName];
+            string nextBankName = currentIsModded ? entry.musicNameToBank[cueName] : dssSongRegionMap[sSongName];
 
-            // All bank names must be unique due to XACT design
+            WaveBank currentMusicBank = f_musicWaveBank.GetValue(soundSystem) as WaveBank;
 
-            WaveBank currentMusicBank = (WaveBank)fieldMusicWaveBank.GetValue(soundSystem);
-
-            if (Utils.IsUniversalMusicBank(modBank))
+            if (Utils.IsUniversalMusicBank(nextBankName))
             {
                 if (currentIsModded && entry.universalMusicWaveBank == null)
                 {
-                    GrindScript.Logger.Warn($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
+                    GrindScript.Logger.Error($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
                     return false;
                 }
+
                 if (currentMusicBank != null && !Utils.IsUniversalMusicBank(currentMusicBank))
-                {
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
-                }
-                fieldMusicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicWaveBank : vanillaUniversalMusic);
+
+                f_musicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicWaveBank : universalMusic);
             }
-            else if (soundSystem.sCurrentMusicWaveBank != modBank)
+            else if (soundSystem.sCurrentMusicWaveBank != nextBankName)
             {
                 if (currentMusicBank != null && !Utils.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
-                {
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
-                }
-                soundSystem.sCurrentMusicWaveBank = modBank;
-                if (dsxStandbyWaveBanks.ContainsKey(modBank))
+
+                soundSystem.sCurrentMusicWaveBank = nextBankName;
+
+                if (dsxStandbyWaveBanks.ContainsKey(nextBankName))
                 {
-                    fieldMusicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[modBank]);
-                    dsxStandbyWaveBanks.Remove(modBank);
+                    f_musicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[nextBankName]);
+                    dsxStandbyWaveBanks.Remove(nextBankName);
                 }
                 else
                 {
-                    WaveBank newBank;
-                    if (currentIsModded)
-                        newBank = new WaveBank(audioEngine, $"{entry.owner.ModContent.RootDirectory}/Sound/{modBank}.xwb");
-                    else
-                        newBank = new WaveBank(audioEngine, $"{GrindScript.Game.Content.RootDirectory}/Sound/{soundSystem.sCurrentMusicWaveBank}.xwb");
+                    string root = Path.Combine(GrindScript.Game.Content.RootDirectory, currentIsModded ? entry.owner.ModPath : "");
 
-                    fieldLoadedMusicWaveBank.SetValue(soundSystem, newBank);
-                    fieldMusicWaveBank.SetValue(soundSystem, null);
+                    f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", $"{nextBankName}.xwb")));
+                    f_musicWaveBank.SetValue(soundSystem, null);
                 }
                 soundSystem.xMusicVolumeMods.iMusicCueRetries = 0;
                 soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
-                SoundType.GetPrivateInstanceMethod("CheckStandbyBanks").Invoke(soundSystem, new object[] { modBank });
+                soundType.GetPrivateInstanceMethod("CheckStandbyBanks").Invoke(soundSystem, new object[] { nextBankName });
             }
             else if (Utils.IsUniversalMusicBank(currentMusicBank))
             {
                 if (dsxStandbyWaveBanks.ContainsKey(soundSystem.sCurrentMusicWaveBank))
                 {
-                    fieldMusicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[soundSystem.sCurrentMusicWaveBank]);
+                    f_musicWaveBank.SetValue(soundSystem, dsxStandbyWaveBanks[soundSystem.sCurrentMusicWaveBank]);
                     dsxStandbyWaveBanks.Remove(soundSystem.sCurrentMusicWaveBank);
                     return false;
                 }
 
-                WaveBank newBank;
-                if (currentIsModded)
-                    newBank = new WaveBank(audioEngine, $"{entry.owner.ModContent.RootDirectory}/Sound/{modBank}.xwb");
-                else
-                    newBank = new WaveBank(audioEngine, $"{GrindScript.Game.Content.RootDirectory}/Sound/{soundSystem.sCurrentMusicWaveBank}.xwb");
+                string root = Path.Combine(GrindScript.Game.Content.RootDirectory, currentIsModded ? entry.owner.ModPath : "");
+                string bankToUse = currentIsModded ? nextBankName : soundSystem.sCurrentMusicWaveBank;
 
-                fieldLoadedMusicWaveBank.SetValue(soundSystem, newBank);
-                fieldMusicWaveBank.SetValue(soundSystem, null);
+                f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", bankToUse + ".xwb")));
+                f_musicWaveBank.SetValue(soundSystem, null);
+
                 soundSystem.xMusicVolumeMods.iMusicCueRetries = 0;
                 soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
             }

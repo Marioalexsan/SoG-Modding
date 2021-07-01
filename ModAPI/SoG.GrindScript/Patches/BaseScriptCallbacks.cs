@@ -1,4 +1,6 @@
-﻿namespace SoG.Modding
+﻿using System.Linq;
+
+namespace SoG.Modding
 {
     /// <summary>
     /// Contains methods that act as patches for the game (Prefix, Postfix and Transpilers).
@@ -8,14 +10,12 @@
     {
         private static void OnContentLoad()
         {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.LoadContent();
+            GrindScript._loadedScripts.ForEach(mod => mod.LoadContent());
         }
 
         private static void OnFinalDraw()
         {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnDraw();
+            GrindScript._loadedScripts.ForEach(mod => mod.OnDraw());
         }
 
         private static void OnPlayerTakeDamage(ref int iInDamage, ref byte byType)
@@ -24,16 +24,14 @@
                 mod.OnPlayerDamaged(ref iInDamage, ref byType);
         }
 
-        private static void OnPlayerKilled()
+        private static void OnPlayerKilled(PlayerView xView)
         {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.OnPlayerKilled();
+            GrindScript._loadedScripts.ForEach(mod => mod.OnPlayerKilled(xView));
         }
 
         private static void PostPlayerLevelUp(PlayerView xView)
         {
-            foreach (BaseScript mod in GrindScript._loadedScripts)
-                mod.PostPlayerLevelUp(xView);
+            GrindScript._loadedScripts.ForEach(mod => mod.PostPlayerLevelUp(xView));
         }
 
         private static void OnEnemyTakeDamage(Enemy xEnemy, ref int iDamage, ref byte byType)
@@ -68,6 +66,13 @@
             if (xView.xViewStats.bIsDead) return;
             foreach (BaseScript mod in GrindScript._loadedScripts)
                 mod.OnItemUse(enItem, xView, ref bSend);
+        }
+
+        private static void PostArcadeRoomStart()
+        {
+            GameSessionData.RogueLikeSession session = GrindScript.Game.xGameSessionData.xRogueLikeSession;
+            foreach (BaseScript mod in GrindScript._loadedScripts)
+                mod.PostArcadeRoomStart(session);
         }
     }
 }

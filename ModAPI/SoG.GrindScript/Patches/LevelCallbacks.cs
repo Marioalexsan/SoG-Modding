@@ -20,7 +20,7 @@ namespace SoG.Modding
 
             RareUtils.BlueprintSanityCheck(bprint);
 
-            ModLevelEntry entry = ModLibrary.Global.Levels[enZoneToGet];
+            ModLevelEntry entry = ModLibrary.Levels[enZoneToGet];
             ModLevel level = entry.levelInfo;
 
             try
@@ -65,7 +65,7 @@ namespace SoG.Modding
 
             if (!type.IsModLevel()) return;
 
-            ModLevelEntry entry = ModLibrary.Global.Levels[type];
+            ModLevelEntry entry = ModLibrary.Levels[type];
             ModLevel level = entry.levelInfo;
 
             try

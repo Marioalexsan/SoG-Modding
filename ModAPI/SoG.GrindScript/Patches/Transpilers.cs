@@ -76,7 +76,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -115,7 +115,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -154,7 +154,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -190,7 +190,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(ModElements).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)

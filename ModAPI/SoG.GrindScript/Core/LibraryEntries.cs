@@ -1,21 +1,31 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
+using System;
 using System.Collections.Generic;
 
 namespace SoG.Modding
 {
     /// <summary>
+    /// Represents a modded object that is persisted by SoG
+    /// ISaveables need additional data attached when saving so that
+    /// enum IDs can be identified and restored.
+    /// </summary>
+
+    abstract class IPersistentID<IDType> where IDType : Enum
+    {
+        public BaseScript Owner { get; set; }
+
+        public string ModID { get; set; }
+
+        public IDType GameID { get; set; }
+    }
+
+    /// <summary>
     /// Represents a modded item in the ModLibrary.
     /// </summary>
 
-    internal class ModItemEntry
+    internal class ModItemEntry : IPersistentID<ItemCodex.ItemTypes>
     {
-        public BaseScript owner;
-
-        public string uniqueID;
-
-        public ItemCodex.ItemTypes type;
-
         public ModItem itemInfo;
 
         public ModEquip equipInfo;
@@ -79,13 +89,6 @@ namespace SoG.Modding
 
         public Dictionary<string, string> musicNameToBank = new Dictionary<string, string>();
     }
-
-    internal class WorldRegionEntry
-    {
-        public Level.WorldRegion targetRegion;
-
-        public ContentManager modRegionContent;
-    }
     
     internal class ModLevelEntry
     {
@@ -98,14 +101,36 @@ namespace SoG.Modding
 
     internal class ModLevel
     {
+        public Level.ZoneEnum type;
+
         public LevelBuilder builder;
 
         public LevelLoader loader;
 
-        public string defaultMusic;
-
         public Level.WorldRegion region;
+    }
 
-        public Level.ZoneEnum type;
+    internal class ModCurseEntry : IPersistentID<RogueLikeMode.TreatsCurses>
+    {
+        public bool isTreat = false;
+
+        public string nameHandle = "";
+
+        public string descriptionHandle = "";
+
+        public string resourcePath = "";
+
+        public float scoreModifier = 0f;
+    }
+
+    internal class ModPerkEntry : IPersistentID<RogueLikeMode.Perks>
+    {
+        public int essenceCost;
+
+        public string textEntry;
+
+        public string resourcePath = "";
+
+        public Action<PlayerView> activator;
     }
 }

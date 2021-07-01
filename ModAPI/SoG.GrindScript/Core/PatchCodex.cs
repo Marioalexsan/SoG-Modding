@@ -29,10 +29,23 @@ namespace SoG.Modding
             Game1_NPC_TakeDamage,
             Game1_NPC_Interact,
             Game1_LevelLoading_DoStuff_Arcadia,
-            Game1_Chat_ParseCommand,
             Game1_Item_Use,
 
+            // Game1 has OnEnemyKilled event
+
+            // RogueLike
+
+            Game1_RogueLike_GetPerkTexture,
+            Game1_RogueLike_GetTreatCurseTexture,
+            Game1_RogueLike_GetTreatCurseInfo,
+            TreatCurseMenu_FillTreatList,
+            TreatCurseMenu_FillCurseList,
+            Game1_RogueLike_ActivatePerks,
+            Game1_LevelLoading_DoStuff_ArcadeModeRoom,
+            PerkInfo_Init,
+
             // Item API callbacks
+            Game1_Chat_ParseCommand,
             ItemCodex_GetItemDescription,
             ItemCodex_GetItemInstance,
             EquipmentCodex_GetArmorInfo,
@@ -100,6 +113,7 @@ namespace SoG.Modding
             TypeInfo FacegearCodex = typeof(FacegearCodex).GetTypeInfo();
             TypeInfo HatCodex = typeof(HatCodex).GetTypeInfo();
             TypeInfo WeaponCodex = typeof(WeaponCodex).GetTypeInfo();
+            TypeInfo TreatCurseMenu = typeof(ShopMenu.TreatCurseMenu).GetTypeInfo();
 
             _patchCodex = new Dictionary<PatchID, PatchInfo>()
             {
@@ -113,6 +127,8 @@ namespace SoG.Modding
                     Target = Game1.GetMethod("__StartupThreadExecute"),
                     Transpiler = Patches.GetPrivateMethod("StartupTranspiler")
                 },
+
+
                 [PatchID.Game1_FinalDraw] = new PatchInfo()
                 {
                     Target = Game1.GetMethod("FinalDraw"),
@@ -153,15 +169,59 @@ namespace SoG.Modding
                     Target = Game1.GetMethod("_LevelLoading_DoStuff_Arcadia"),
                     Prefix = Patches.GetPrivateMethod("OnArcadiaLoad")
                 },
-                [PatchID.Game1_Chat_ParseCommand] = new PatchInfo()
-                {
-                    Target = Game1.GetMethod("_Chat_ParseCommand"),
-                    Transpiler = Patches.GetPrivateMethod("CommandTranspiler")
-                },
                 [PatchID.Game1_Item_Use] = new PatchInfo()
                 {
                     Target = Game1.GetDeclaredMethods("_Item_Use").ElementAt(1),
                     Prefix = Patches.GetPrivateMethod("OnItemUse")
+                },
+
+
+                [PatchID.Game1_RogueLike_GetPerkTexture] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_RogueLike_GetPerkTexture"),
+                    Prefix = Patches.GetPrivateMethod("OnGetPerkTexture")
+                },
+                [PatchID.Game1_RogueLike_GetTreatCurseTexture] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_RogueLike_GetTreatCurseTexture"),
+                    Prefix = Patches.GetPrivateMethod("OnGetTreatCurseTexture")
+                },
+                [PatchID.Game1_RogueLike_GetTreatCurseInfo] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_RogueLike_GetTreatCurseInfo"),
+                    Prefix = Patches.GetPrivateMethod("OnGetTreatCurseInfo")
+                },
+                [PatchID.TreatCurseMenu_FillCurseList] = new PatchInfo()
+                {
+                    Target = TreatCurseMenu.GetMethod("FillCurseList"),
+                    Postfix = Patches.GetPrivateMethod("PostFillCurseList")
+                },
+                [PatchID.TreatCurseMenu_FillTreatList] = new PatchInfo()
+                {
+                    Target = TreatCurseMenu.GetMethod("FillTreatList"),
+                    Postfix = Patches.GetPrivateMethod("PostFillTreatList")
+                },
+                [PatchID.Game1_RogueLike_ActivatePerks] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_RogueLike_ActivatePerks"),
+                    Postfix = Patches.GetPrivateMethod("PostPerkActivation")
+                },
+                [PatchID.Game1_LevelLoading_DoStuff_ArcadeModeRoom] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_LevelLoading_DoStuff_ArcadeModeRoom"),
+                    Postfix = Patches.GetPrivateMethod("PostArcadeRoomStart")
+                },
+                [PatchID.PerkInfo_Init] = new PatchInfo()
+                {
+                    Target = typeof(RogueLikeMode.PerkInfo).GetMethod("Init"),
+                    Postfix = Patches.GetPrivateMethod("PostPerkListInit")
+                },
+
+
+                [PatchID.Game1_Chat_ParseCommand] = new PatchInfo()
+                {
+                    Target = Game1.GetMethod("_Chat_ParseCommand"),
+                    Transpiler = Patches.GetPrivateMethod("CommandTranspiler")
                 },
                 [PatchID.ItemCodex_GetItemDescription] = new PatchInfo()
                 {

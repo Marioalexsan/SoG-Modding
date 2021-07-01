@@ -9,6 +9,8 @@ namespace SoG.Modding
     internal static class IDAllocator
     {
 		public const ItemCodex.ItemTypes ItemTypes_ShuffleStart = (ItemCodex.ItemTypes)1500000;
+		public const RogueLikeMode.Perks RoguelikePerk_ShuffleStart = (RogueLikeMode.Perks)9000;
+		public const RogueLikeMode.TreatsCurses TreatsCurses_ShuffleStart = (RogueLikeMode.TreatsCurses)9000;
 
 		public const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)700000;
 		public static ItemCodex.ItemTypes ItemTypesEnd { get; private set; } = ItemTypesStart;
@@ -25,6 +27,12 @@ namespace SoG.Modding
 		public const Level.WorldRegion WorldRegionStart = (Level.WorldRegion)650;
 		public static Level.WorldRegion WorldRegionEnd { get; private set; } = WorldRegionStart;
 
+		public const RogueLikeMode.Perks RoguelikePerkStart = (RogueLikeMode.Perks)3500;
+		public static RogueLikeMode.Perks RoguelikePerkEnd { get; private set; } = RoguelikePerkStart;
+
+		public const RogueLikeMode.TreatsCurses TreatsCursesStart = (RogueLikeMode.TreatsCurses)3500;
+		public static RogueLikeMode.TreatsCurses TreatsCursesEnd { get; private set; } = TreatsCursesStart;
+
 		internal static ItemCodex.ItemTypes NewItemType() => ItemTypesEnd++;
 
 		internal static EquipmentInfo.SpecialEffect NewEquipEffect() => EquipEffectEnd++;
@@ -34,5 +42,9 @@ namespace SoG.Modding
 		internal static Level.ZoneEnum NewZoneEnum() => ZoneEnumEnd++;
 
 		internal static Level.WorldRegion NewWorldRegion() => WorldRegionEnd++;
+
+		internal static RogueLikeMode.Perks NewRoguelikePerk() => RoguelikePerkEnd++;
+
+		internal static RogueLikeMode.TreatsCurses NewTreatOrCurse() => TreatsCursesEnd++;
 	}
 }

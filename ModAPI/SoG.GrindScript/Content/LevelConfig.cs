@@ -8,43 +8,28 @@ namespace SoG.Modding
 {
     public class LevelConfig
     {
-        LevelBuilder _builder;
-        LevelLoader _loader;
-        string _defaultMusic;
-        Level.WorldRegion _region = Level.WorldRegion.NotLoaded;
+        /// <summary> 
+        /// Called when the game prepares a level switch.
+        /// It receives a <see cref="LevelBlueprint"/> as an argument, and it should add to it the information needed for the level.
+        /// </summary>
+        public LevelBuilder Builder { get; set; } = null;
 
-        public LevelConfig Builder(LevelBuilder builder)
-        {
-            _builder = builder;
-            return this;
-        }
+        /// <summary>
+        /// Called after the game has instantiated the <see cref="LevelBlueprint"/>.
+        /// The Loader should instantiate most state-dependent objects found within the level, such as entities and bagmans.
+        /// </summary>
+        public LevelLoader Loader { get; set; } = null;
 
-        public LevelConfig Loader(LevelLoader loader)
-        {
-            _loader = loader;
-            return this;
-        }
+        /// <summary> Sets the World Region, which is used for asset loading and certain gameplay logic. </summary>
+        public Level.WorldRegion WorldRegion { get; set; } = Level.WorldRegion.NotLoaded;
 
-        public LevelConfig MusicToPlay(string music)
-        {
-            _defaultMusic = music;
-            return this;
-        }
-
-        public LevelConfig WorldRegion(Level.WorldRegion region)
-        {
-            _region = region;
-            return this;
-        }
-
-        internal ModLevel CreateLevel(BaseScript owner, Level.ZoneEnum allocatedType)
+        internal ModLevel CreateLevel(Level.ZoneEnum allocatedType)
         {
             return new ModLevel()
             {
-                builder = _builder,
-                loader = _loader,
-                defaultMusic = _defaultMusic,
-                region = _region,
+                builder = Builder,
+                loader = Loader,
+                region = WorldRegion,
                 type = allocatedType
             };
         }

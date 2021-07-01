@@ -79,6 +79,12 @@
     <Compile Include="FeatureExample.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ModAPI\SoG.GrindScript\SoG.GrindScript.csproj">
+      <Project>{8b7405ad-3c39-4647-ab62-6fcc42068880}</Project>
+      <Name>SoG.GrindScript</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
