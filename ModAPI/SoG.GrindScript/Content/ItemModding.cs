@@ -31,22 +31,97 @@ namespace SoG.Modding
                 return ItemCodex.ItemTypes.Null;
             }
 
-            ItemCodex.ItemTypes allocatedType = IDAllocator.NewItemType();
+            ItemCodex.ItemTypes gameID = IDAllocator.NewItemType();
 
-            ModItemEntry newEntry = new ModItemEntry()
+            ModItemEntry entry = new ModItemEntry(owner, gameID, cfg.ModID)
             {
-                ModID = cfg.UniqueID,
-                Owner = owner,
-                GameID = allocatedType,
-                itemInfo = cfg.CreateModItem(allocatedType),
+                ItemShadowPath = cfg.ShadowPath,
+                Manager = cfg.Manager,
+                ItemResourcePath = cfg.IconPath,
+                EquipResourcePath = cfg.EquipResourcePath
             };
 
-            ModLibrary.GlobalLib.Items[allocatedType] = newEntry;
-            owner.ModLib.Items[allocatedType] = newEntry;
+            ModLibrary.GlobalLib.Items[gameID] = owner.ModLib.Items[gameID] = entry;
 
-            newEntry.equipInfo = cfg.CreateEquipInfo(allocatedType); // Must be done after ItemDescription can be retrieved by SoG
+            ItemDescription itemData = entry.ItemData = new ItemDescription()
+            {
+                enType = gameID,
+                sFullName = cfg.Name,
+                sDescription = cfg.Description,
+                sNameLibraryHandle = $"Item_{(int)gameID}_Name",
+                sDescriptionLibraryHandle = $"Item_{(int)gameID}_Description",
+                sCategory = "",
+                iInternalLevel = cfg.SortingValue,
+                byFancyness = Math.Min((byte)1, Math.Max(cfg.Fancyness, (byte)3)),
+                iValue = cfg.Value,
+                iOverrideBloodValue = cfg.BloodValue,
+                fArcadeModeCostModifier = cfg.ArcadeValueModifier,
+                lenCategory = new HashSet<ItemCodex.ItemCategories>(cfg.Categories)
+            };
 
-            ItemDescription itemInfo = newEntry.itemInfo.vanilla;
+            EquipmentType typeToUse = Enum.IsDefined(typeof(EquipmentType), cfg.EquipType) ? cfg.EquipType : EquipmentType.None;
+
+            EquipmentInfo equipData = null;
+            switch (typeToUse)
+            {
+                case EquipmentType.None:
+                    break;
+                case EquipmentType.Facegear:
+                    FacegearInfo faceData = (equipData = new FacegearInfo(gameID)) as FacegearInfo;
+
+                    Array.Copy(cfg.FacegearOverHair, faceData.abOverHair, 4);
+                    Array.Copy(cfg.FacegearOverHat, faceData.abOverHat, 4);
+                    Array.Copy(cfg.FacegearOffsets, faceData.av2RenderOffsets, 4);
+
+                    break;
+                case EquipmentType.Hat:
+                    HatInfo hatData = (equipData = new HatInfo(gameID) { bDoubleSlot = cfg.HatDoubleSlot }) as HatInfo;
+
+                    InitializeSet(hatData.xDefaultSet, cfg.DefaultSet);
+                    foreach (var kvp in cfg.AltSets)
+                        InitializeSet(hatData.denxAlternateVisualSets[kvp.Key] = new HatInfo.VisualSet(), kvp.Value);
+                    
+                    break;
+                case EquipmentType.Weapon:
+                    WeaponInfo weaponData = new WeaponInfo(cfg.EquipResourcePath, gameID, cfg.WeaponType)
+                    {
+                        enWeaponCategory = cfg.WeaponType,
+                        enAutoAttackSpell = WeaponInfo.AutoAttackSpell.None
+                    };
+                    equipData = weaponData;
+
+                    if (cfg.WeaponType == WeaponInfo.WeaponCategory.OneHanded)
+                    {
+                        weaponData.iDamageMultiplier = 90;
+                        if (cfg.MagicWeapon)
+                            weaponData.enAutoAttackSpell = WeaponInfo.AutoAttackSpell.Generic1H;
+                    }
+                    else if (cfg.WeaponType == WeaponInfo.WeaponCategory.TwoHanded)
+                    {
+                        weaponData.iDamageMultiplier = 125;
+                        if (cfg.MagicWeapon)
+                            weaponData.enAutoAttackSpell = WeaponInfo.AutoAttackSpell.Generic2H;
+                    }
+                    break;
+                default:
+                    equipData = new EquipmentInfo(cfg.EquipResourcePath, gameID);
+                    break;
+            }
+
+            if (cfg.EquipType != EquipmentType.None)
+            {
+                equipData.deniStatChanges = new Dictionary<EquipmentInfo.StatEnum, int>(cfg.Stats);
+                equipData.lenSpecialEffects.AddRange(cfg.Effects);
+
+                if (cfg.EquipType == EquipmentType.Hat)
+                {
+                    var altResources = entry.HatAltSetResourcePaths = new Dictionary<ItemCodex.ItemTypes, string>();
+                    foreach (var set in cfg.AltSets)
+                        altResources.Add(set.Key, set.Value.Resource);
+                }
+            }
+
+            entry.EquipData = equipData;
 
             HashSet<ItemCodex.ItemCategories> toSanitize = new HashSet<ItemCodex.ItemCategories>
             {
@@ -60,38 +135,46 @@ namespace SoG.Modding
                 ItemCodex.ItemCategories.Shoes,
                 ItemCodex.ItemCategories.Facegear
             };
-            itemInfo.lenCategory.ExceptWith(toSanitize);
 
-            if (newEntry.equipInfo != null)
+            itemData.lenCategory.ExceptWith(toSanitize);
+
+            if (equipData != null)
             {
-                ItemCodex.ItemCategories type = (ItemCodex.ItemCategories)newEntry.equipInfo.equipType;
-                itemInfo.lenCategory.Add(type);
+                ItemCodex.ItemCategories type = (ItemCodex.ItemCategories)cfg.EquipType;
+                itemData.lenCategory.Add(type);
 
                 if (type == ItemCodex.ItemCategories.Weapon)
                 {
-                    switch ((newEntry.equipInfo.vanilla as WeaponInfo).enWeaponCategory)
+                    switch ((equipData as WeaponInfo).enWeaponCategory)
                     {
                         case WeaponInfo.WeaponCategory.OneHanded:
-                            itemInfo.lenCategory.Add(ItemCodex.ItemCategories.OneHandedWeapon); break;
+                            itemData.lenCategory.Add(ItemCodex.ItemCategories.OneHandedWeapon); break;
                         case WeaponInfo.WeaponCategory.TwoHanded:
-                            itemInfo.lenCategory.Add(ItemCodex.ItemCategories.TwoHandedWeapon); break;
+                            itemData.lenCategory.Add(ItemCodex.ItemCategories.TwoHandedWeapon); break;
                     }
                 }
             }
 
-            itemInfo.sNameLibraryHandle = (int)allocatedType + "_Name";
-            itemInfo.sDescriptionLibraryHandle = (int)allocatedType + "_sDescription";
+            TextModding.AddMiscText("Items", itemData.sNameLibraryHandle, itemData.sFullName, MiscTextTypes.GenericItemName);
+            TextModding.AddMiscText("Items", itemData.sDescriptionLibraryHandle, itemData.sDescription, MiscTextTypes.GenericItemDescription);
 
-            TextModding.AddMiscText("Items", itemInfo.sNameLibraryHandle, itemInfo.sFullName, MiscTextTypes.GenericItemName);
-            TextModding.AddMiscText("Items", itemInfo.sDescriptionLibraryHandle, itemInfo.sDescription, MiscTextTypes.GenericItemDescription);
-
-            if (owner.ModLib.Items.Values.Any(x => x != newEntry && x.ModID == cfg.UniqueID))
+            if (owner.ModLib.Items.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more items with the uniqueID {cfg.UniqueID}!");
+                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more items with the uniqueID {cfg.ModID}!");
                 GrindScript.Logger.Error($"This is likely to break loading, saving, and many other things!");
             }
 
-            return allocatedType;
+            return gameID;
+
+            void InitializeSet(HatInfo.VisualSet set, ItemConfig.VSetInfo desc)
+            {
+                Array.Copy(desc.HatUnderHair, set.abUnderHair, 4);
+                Array.Copy(desc.HatBehindPlayer, set.abBehindCharacter, 4);
+                Array.Copy(desc.HatOffsets, set.av2RenderOffsets, 4);
+                set.bObstructsSides = desc.ObstructHairSides;
+                set.bObstructsTop = desc.ObstructHairTop;
+                set.bObstructsBottom = desc.ObstructHairBottom;
+            }
         }
 
         /// <summary>

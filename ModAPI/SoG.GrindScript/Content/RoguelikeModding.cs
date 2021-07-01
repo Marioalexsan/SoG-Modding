@@ -19,33 +19,29 @@ namespace SoG.Modding
                 return RogueLikeMode.TreatsCurses.None;
             }
 
-            RogueLikeMode.TreatsCurses allocatedType = IDAllocator.NewTreatOrCurse();
+            RogueLikeMode.TreatsCurses gameID = IDAllocator.NewTreatOrCurse();
 
-            ModCurseEntry entry = new ModCurseEntry()
+            ModCurseEntry entry = new ModCurseEntry(owner, gameID, cfg.ModID)
             {
-                Owner = owner,
-                ModID = cfg.UniqueID,
-                GameID = allocatedType,
-                isTreat = cfg.IsTreat,
-                nameHandle = "TreatCurse_" + (int)allocatedType + "_Name",
-                descriptionHandle = "TreatCurse_" + (int)allocatedType + "_Description",
-                resourcePath = cfg.TexturePath,
-                scoreModifier = cfg.ScoreModifier
+                IsTreat = cfg.IsTreat,
+                NameHandle = "TreatCurse_" + (int)gameID + "_Name",
+                DescriptionHandle = "TreatCurse_" + (int)gameID + "_Description",
+                ResourcePath = cfg.TexturePath,
+                ScoreModifier = cfg.ScoreModifier
             };
 
-            ModLibrary.GlobalLib.TreatsCurses[allocatedType] = entry;
-            owner.ModLib.TreatsCurses[allocatedType] = entry;
+            ModLibrary.GlobalLib.TreatsCurses[gameID] = owner.ModLib.TreatsCurses[gameID] = entry;
 
-            if (owner.ModLib.TreatsCurses.Values.Any(x => x != entry && x.ModID == cfg.UniqueID))
+            if (owner.ModLib.TreatsCurses.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more treats / curses with the uniqueID {cfg.UniqueID}!");
+                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more treats / curses with the uniqueID {cfg.ModID}!");
                 GrindScript.Logger.Error($"This is likely to break loading, saving, and many other things!");
             }
 
-            TextModding.AddMiscText("Menus", entry.nameHandle, cfg.Name, MiscTextTypes.GenericItemName);
-            TextModding.AddMiscText("Menus", entry.descriptionHandle, cfg.Description, MiscTextTypes.GenericItemDescription);
+            TextModding.AddMiscText("Menus", entry.NameHandle, cfg.Name, MiscTextTypes.GenericItemName);
+            TextModding.AddMiscText("Menus", entry.DescriptionHandle, cfg.Description, MiscTextTypes.GenericItemDescription);
 
-            return allocatedType;
+            return gameID;
         }
 
         public static RogueLikeMode.Perks CreatePerk(BaseScript owner, PerkConfig cfg)
@@ -56,34 +52,29 @@ namespace SoG.Modding
                 return RogueLikeMode.Perks.None;
             }
 
-            RogueLikeMode.Perks allocatedType = IDAllocator.NewRoguelikePerk();
+            RogueLikeMode.Perks gameID = IDAllocator.NewRoguelikePerk();
 
-            string textEntry = ((int)allocatedType).ToString();
-
-            ModPerkEntry entry = new ModPerkEntry()
+            ModPerkEntry entry = new ModPerkEntry(owner, gameID, cfg.ModID)
             {
-                Owner = owner,
-                ModID = cfg.UniqueID,
-                GameID = allocatedType,
-                resourcePath = cfg.TexturePath,
-                activator = cfg.RunStartActivator,
-                essenceCost = cfg.EssenceCost,
-                textEntry = textEntry
+                ResourcePath = cfg.TexturePath,
+                Activator = cfg.RunStartActivator,
+                EssenceCost = cfg.EssenceCost,
+                TextEntry = ((int)gameID).ToString()
             };
 
-            ModLibrary.GlobalLib.Perks[allocatedType] = entry;
-            owner.ModLib.Perks[allocatedType] = entry;
+            ModLibrary.GlobalLib.Perks[gameID] = entry;
+            owner.ModLib.Perks[gameID] = entry;
 
-            if (owner.ModLib.Perks.Values.Any(x => x != entry && x.ModID == cfg.UniqueID))
+            if (owner.ModLib.Perks.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more treats / curses with the uniqueID {cfg.UniqueID}!");
+                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more treats / curses with the uniqueID {cfg.ModID}!");
                 GrindScript.Logger.Error($"This is likely to break loading, saving, and many other things!");
             }
 
-            TextModding.AddMiscText("Menus", "Perks_Name_" + textEntry, cfg.Name, MiscTextTypes.GenericItemName);
-            TextModding.AddMiscText("Menus", "Perks_Description_" + textEntry, cfg.Description, MiscTextTypes.GenericItemDescription);
+            TextModding.AddMiscText("Menus", "Perks_Name_" + entry.TextEntry, cfg.Name, MiscTextTypes.GenericItemName);
+            TextModding.AddMiscText("Menus", "Perks_Description_" + entry.TextEntry, cfg.Description, MiscTextTypes.GenericItemDescription);
 
-            return allocatedType;
+            return gameID;
         }
     }
 }

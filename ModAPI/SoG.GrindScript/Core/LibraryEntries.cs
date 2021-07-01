@@ -6,131 +6,128 @@ using System.Collections.Generic;
 namespace SoG.Modding
 {
     /// <summary>
-    /// Represents a modded object that is persisted by SoG
-    /// ISaveables need additional data attached when saving so that
-    /// enum IDs can be identified and restored.
+    /// Represents a modded object type that is assigned to a certain mod.
     /// </summary>
 
-    abstract class IPersistentID<IDType> where IDType : Enum
+    abstract class Entry<IDType> where IDType : struct 
     {
-        public BaseScript Owner { get; set; }
+        public BaseScript Owner { get; private set; }
 
-        public string ModID { get; set; }
+        public IDType GameID { get; private set; }
 
-        public IDType GameID { get; set; }
+        public Entry(BaseScript owner, IDType gameID)
+        {
+            Owner = owner;
+            GameID = gameID;
+        }
+    }
+
+    /// <summary>
+    /// ISaveables are IEntries whose IDTypes are saved by SoG in one way or another.
+    /// As a result, additional information is required for ensuring consistency.
+    /// </summary>
+
+    abstract class PersistentEntry<IDType> : Entry<IDType> where IDType : struct
+    {
+        public string ModID { get; private set; }
+
+        public PersistentEntry(BaseScript owner, IDType gameID, string modID)
+            : base(owner, gameID)
+        {
+            ModID = modID;
+        }
     }
 
     /// <summary>
     /// Represents a modded item in the ModLibrary.
+    /// The item can act as equipment if EquipData is not null.
     /// </summary>
 
-    internal class ModItemEntry : IPersistentID<ItemCodex.ItemTypes>
+    internal class ModItemEntry : PersistentEntry<ItemCodex.ItemTypes>
     {
-        public ModItem itemInfo;
+        public ItemDescription ItemData;
 
-        public ModEquip equipInfo;
-    }
+        public EquipmentInfo EquipData; // May be null or a subtype
 
-    /// <summary>
-    /// Stores data for a modded item description.
-    /// </summary>
+        public ContentManager Manager;
 
-    internal class ModItem
-    {
-        public ItemDescription vanilla;
+        public string ItemShadowPath = "";
 
-        public string shadowPath = "";
+        public string ItemResourcePath = "";
 
-        public string resourcePath = "";
+        public string EquipResourcePath = "";
 
-        public ContentManager managerToUse;
-    }
+        public Dictionary<ItemCodex.ItemTypes, string> HatAltSetResourcePaths;
 
-    /// <summary>
-    /// Stores data for a modded equipment info.
-    /// </summary>
-
-    internal class ModEquip
-    {
-        public EquipmentInfo vanilla;
-
-        public string resourcePath = "";
-
-        public ContentManager managerToUse;
-
-        public Dictionary<ItemCodex.ItemTypes, string> hatAltSetResources;
-
-        public EquipType equipType;
+        public ModItemEntry(BaseScript owner, ItemCodex.ItemTypes gameID, string modID)
+            : base(owner, gameID, modID) { }
     }
 
     /// <summary>
     /// Stores modded audio for a mod - an entry is created for each mod upon its creation, and initialized by the mod if needed
     /// </summary>
 
-    internal class ModAudioEntry
+    internal class ModAudioEntry : Entry<int>
     {
-        public BaseScript owner;
+        public bool IsReady = false;
 
-        public int allocatedID;
+        public SoundBank EffectsSB; // "<Mod>Effects.xsb"
 
-        public bool isReady = false;
+        public WaveBank EffectsWB; // "<Mod>Music.xwb"
 
-        public SoundBank effectsSoundBank; // "<Mod>Effects.xsb", i.e. "FeatureExampleEffects.xsb"
+        public SoundBank MusicSB; //"<Mod>Music.xsb"
 
-        public WaveBank effectsWaveBank; // "<Mod>Music.xwb", i.e. "FeatureExampleEffects.xwb"
+        public WaveBank UniversalWB; // "<Mod>.xwb", never unloaded
 
-        public SoundBank musicSoundBank; //"<Mod>Music.xsb", i.e. "FeatureExampleMusic.xsb"
+        public Dictionary<int, string> EffectNames = new Dictionary<int, string>();
 
-        public WaveBank universalMusicWaveBank; // "<Mod>.xwb", i.e. "FeatureExample.xwb". Universal Music is always kept loaded, so only frequently used tracks should be put here.
+        public Dictionary<int, string> MusicNames = new Dictionary<int, string>();
 
-        public Dictionary<int, string> effectIDToName = new Dictionary<int, string>();
+        public Dictionary<string, string> MusicBankNames = new Dictionary<string, string>();
 
-        public Dictionary<int, string> musicIDToName = new Dictionary<int, string>();
-
-        public Dictionary<string, string> musicNameToBank = new Dictionary<string, string>();
+        public ModAudioEntry(BaseScript owner, int audioID)
+            : base(owner, audioID) { }
     }
     
-    internal class ModLevelEntry
+    internal class ModLevelEntry : Entry<Level.ZoneEnum>
     {
-        public BaseScript owner;
+        public LevelBuilder Builder;
 
-        public Level.ZoneEnum type;
+        public LevelLoader Loader;
 
-        public ModLevel levelInfo;
+        public Level.WorldRegion Region;
+
+        public ModLevelEntry(BaseScript owner, Level.ZoneEnum gameID)
+            : base(owner, gameID) { }
     }
 
-    internal class ModLevel
+    internal class ModCurseEntry : PersistentEntry<RogueLikeMode.TreatsCurses>
     {
-        public Level.ZoneEnum type;
+        public bool IsTreat = false;
 
-        public LevelBuilder builder;
+        public string NameHandle = "";
 
-        public LevelLoader loader;
+        public string DescriptionHandle = "";
 
-        public Level.WorldRegion region;
+        public string ResourcePath = "";
+
+        public float ScoreModifier = 0f;
+
+        public ModCurseEntry(BaseScript owner, RogueLikeMode.TreatsCurses gameID, string modID)
+            : base(owner, gameID, modID) { }
     }
 
-    internal class ModCurseEntry : IPersistentID<RogueLikeMode.TreatsCurses>
+    internal class ModPerkEntry : PersistentEntry<RogueLikeMode.Perks>
     {
-        public bool isTreat = false;
+        public int EssenceCost = 15;
 
-        public string nameHandle = "";
+        public string TextEntry = "";
 
-        public string descriptionHandle = "";
+        public string ResourcePath = "";
 
-        public string resourcePath = "";
+        public Action<PlayerView> Activator;
 
-        public float scoreModifier = 0f;
-    }
-
-    internal class ModPerkEntry : IPersistentID<RogueLikeMode.Perks>
-    {
-        public int essenceCost;
-
-        public string textEntry;
-
-        public string resourcePath = "";
-
-        public Action<PlayerView> activator;
+        public ModPerkEntry(BaseScript owner, RogueLikeMode.Perks gameID, string modID)
+            : base(owner, gameID, modID) { }
     }
 }

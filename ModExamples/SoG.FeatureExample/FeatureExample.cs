@@ -119,7 +119,7 @@ namespace SoG.FeatureExample
                 {
                     Name = "Shield Example",
                     Description = "This is a custom shield!",
-                    EquipType = EquipType.Shield,
+                    EquipType = EquipmentType.Shield,
                     IconPath = ModPath + "Items/ModShield/Icon",
                     EquipResourcePath = ModPath + "Items/ModShield",
                     ShldHP = 1337
@@ -130,7 +130,7 @@ namespace SoG.FeatureExample
                     Name = "Accessory Example",
                     Description = "This is a custom accessory that mimics a shield due to lazyness!",
                     IconPath = ModPath + "Items/Common/Icon",
-                    EquipType = EquipType.Accessory,
+                    EquipType = EquipmentType.Accessory,
                     ATK = 1337
                 },
 
@@ -139,7 +139,7 @@ namespace SoG.FeatureExample
                     Name = "Hat Example",
                     Description = "This is a custom hat!",
                     IconPath = ModPath + "Items/ModHat/Icon",
-                    EquipType = EquipType.Hat,
+                    EquipType = EquipmentType.Hat,
                     EquipResourcePath = ModPath + "Items/ModHat",
                     ATK = 1111
                 }
@@ -150,7 +150,7 @@ namespace SoG.FeatureExample
                     Name = "Facegear Example",
                     Description = "This is a custom facegear!",
                     IconPath = ModPath + "Items/ModFacegear/Icon",
-                    EquipType = EquipType.Facegear,
+                    EquipType = EquipmentType.Facegear,
                     EquipResourcePath = ModPath + "Items/ModFacegear",
                     ATK = 1234
                 }
@@ -161,7 +161,7 @@ namespace SoG.FeatureExample
                     Name = "OneHandedMelee Example",
                     Description = "This is a custom 1H weapon! It has cool animations for downward attacks.",
                     IconPath = ModPath + "Items/Mod1H/Icon",
-                    EquipType = EquipType.Weapon,
+                    EquipType = EquipmentType.Weapon,
                     WeaponType = WeaponInfo.WeaponCategory.OneHanded,
                     MagicWeapon = false,
                     EquipResourcePath = ModPath + "Items/Mod1H",
@@ -173,7 +173,7 @@ namespace SoG.FeatureExample
                     Name = "TwoHandedMagic Example",
                     Description = "This is a custom 2H weapon!",
                     IconPath = ModPath + "Items/Mod2H/Icon",
-                    EquipType = EquipType.Weapon,
+                    EquipType = EquipmentType.Weapon,
                     WeaponType = WeaponInfo.WeaponCategory.TwoHanded,
                     MagicWeapon = true,
                     EquipResourcePath = ModPath + "Items/Mod2H",

@@ -119,7 +119,7 @@ namespace SoG.Modding
                 return null;
 
             var entry = ModLibrary.Audio[entryID];
-            return entry.effectsSoundBank.GetCue(entry.effectIDToName[cueID]);
+            return entry.EffectsSB.GetCue(entry.EffectNames[cueID]);
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace SoG.Modding
             if (entry == null)
                 return null;
 
-            return entry.effectsSoundBank;
+            return entry.EffectsSB;
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace SoG.Modding
             if (!(success && !isMusic))
                 return null;
 
-            return ModLibrary.Audio[entryID]?.effectsWaveBank;
+            return ModLibrary.Audio[entryID]?.EffectsWB;
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace SoG.Modding
             if (!(success && isMusic))
                 return null;
 
-            return ModLibrary.Audio[entryID]?.musicSoundBank;
+            return ModLibrary.Audio[entryID]?.MusicSB;
         }
 
         /// <summary>
@@ -178,10 +178,10 @@ namespace SoG.Modding
 
             var entry = ModLibrary.Audio[entryID];
 
-            if (!entry.musicIDToName.TryGetValue(cueID, out string cueName))
+            if (!entry.MusicNames.TryGetValue(cueID, out string cueName))
                 return null;
 
-            if (!entry.musicNameToBank.TryGetValue(cueName, out string bank))
+            if (!entry.MusicBankNames.TryGetValue(cueName, out string bank))
                 return null;
 
             return bank;
@@ -199,7 +199,7 @@ namespace SoG.Modding
 
             foreach (var kvp in ModLibrary.Audio)
             {
-                if (kvp.Value.owner.GetType().Name == bank)
+                if (kvp.Value.Owner.GetType().Name == bank)
                     return true;
             }
 
@@ -218,7 +218,7 @@ namespace SoG.Modding
 
             foreach (var kvp in ModLibrary.Audio)
             {
-                if (kvp.Value.universalMusicWaveBank == bank)
+                if (kvp.Value.UniversalWB == bank)
                     return true;
             }
 

@@ -21,11 +21,10 @@ namespace SoG.Modding
             RareUtils.BlueprintSanityCheck(bprint);
 
             ModLevelEntry entry = ModLibrary.Levels[enZoneToGet];
-            ModLevel level = entry.levelInfo;
 
             try
             {
-                level.builder?.Invoke(bprint);
+                entry.Builder?.Invoke(bprint);
             }
             catch (Exception e)
             {
@@ -37,8 +36,8 @@ namespace SoG.Modding
 
             // Enforce certain values
 
-            bprint.enRegion = level.region;
-            bprint.enZone = level.type;
+            bprint.enRegion = entry.Region;
+            bprint.enZone = entry.GameID;
             bprint.sDefaultMusic = ""; // TODO Custom music
             bprint.sDialogueFiles = ""; // TODO Dialogue Files
             bprint.sMenuBackground = "bg01_mountainvillage"; // TODO Proper custom backgrounds. Transpiling _Level_Load is a good idea.
@@ -66,11 +65,10 @@ namespace SoG.Modding
             if (!type.IsModLevel()) return;
 
             ModLevelEntry entry = ModLibrary.Levels[type];
-            ModLevel level = entry.levelInfo;
 
             try
             {
-                level.loader?.Invoke(staticOnly);
+                entry.Loader?.Invoke(staticOnly);
             }
             catch (Exception e)
             {

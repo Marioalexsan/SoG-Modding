@@ -21,26 +21,24 @@ namespace SoG.Modding
             return allocatedType;
         }
 
-        public static Level.ZoneEnum CreateLevel(BaseScript owner, LevelConfig config)
+        public static Level.ZoneEnum CreateLevel(BaseScript owner, LevelConfig cfg)
         {
-            if (config == null || owner == null)
+            if (cfg == null || owner == null)
             {
                 GrindScript.Logger.Warn("Owner or config is null!");
                 return Level.ZoneEnum.None;
             }
 
-            Level.ZoneEnum allocatedType = IDAllocator.NewZoneEnum();
+            Level.ZoneEnum gameID = IDAllocator.NewZoneEnum();
 
-            ModLevel baseEntry = config.CreateLevel(allocatedType);
-
-            ModLibrary.Levels[allocatedType] = new ModLevelEntry()
+            ModLibrary.Levels[gameID] = new ModLevelEntry(owner, gameID)
             {
-                owner = owner,
-                type = allocatedType,
-                levelInfo = baseEntry
+                Builder = cfg.Builder,
+                Loader = cfg.Loader,
+                Region = cfg.WorldRegion
             };
 
-            return allocatedType;
+            return gameID;
         }
     }
 }

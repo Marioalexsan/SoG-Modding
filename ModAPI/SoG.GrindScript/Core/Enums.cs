@@ -18,7 +18,7 @@
     /// Defines equipment types based on ItemCodex.ItemCategories.
     /// </summary>
 
-    public enum EquipType
+    public enum EquipmentType
     {
         None = -1,
         Weapon = ItemCodex.ItemCategories.Weapon,

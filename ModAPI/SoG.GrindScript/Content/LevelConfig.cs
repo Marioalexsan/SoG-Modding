@@ -22,16 +22,5 @@ namespace SoG.Modding
 
         /// <summary> Sets the World Region, which is used for asset loading and certain gameplay logic. </summary>
         public Level.WorldRegion WorldRegion { get; set; } = Level.WorldRegion.NotLoaded;
-
-        internal ModLevel CreateLevel(Level.ZoneEnum allocatedType)
-        {
-            return new ModLevel()
-            {
-                builder = Builder,
-                loader = Loader,
-                region = WorldRegion,
-                type = allocatedType
-            };
-        }
     }
 }

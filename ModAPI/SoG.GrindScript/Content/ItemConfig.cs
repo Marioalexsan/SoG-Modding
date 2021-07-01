@@ -42,13 +42,13 @@ namespace SoG.Modding
 
         public ItemConfig(string uniqueID)
         {
-            UniqueID = uniqueID;
+            ModID = uniqueID;
         }
 
         // ItemDescription
 
         /// <summary> An identifier that must be unique between all other items in the same mod. </summary>
-        public string UniqueID { get; set; } = "";
+        public string ModID { get; set; } = "";
 
         public string Name { get; set; } = "A Mod Item";
 
@@ -99,9 +99,6 @@ namespace SoG.Modding
         /// <summary> The path to the folder containing the textures needed for the equipment. </summary>
         public string EquipResourcePath { get; set; } = "";
 
-        /// <summary> The ContentManager to use for this equipment's textures. By default, Game1.Content is used. </summary>
-        public ContentManager EquipManager { get; set; } = GrindScript.Game.Content;
-
         /// <summary> The stats that this equipment provides. The stat property shorthands modify this dictionary. </summary>
         public Dictionary<Stat, int> Stats { get; } = new Dictionary<Stat, int>();
 
@@ -134,7 +131,7 @@ namespace SoG.Modding
         /// Certain config settings are ignored depending on the EquipType (for example, hat appearance settings for weapons). <para/>
         /// A value of EquipType.None will create a non-equipment item.
         /// </summary>
-        public EquipType EquipType { get; set; } = EquipType.None;
+        public EquipmentType EquipType { get; set; } = EquipmentType.None;
 
         /// <summary> The Special Effects that this equipment has. Multiple special effects can be added. </summary>
         public HashSet<EquipmentInfo.SpecialEffect> Effects { get; } = new HashSet<EquipmentInfo.SpecialEffect>();
@@ -177,16 +174,6 @@ namespace SoG.Modding
                 return DefaultSet;
 
             return AltSets.TryGetValue(altSet, out VSetInfo exists) ? exists : AltSets[altSet] = new VSetInfo();
-        }
-
-        private void InitializeSet(HatInfo.VisualSet set, VSetInfo desc)
-        {
-            Array.Copy(desc.HatUnderHair, set.abUnderHair, 4);
-            Array.Copy(desc.HatBehindPlayer, set.abBehindCharacter, 4);
-            Array.Copy(desc.HatOffsets, set.av2RenderOffsets, 4);
-            set.bObstructsSides = desc.ObstructHairSides;
-            set.bObstructsTop = desc.ObstructHairTop;
-            set.bObstructsBottom = desc.ObstructHairBottom;
         }
 
         // Methods shared by all EquipmentInfos
@@ -249,123 +236,6 @@ namespace SoG.Modding
             if (setToUse != DefaultSet)
                 setToUse.Resource = resource;
             return this;
-        }
-
-        //
-        // API Methods
-        //
-
-        internal ModItem CreateModItem(ItemCodex.ItemTypes allocatedType)
-        {
-            ItemDescription itemInfo = new ItemDescription()
-            {
-                sFullName = Name,
-                sDescription = Description,
-                sNameLibraryHandle = "???",
-                sDescriptionLibraryHandle = "???",
-                sCategory = "",
-                iInternalLevel = SortingValue,
-                byFancyness = Math.Min((byte)1, Math.Max(Fancyness, (byte)3)),
-                iValue = Value,
-                iOverrideBloodValue = BloodValue,
-                fArcadeModeCostModifier = ArcadeValueModifier,
-                enType = allocatedType
-            };
-
-            itemInfo.lenCategory.UnionWith(Categories);
-
-            return new ModItem()
-            {
-                vanilla = itemInfo,
-                shadowPath = ShadowPath,
-                managerToUse = Manager,
-                resourcePath = IconPath
-            };
-        }
-
-        internal ModEquip CreateEquipInfo(ItemCodex.ItemTypes allocatedType)
-        {
-            EquipType typeToUse = Enum.IsDefined(typeof(EquipType), EquipType) ? EquipType : EquipType.None;
-
-            if (EquipType == EquipType.None)
-                return null;
-
-            EquipmentInfo info;
-            switch (typeToUse)
-            {
-                case EquipType.Weapon:
-                    info = BuildWeapon(allocatedType); break;
-                case EquipType.Hat:
-                    info = BuildHat(allocatedType); break;
-                case EquipType.Facegear:
-                    info = BuildFacegear(allocatedType); break;
-                default:
-                    info = new EquipmentInfo(EquipResourcePath, allocatedType); break;
-            }
-
-            info.deniStatChanges = new Dictionary<Stat, int>(Stats);
-            info.lenSpecialEffects.AddRange(Effects);
-
-            var altResources = new Dictionary<ItemCodex.ItemTypes, string>();
-            foreach (var set in AltSets)
-                altResources.Add(set.Key, set.Value.Resource);
-
-            return new ModEquip()
-            {
-                resourcePath = EquipResourcePath,
-                managerToUse = EquipManager,
-                equipType = typeToUse,
-                vanilla = info,
-                hatAltSetResources = EquipType != EquipType.Hat ? null : altResources
-            };
-        }
-
-        private FacegearInfo BuildFacegear(ItemCodex.ItemTypes allocatedType)
-        {
-            FacegearInfo equipInfo = new FacegearInfo(allocatedType);
-
-            Array.Copy(FacegearOverHair, equipInfo.abOverHair, 4);
-            Array.Copy(FacegearOverHat, equipInfo.abOverHat, 4);
-            Array.Copy(FacegearOffsets, equipInfo.av2RenderOffsets, 4);
-
-            return equipInfo;
-        }
-
-        private HatInfo BuildHat(ItemCodex.ItemTypes allocatedType)
-        {
-            HatInfo equipInfo = new HatInfo(allocatedType) { bDoubleSlot = HatDoubleSlot };
-
-            InitializeSet(equipInfo.xDefaultSet, DefaultSet);
-
-            foreach (var kvp in AltSets)
-                InitializeSet(equipInfo.denxAlternateVisualSets[kvp.Key] = new HatInfo.VisualSet(), kvp.Value);
-
-            return equipInfo;
-        }
-
-        private WeaponInfo BuildWeapon(ItemCodex.ItemTypes allocatedType)
-        {
-            // TODO add custom palette support
-            WeaponInfo equipInfo = new WeaponInfo(EquipResourcePath, allocatedType, WeaponType)
-            {
-                enWeaponCategory = WeaponType,
-                enAutoAttackSpell = WeaponInfo.AutoAttackSpell.None
-            };
-
-            if (WeaponType == WeaponInfo.WeaponCategory.OneHanded)
-            {
-                equipInfo.iDamageMultiplier = 90;
-                if (MagicWeapon)
-                    equipInfo.enAutoAttackSpell = WeaponInfo.AutoAttackSpell.Generic1H;
-            }
-            else if (WeaponType == WeaponInfo.WeaponCategory.TwoHanded)
-            {
-                equipInfo.iDamageMultiplier = 125;
-                if (MagicWeapon)
-                    equipInfo.enAutoAttackSpell = WeaponInfo.AutoAttackSpell.Generic2H;
-            }
-
-            return equipInfo;
         }
     }
 }

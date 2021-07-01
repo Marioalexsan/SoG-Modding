@@ -109,7 +109,7 @@ namespace SoG.Modding
                 session.enCurseTreatSlot03 = to;
         }
 
-        public static void IdentifyModUnique<T>(IEnumerable<IPersistentID<T>> targetUniques, Dictionary<T, string> targetSavedItems, ref T tempShuffleStart, Action<T, T> typeShuffler) where T : Enum
+        public static void IdentifyModUnique<T>(IEnumerable<PersistentEntry<T>> targetUniques, Dictionary<T, string> targetSavedItems, ref T tempShuffleStart, Action<T, T> typeShuffler) where T : struct
         {
             var savedItems = new Dictionary<T, string>(targetSavedItems);
 

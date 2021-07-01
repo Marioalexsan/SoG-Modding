@@ -10,7 +10,7 @@ namespace SoG.Modding
     {
         public TreatCurseConfig(string uniqueID)
         {
-            UniqueID = uniqueID;
+            ModID = uniqueID;
         }
 
         bool _isTreat = false;
@@ -33,7 +33,7 @@ namespace SoG.Modding
 
         public string Description { get; set; } = "It's a mysterious treat or curse!";
 
-        public string UniqueID { get; set; } = "";
+        public string ModID { get; set; } = "";
 
         public float ScoreModifier { get; set; } = 0f;
     }
@@ -42,7 +42,7 @@ namespace SoG.Modding
     {
         public PerkConfig(string uniqueID)
         {
-            UniqueID = uniqueID;
+            ModID = uniqueID;
         }
 
         public Action<PlayerView> RunStartActivator { get; set; } = null;
@@ -55,6 +55,6 @@ namespace SoG.Modding
 
         public string TexturePath { get; set; } = "";
 
-        public string UniqueID { get; set; } = "";
+        public string ModID { get; set; } = "";
     }
 }

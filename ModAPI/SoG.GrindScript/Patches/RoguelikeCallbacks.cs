@@ -14,7 +14,7 @@ namespace SoG.Modding
             if (!enPerk.IsModPerk())
                 return true;
 
-            __result = Utils.TryLoadTex(ModLibrary.GlobalLib.Perks[enPerk].resourcePath, GrindScript.Game.Content);
+            __result = Utils.TryLoadTex(ModLibrary.GlobalLib.Perks[enPerk].ResourcePath, GrindScript.Game.Content);
 
             return false;
         }
@@ -24,7 +24,7 @@ namespace SoG.Modding
             if (!enTreat.IsModTreatCurse())
                 return true;
 
-            __result = Utils.TryLoadTex(ModLibrary.GlobalLib.TreatsCurses[enTreat].resourcePath, GrindScript.Game.Content);
+            __result = Utils.TryLoadTex(ModLibrary.GlobalLib.TreatsCurses[enTreat].ResourcePath, GrindScript.Game.Content);
 
             return false;
         }
@@ -41,9 +41,9 @@ namespace SoG.Modding
 
             var entry = ModLibrary.GlobalLib.TreatsCurses[enTreatCurse];
 
-            sNameHandle = entry.nameHandle;
-            sDescriptionHandle = entry.descriptionHandle;
-            fScoreModifier = entry.scoreModifier;
+            sNameHandle = entry.NameHandle;
+            sDescriptionHandle = entry.DescriptionHandle;
+            fScoreModifier = entry.ScoreModifier;
 
             return false;
         }
@@ -52,7 +52,7 @@ namespace SoG.Modding
         {
             foreach (var kvp in ModLibrary.GlobalLib.TreatsCurses)
             {
-                if (!kvp.Value.isTreat)
+                if (!kvp.Value.IsTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
             }
         }
@@ -61,7 +61,7 @@ namespace SoG.Modding
         {
             foreach (var kvp in ModLibrary.GlobalLib.TreatsCurses)
             {
-                if (kvp.Value.isTreat)
+                if (kvp.Value.IsTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
             }
         }
@@ -71,7 +71,7 @@ namespace SoG.Modding
             foreach (var perk in len)
             {
                 if (perk.IsModPerk())
-                    ModLibrary.GlobalLib.Perks[perk].activator?.Invoke(xView);
+                    ModLibrary.GlobalLib.Perks[perk].Activator?.Invoke(xView);
             }
         }
 
@@ -79,7 +79,7 @@ namespace SoG.Modding
         {
             GrindScript.Logger.Debug("Init!");
             foreach (var perk in ModLibrary.GlobalLib.Perks.Values)
-                RogueLikeMode.PerkInfo.lxAllPerks.Add(new RogueLikeMode.PerkInfo(perk.GameID, perk.essenceCost, perk.textEntry));
+                RogueLikeMode.PerkInfo.lxAllPerks.Add(new RogueLikeMode.PerkInfo(perk.GameID, perk.EssenceCost, perk.TextEntry));
         }
     }
 }

@@ -70,7 +70,7 @@ namespace SoG.Modding
 
                 if (modItem)
                 {
-                    __result.txShield = Utils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", ModLibrary.GlobalLib.Items[enType].equipInfo.managerToUse);
+                    __result.txShield = Utils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", ModLibrary.GlobalLib.Items[enType].Manager);
                 }
                 else
                 {
@@ -128,14 +128,14 @@ namespace SoG.Modding
                 GrindScript.Logger.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
 
             ModAudioEntry entry = currentIsModded ? ModLibrary.Audio[entryID] : null;
-            string cueName = currentIsModded ? entry.musicIDToName[cueID] : sSongName;
-            string nextBankName = currentIsModded ? entry.musicNameToBank[cueName] : dssSongRegionMap[sSongName];
+            string cueName = currentIsModded ? entry.MusicNames[cueID] : sSongName;
+            string nextBankName = currentIsModded ? entry.MusicBankNames[cueName] : dssSongRegionMap[sSongName];
 
             WaveBank currentMusicBank = f_musicWaveBank.GetValue(soundSystem) as WaveBank;
 
             if (Utils.IsUniversalMusicBank(nextBankName))
             {
-                if (currentIsModded && entry.universalMusicWaveBank == null)
+                if (currentIsModded && entry.UniversalWB == null)
                 {
                     GrindScript.Logger.Error($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
                     return false;
@@ -144,7 +144,7 @@ namespace SoG.Modding
                 if (currentMusicBank != null && !Utils.IsUniversalMusicBank(currentMusicBank))
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
 
-                f_musicWaveBank.SetValue(soundSystem, currentIsModded ? entry.universalMusicWaveBank : universalMusic);
+                f_musicWaveBank.SetValue(soundSystem, currentIsModded ? entry.UniversalWB : universalMusic);
             }
             else if (soundSystem.sCurrentMusicWaveBank != nextBankName)
             {
@@ -160,7 +160,7 @@ namespace SoG.Modding
                 }
                 else
                 {
-                    string root = Path.Combine(GrindScript.Game.Content.RootDirectory, currentIsModded ? entry.owner.ModPath : "");
+                    string root = Path.Combine(GrindScript.Game.Content.RootDirectory, currentIsModded ? entry.Owner.ModPath : "");
 
                     f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", $"{nextBankName}.xwb")));
                     f_musicWaveBank.SetValue(soundSystem, null);
@@ -178,7 +178,7 @@ namespace SoG.Modding
                     return false;
                 }
 
-                string root = Path.Combine(GrindScript.Game.Content.RootDirectory, currentIsModded ? entry.owner.ModPath : "");
+                string root = Path.Combine(GrindScript.Game.Content.RootDirectory, currentIsModded ? entry.Owner.ModPath : "");
                 string bankToUse = currentIsModded ? nextBankName : soundSystem.sCurrentMusicWaveBank;
 
                 f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", bankToUse + ".xwb")));

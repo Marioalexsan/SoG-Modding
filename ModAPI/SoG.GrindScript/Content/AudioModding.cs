@@ -28,39 +28,39 @@ namespace SoG.Modding
 
             AudioEngine audioEngine = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(GrindScript.Game.xSoundSystem) as AudioEngine;
 
-            if (entry.isReady)
+            if (entry.IsReady)
             {
                 GrindScript.Logger.Warn($"Audio Entry {ID} is being redefined for a second time! This may cause issues.");
 
-                if (entry.effectsSoundBank != null)
+                if (entry.EffectsSB != null)
                 {
-                    if (!entry.effectsSoundBank.IsDisposed)
-                        entry.effectsSoundBank.Dispose();
-                    entry.effectsSoundBank = null;
+                    if (!entry.EffectsSB.IsDisposed)
+                        entry.EffectsSB.Dispose();
+                    entry.EffectsSB = null;
                 }
 
-                if (entry.effectsWaveBank != null)
+                if (entry.EffectsWB != null)
                 {
-                    if (!entry.effectsWaveBank.IsDisposed)
-                        entry.effectsWaveBank.Dispose();
-                    entry.effectsWaveBank = null;
+                    if (!entry.EffectsWB.IsDisposed)
+                        entry.EffectsWB.Dispose();
+                    entry.EffectsWB = null;
                 }
 
-                if (entry.musicSoundBank != null)
+                if (entry.MusicSB != null)
                 {
-                    if (!entry.musicSoundBank.IsDisposed)
-                        entry.musicSoundBank.Dispose();
-                    entry.musicSoundBank = null;
+                    if (!entry.MusicSB.IsDisposed)
+                        entry.MusicSB.Dispose();
+                    entry.MusicSB = null;
                 }
 
-                if (entry.universalMusicWaveBank != null)
+                if (entry.UniversalWB != null)
                 {
-                    if (!entry.universalMusicWaveBank.IsDisposed)
-                        entry.universalMusicWaveBank.Dispose();
-                    entry.universalMusicWaveBank = null;
+                    if (!entry.UniversalWB.IsDisposed)
+                        entry.UniversalWB.Dispose();
+                    entry.UniversalWB = null;
                 }
             }
-            entry.isReady = true;
+            entry.IsReady = true;
 
             // Assign indexes to effects
             Dictionary<int, string> effectIDToCue = new Dictionary<int, string>();
@@ -68,7 +68,7 @@ namespace SoG.Modding
             foreach (var effect in cfg.EffectCues)
                 effectIDToCue[effectID++] = effect;
 
-            string modName = entry.owner.GetType().Name;
+            string modName = entry.Owner.GetType().Name;
 
             // Assign indexes to music
             Dictionary<int, string> musicIDToCue = new Dictionary<int, string>();
@@ -85,15 +85,15 @@ namespace SoG.Modding
                     GrindScript.Logger.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not follow the naming convention, and may cause conflicts!");
             }
 
-            string root = Path.Combine(entry.owner.ModContent.RootDirectory, assetPath);
+            string root = Path.Combine(entry.Owner.ModContent.RootDirectory, assetPath);
 
-            entry.effectsWaveBank = Utils.TryLoadWaveBank(Path.Combine(root, "Sound", modName + "Effects.xwb"), audioEngine);
-            entry.effectsSoundBank = Utils.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Effects.xsb"), audioEngine);
-            entry.musicSoundBank = Utils.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Music.xsb"), audioEngine);
-            entry.universalMusicWaveBank = Utils.TryLoadWaveBank(Path.Combine(root, "Sound", modName + ".xwb"), audioEngine);
-            entry.effectIDToName = effectIDToCue;
-            entry.musicIDToName = musicIDToCue;
-            entry.musicNameToBank = cueToWaveBank;
+            entry.EffectsWB = Utils.TryLoadWaveBank(Path.Combine(root, "Sound", modName + "Effects.xwb"), audioEngine);
+            entry.EffectsSB = Utils.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Effects.xsb"), audioEngine);
+            entry.MusicSB = Utils.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Music.xsb"), audioEngine);
+            entry.UniversalWB = Utils.TryLoadWaveBank(Path.Combine(root, "Sound", modName + ".xwb"), audioEngine);
+            entry.EffectNames = effectIDToCue;
+            entry.MusicNames = musicIDToCue;
+            entry.MusicBankNames = cueToWaveBank;
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace SoG.Modding
 
             bool isModded = Utils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
             var entry = ModLibrary.Audio.ContainsKey(entryID) ? ModLibrary.Audio[entryID] : null;
-            string cueName = entry != null && entry.musicIDToName.ContainsKey(cueID) ? entry.musicIDToName[cueID] : null;
+            string cueName = entry != null && entry.MusicNames.ContainsKey(cueID) ? entry.MusicNames[cueID] : null;
 
             if ((!isModded || !isMusic || cueName == null) && !(redirect == ""))
             {
@@ -157,7 +157,7 @@ namespace SoG.Modding
 
         public static string GetEffectID(int audioEntryID, string cueName)
         {
-            var effects = ModLibrary.Audio[audioEntryID].effectIDToName;
+            var effects = ModLibrary.Audio[audioEntryID].EffectNames;
             foreach (var kvp in effects)
             {
                 if (kvp.Value == cueName)
@@ -190,7 +190,7 @@ namespace SoG.Modding
 
         public static string GetMusicID(int audioEntryID, string cueName)
         {
-            var music = ModLibrary.Audio[audioEntryID].musicIDToName;
+            var music = ModLibrary.Audio[audioEntryID].MusicNames;
             foreach (var kvp in music)
             {
                 if (kvp.Value == cueName)
@@ -208,7 +208,7 @@ namespace SoG.Modding
             if (!Utils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
             ModAudioEntry entry = ModLibrary.Audio[entryID];
-            return isMusic ? entry.musicIDToName[cueID] : entry.effectIDToName[cueID];
+            return isMusic ? entry.MusicNames[cueID] : entry.EffectNames[cueID];
         }
     }
 }

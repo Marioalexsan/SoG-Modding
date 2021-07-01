@@ -27,6 +27,8 @@ namespace SoG.Modding
 
             Logger.Info($"ModPath set as {ModPath}");
 
+            // TODO Clean up the code below
+
             var allAudio = ModLibrary.Audio;
             if (allAudio.ContainsKey(IDAllocator.AudioIDNext))
             {
@@ -36,7 +38,7 @@ namespace SoG.Modding
             else
             {
                 _audioID = IDAllocator.NewAudioEntry();
-                allAudio.Add(_audioID, new ModAudioEntry() { allocatedID = _audioID, owner = this });
+                allAudio.Add(_audioID, new ModAudioEntry(this, _audioID));
                 Logger.Info($"AudioID set as {_audioID}");
             }
 
