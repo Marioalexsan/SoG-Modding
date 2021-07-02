@@ -3,8 +3,9 @@ using Microsoft.Xna.Framework.Content;
 using System;
 using System.Collections.Generic;
 using Stat = SoG.EquipmentInfo.StatEnum;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
     /// <summary>
     /// Used to define a custom item's basic properties, such as its name, value, item categories, and other things.
@@ -76,7 +77,7 @@ namespace SoG.Modding
         public byte Fancyness { get; set; } = 1;
 
         /// <summary> The ContentManager to use for this item's textures. By default, Game1.Content is used. </summary>
-        public ContentManager Manager { get; set; } = GrindScript.Game.Content;
+        public ContentManager Manager { get; set; } = ModGlobals.Game.Content;
 
         /// <summary> Item Categories to assign to this item. GrindScript automatically assigns certain categories for equipments. </summary>
         public HashSet<ItemCodex.ItemCategories> Categories { get; } = new HashSet<ItemCodex.ItemCategories>();

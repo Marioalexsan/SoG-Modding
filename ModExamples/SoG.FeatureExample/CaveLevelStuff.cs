@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding;
+using SoG.Modding.Extensions;
 
 namespace SoG.FeatureExample
 {

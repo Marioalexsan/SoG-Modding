@@ -3,27 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
-    public static class MiscModding
+    public class MiscModding : ModdingLogic
     {
+        public MiscModding(GrindScript modAPI)
+            : base(modAPI) { }
+
         /// <summary>
         /// Helper method for setting up multiple commands.
         /// </summary>
 
-        public static void ConfigureCommandsFrom(BaseScript owner, IDictionary<string, CommandParser> parsers)
+        public void ConfigureCommands(IDictionary<string, CommandParser> parsers)
         {
-            if (owner == null || parsers == null)
-            {
-                GrindScript.Logger.Warn("Can't configure commands due to owner or parsers being null!");
-                return;
-            }
-
             foreach (var kvp in parsers)
-            {
-                ConfigureCommand(owner, kvp.Key, kvp.Value);
-            }
+                ConfigureCommand(kvp.Key, kvp.Value);
         }
 
         /// <summary>
@@ -31,31 +27,32 @@ namespace SoG.Modding
         /// The command must not have whitespace in it.
         /// </summary>
 
-        public static void ConfigureCommand(BaseScript owner, string command, CommandParser parser)
+        public void ConfigureCommand(string command, CommandParser parser)
         {
+            BaseScript owner = _modAPI.CurrentModContext;
             if (owner == null || command == null)
             {
-                GrindScript.Logger.Warn("Can't configure command due to owner or command being null!");
+                ModGlobals.Log.Warn("Can't configure command due to owner or command being null!");
                 return;
             }
 
             string name = owner.GetType().Name;
 
-            if (!ModLibrary.Commands.TryGetValue(name, out var parsers))
+            if (!_modAPI.Library.Commands.TryGetValue(name, out var parsers))
             {
-                GrindScript.Logger.Error($"Couldn't retrieve command table for mod {name}!");
+                ModGlobals.Log.Error($"Couldn't retrieve command table for mod {name}!");
                 return;
             }
 
             if (parser == null)
             {
                 parsers.Remove(command);
-                GrindScript.Logger.Info($"Cleared command /{name}:{command}.");
+                ModGlobals.Log.Info($"Cleared command /{name}:{command}.");
             }
             else
             {
                 parsers[command] = parser;
-                GrindScript.Logger.Info($"Updated command /{name}:{command}.");
+                ModGlobals.Log.Info($"Updated command /{name}:{command}.");
             }
         }
     }

@@ -1,9 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using SoG.Modding.Core;
+using SoG.Modding.Content;
+using SoG.Modding.Extensions;
+using SoG.Modding.Tools;
 
 namespace SoG.FeatureExample
 {
@@ -197,18 +200,18 @@ namespace SoG.FeatureExample
                 }
             };
 
-            ItemModding.CreateItemsFrom(this, ItemLibrary.Values);
+            ModAPI.ItemAPI.CreateItems(ItemLibrary.Values);
 
-            modShield = ItemModding.GetItemType(this, "_Mod_Item0001");
-            modAccessory = ItemModding.GetItemType(this, "_Mod_Item0002");
-            modHat = ItemModding.GetItemType(this, "_Mod_Item0003");
-            modFacegear = ItemModding.GetItemType(this, "_Mod_Item0004");
-            modOneHandedWeapon = ItemModding.GetItemType(this, "_Mod_Item0005");
-            modTwoHandedWeapon = ItemModding.GetItemType(this, "_Mod_Item0006");
-            modMisc1 = ItemModding.GetItemType(this, "_Mod_Item0007");
-            modMisc2 = ItemModding.GetItemType(this, "_Mod_Item0008");
+            modShield = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0001");
+            modAccessory = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0002");
+            modHat = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0003");
+            modFacegear = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0004");
+            modOneHandedWeapon = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0005");
+            modTwoHandedWeapon = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0006");
+            modMisc1 = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0007");
+            modMisc2 = ModAPI.ItemAPI.GetItemType(this, "_Mod_Item0008");
 
-            ItemModding.AddRecipe(modOneHandedWeapon, new Dictionary<ItemCodex.ItemTypes, ushort>
+            ModAPI.ItemAPI.AddRecipe(modOneHandedWeapon, new Dictionary<ItemCodex.ItemTypes, ushort>
             {
                 [modMisc1] = 5,
                 [modMisc2] = 10,
@@ -222,31 +225,31 @@ namespace SoG.FeatureExample
         {
             Logger.Info("Building sounds...");
 
-            AudioModding.ConfigureModAudio(this, new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny"));
+            ModAPI.AudioAPI.ConfigureAudio(new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny"));
 
-            audioIntro = AudioModding.GetMusicID(this, "Intro");
-            audioDestiny = AudioModding.GetMusicID(this, "Destiny");
-            audioRipped = AudioModding.GetMusicID(this, "Ripped");
-            audioClash = AudioModding.GetMusicID(this, "Clash");
-            audioDeafSilence = AudioModding.GetMusicID(this, "DeafSilence");
+            audioIntro = ModAPI.AudioAPI.GetMusicID(this, "Intro");
+            audioDestiny = ModAPI.AudioAPI.GetMusicID(this, "Destiny");
+            audioRipped = ModAPI.AudioAPI.GetMusicID(this, "Ripped");
+            audioClash = ModAPI.AudioAPI.GetMusicID(this, "Clash");
+            audioDeafSilence = ModAPI.AudioAPI.GetMusicID(this, "DeafSilence");
 
             // Uncomment this if you want to see more redirect behavior
             /*
             Logger.Info("Testing sound redirects...");
 
-            AudioModding.RedirectVanillaMusic("BossBattle01", "BishopBattle"); // Redirect is invalid
-            AudioModding.RedirectVanillaMusic("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
-            AudioModding.RedirectVanillaMusic("GS_1337_M1337", audioClash); // Vanilla is invalid
+            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", "BishopBattle"); // Redirect is invalid
+            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
+            ModAPI.AudioAPI.RedirectVanillaMusic("GS_1337_M1337", audioClash); // Vanilla is invalid
 
-            AudioModding.RedirectVanillaMusic("BossBattle01", audioClash); // Sets a redirect
-            AudioModding.RedirectVanillaMusic("BossBattle01", audioRipped); // Overrides the redirect
-            AudioModding.RedirectVanillaMusic("BossBattle01", ""); // Clears the redirect
+            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", audioClash); // Sets a redirect
+            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", audioRipped); // Overrides the redirect
+            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", ""); // Clears the redirect
 
             Logger.Info("Redirect tests done!");
             */
 
-            AudioModding.RedirectVanillaMusic("BossBattle01", audioClash);
-            AudioModding.RedirectVanillaMusic("BishopBattle", audioRipped);
+            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", audioClash);
+            ModAPI.AudioAPI.RedirectVanillaMusic("BishopBattle", audioRipped);
 
             Logger.Info("Done with sounds!");
         }
@@ -262,7 +265,7 @@ namespace SoG.FeatureExample
                     string[] args = argList.Split(' ');
                     if (NetUtils.IsLocalOrServer)
                     {
-                        PlayerView localPlayer = GrindScript.Game.xLocalPlayer;
+                        PlayerView localPlayer = ModGlobals.Game.xLocalPlayer;
                         CAS.AddChatMessage("Dropping Items!");
                         modShield.SpawnItem(localPlayer);
                         modAccessory.SpawnItem(localPlayer);
@@ -290,13 +293,13 @@ namespace SoG.FeatureExample
                     };
 
                     if (music.TryGetValue(args[0], out string ID))
-                        GrindScript.Game.xSoundSystem.PlaySong(ID, true);
+                        ModGlobals.Game.xSoundSystem.PlaySong(ID, true);
                     else CAS.AddChatMessage("Unknown mod music!");
                 },
 
                 ["TellIDs"] = (argList, _) =>
                 {
-                    Inventory inv = GrindScript.Game.xLocalPlayer.xInventory;
+                    Inventory inv = ModGlobals.Game.xLocalPlayer.xInventory;
                     CAS.AddChatMessage("Shield:" + (int)modShield + ", count: " + inv.GetAmount(modShield));
                     CAS.AddChatMessage("Accessory:" + (int)modAccessory + ", count: " + inv.GetAmount(modAccessory));
                     CAS.AddChatMessage("Hat:" + (int)modHat + ", count: " + inv.GetAmount(modHat));
@@ -307,7 +310,7 @@ namespace SoG.FeatureExample
 
                 ["GibCraft"] = (argList, _) =>
                 {
-                    PlayerView localPlayer = GrindScript.Game.xLocalPlayer;
+                    PlayerView localPlayer = ModGlobals.Game.xLocalPlayer;
                     CAS.AddChatMessage("Dropping Items!");
 
                     int amount = 10;
@@ -320,11 +323,18 @@ namespace SoG.FeatureExample
 
                 ["Yeet"] = (argList, _) =>
                 {
-                    GrindScript.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
+                    ModGlobals.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
+                },
+
+                ["TryCrappyLoad"] = (argList, _) =>
+                {
+                    // This should fail since there's no load context
+                    // In commands
+                    ModAPI.ItemAPI.CreateItem(new ItemConfig("Lmao"));
                 }
             };
 
-            MiscModding.ConfigureCommandsFrom(this, parsers);
+            ModAPI.MiscAPI.ConfigureCommands(parsers);
 
             Logger.Info("Commands set up successfully!");
         }
@@ -340,7 +350,7 @@ namespace SoG.FeatureExample
                 Loader = null
             };
 
-            modLevel = LevelModding.CreateLevel(this, cfg);
+            modLevel = ModAPI.LevelAPI.CreateLevel(cfg);
 
             Logger.Info("Levels set up successfully!");
         }
@@ -362,7 +372,7 @@ namespace SoG.FeatureExample
                 TexturePath = ModPath + "RogueLike/SoulBooster"
             };
 
-            RoguelikeModding.CreatePerk(this, perk01);
+            ModAPI.RoguelikeAPI.CreatePerk(perk01);
 
             Logger.Info("Done with Roguelike stuff!");
         }

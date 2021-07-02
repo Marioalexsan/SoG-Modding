@@ -1,7 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Extensions
 {
     public static class ItemExtension
     {
@@ -24,25 +25,7 @@ namespace SoG.Modding
         {
             Vector2 v2ThrowDirection = Utility.RandomizeVector2Direction(CAS.RandomInLogic);
 
-            return GrindScript.Game._EntityMaster_AddItem(enType, v2Pos, fVirtualHeight, iColliderLayer, v2ThrowDirection);
-        }
-
-        /// <summary>
-        /// Checks if the given item ID is a vanilla item (i.e. is present in the base game)
-        /// </summary>
-
-        public static bool IsSoGItem(this ItemCodex.ItemTypes enType)
-        {
-            return Enum.IsDefined(typeof(ItemCodex.ItemTypes), enType);
-        }
-
-        /// <summary>
-        /// Checks if the given item ID is a mod item (i.e. it is currently allocated by GrindScript)
-        /// </summary>
-
-        public static bool IsModItem(this ItemCodex.ItemTypes enType)
-        {
-            return enType >= IDAllocator.ItemTypesStart && enType < IDAllocator.ItemTypesEnd;
+            return ModGlobals.Game._EntityMaster_AddItem(enType, v2Pos, fVirtualHeight, iColliderLayer, v2ThrowDirection);
         }
     }
 }

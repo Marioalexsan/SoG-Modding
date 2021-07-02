@@ -5,33 +5,38 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
-    public class LevelModding
+    public class LevelModding : ModdingLogic
     {
-        public static Level.WorldRegion CreateWorldRegion()
+        public LevelModding(GrindScript modAPI)
+            : base(modAPI) { }
+
+        public Level.WorldRegion CreateWorldRegion()
         {
-            var VanillaContent = GrindScript.Game.Content;
+            var VanillaContent = ModGlobals.Game.Content;
 
-            var allocatedType = IDAllocator.NewWorldRegion();
+            var gameID = _modAPI.Allocator.WorldRegionID.Allocate();
 
-            GrindScript.Game.xLevelMaster.denxRegionContent.Add(allocatedType, new ContentManager(VanillaContent.ServiceProvider, VanillaContent.RootDirectory));
+            ModGlobals.Game.xLevelMaster.denxRegionContent.Add(gameID, new ContentManager(VanillaContent.ServiceProvider, VanillaContent.RootDirectory));
 
-            return allocatedType;
+            return gameID;
         }
 
-        public static Level.ZoneEnum CreateLevel(BaseScript owner, LevelConfig cfg)
+        public Level.ZoneEnum CreateLevel(LevelConfig cfg)
         {
+            BaseScript owner = _modAPI.CurrentModContext;
             if (cfg == null || owner == null)
             {
-                GrindScript.Logger.Warn("Owner or config is null!");
+                ModGlobals.Log.Warn("Owner or config is null!");
                 return Level.ZoneEnum.None;
             }
 
-            Level.ZoneEnum gameID = IDAllocator.NewZoneEnum();
+            Level.ZoneEnum gameID = _modAPI.Allocator.LevelID.Allocate();
 
-            ModLibrary.Levels[gameID] = new ModLevelEntry(owner, gameID)
+            _modAPI.Library.Levels[gameID] = new ModLevelEntry(owner, gameID)
             {
                 Builder = cfg.Builder,
                 Loader = cfg.Loader,

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using WeaponAssets;
+using SoG.Modding.Patches;
+using SoG.Modding.Extensions;
 
-namespace SoG.Modding
+namespace SoG.Modding.Core
 {
     /// <summary>
     /// Factory class used for retrieving Harmony patches via an enum.
@@ -93,6 +95,13 @@ namespace SoG.Modding
             public MethodInfo Prefix;
             public MethodInfo Transpiler;
             public MethodInfo Postfix;
+
+            public PatchInfo() { }
+
+            public PatchInfo(MethodInfo target)
+            {
+                Target = target;
+            }
         }
 
         private static readonly Dictionary<PatchID, PatchInfo> _patchCodex;
@@ -104,7 +113,7 @@ namespace SoG.Modding
 
         static PatchCodex()
         {
-            TypeInfo Patches = typeof(Patches).GetTypeInfo(); // Commonly used
+            TypeInfo Patches = typeof(PatchCollection).GetTypeInfo(); // Commonly used
             TypeInfo Game1 = typeof(Game1).GetTypeInfo(); // Commonly used
             TypeInfo SoundSystem = typeof(SoundSystem).GetTypeInfo(); // SoundSystem patching
             TypeInfo WeaponContentManager = typeof(WeaponContentManager).GetTypeInfo();

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Content;
 
-namespace SoG.Modding
+namespace SoG.Modding.Core
 {
     public delegate void CommandParser(string argList, int connection);
 

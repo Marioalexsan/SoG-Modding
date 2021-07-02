@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
+using SoG.Modding.Tools;
+using SoG.Modding.Extensions;
 
-namespace SoG.Modding
+namespace SoG.Modding.Patches
 {
-    internal static partial class Patches
+    internal static partial class PatchCollection
     {
         /// <summary>
         /// Inserts <see cref="OnContentLoad"/> in <see cref="Game1.__StartupThreadExecute"/>.
@@ -21,7 +23,7 @@ namespace SoG.Modding
 
             List<CodeInstruction> insert = new List<CodeInstruction>
             {
-                new CodeInstruction(OpCodes.Call, typeof(Patches).GetPrivateStaticMethod("OnContentLoad"))
+                new CodeInstruction(OpCodes.Call, typeof(PatchCollection).GetPrivateStaticMethod("OnContentLoad"))
             };
 
             return PatchUtils.InsertAfterMethod(code, target, insert);
@@ -43,7 +45,7 @@ namespace SoG.Modding
                 new CodeInstruction(OpCodes.Ldloc_S, 2),
                 new CodeInstruction(OpCodes.Ldarg_S, 1),
                 new CodeInstruction(OpCodes.Ldarg_S, 2),
-                new CodeInstruction(OpCodes.Call, typeof(Patches).GetPrivateStaticMethod("OnChatParseCommand")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchCollection).GetPrivateStaticMethod("OnChatParseCommand")),
                 new CodeInstruction(OpCodes.Brfalse, afterRet),
                 new CodeInstruction(OpCodes.Ret),
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
@@ -70,13 +72,13 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(Utils).GetMethod("GetEffectSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetEffectSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex), 
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -109,13 +111,13 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(Utils).GetMethod("GetEffectSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetEffectSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -148,13 +150,13 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(Utils).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetMusicSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -184,13 +186,13 @@ namespace SoG.Modding
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(Utils).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetMusicSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(AudioModding).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -220,7 +222,7 @@ namespace SoG.Modding
             {
                 new CodeInstruction(OpCodes.Ldarg_S, 1),
                 new CodeInstruction(OpCodes.Ldarg_S, 2),
-                new CodeInstruction(OpCodes.Call, typeof(Patches).GetPrivateStaticMethod("OnLevelLoadDoStuff"))
+                new CodeInstruction(OpCodes.Call, typeof(PatchCollection).GetPrivateStaticMethod("OnLevelLoadDoStuff"))
             };
 
             return PatchUtils.InsertBeforeMethod(code, target, insert);

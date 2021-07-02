@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
 
-namespace SoG.Modding
+namespace SoG.Modding.Tools
 {
     /// <summary>
     /// Provides various helper methods for transpiling the game.
@@ -59,7 +59,7 @@ namespace SoG.Modding
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to the described incompatibilities. </exception>
 
-        public static CodeList InsertAfterMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, bool missingPopIsOk = false, bool logCode = false)
+        public static CodeList InsertAfterMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, bool missingPopIsOk = false, ConsoleLogger log = null)
         {
             int counter = methodIndex + 1;
             var noReturnValue = target.ReturnType == typeof(void);
@@ -89,8 +89,7 @@ namespace SoG.Modding
             }
             if (stage != 2) throw new Exception("Transpile failed: couldn't find target!");
 
-            if (logCode)
-                GrindScript.Logger.InspectCode(code, target);
+            log?.InspectCode(code, target);
         }
 
         /// <summary> 
@@ -100,7 +99,7 @@ namespace SoG.Modding
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to failing to find the target method, or if a suitable insertion point wasn't spotted. </exception>
 
-        public static CodeList InsertBeforeMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, bool logCode = false)
+        public static CodeList InsertBeforeMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, ConsoleLogger log = null)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();
@@ -159,8 +158,7 @@ namespace SoG.Modding
             foreach (CodeInstruction ins in leftoverCode)
                 yield return ins;
 
-            if (logCode)
-                GrindScript.Logger.InspectCode(code, target);
+            log?.InspectCode(code, target);
         }
     }
 }

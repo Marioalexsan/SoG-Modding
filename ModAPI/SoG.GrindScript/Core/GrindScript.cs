@@ -5,124 +5,188 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
+using SoG.Modding.Core;
+using SoG.Modding.Content;
+using SoG.Modding.Extensions;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Core
 {
     /// <summary>
     /// Core of the API
     /// </summary>
 
-    public static class GrindScript
+    public class GrindScript
     {
-        internal static Texture2D MissingTex { get; private set; }
+        private readonly Harmony _harmony = new Harmony("GrindScriptPatcher");
 
-        private static readonly Harmony _harmony = new Harmony("GrindScriptPatcher");
+        private readonly Stack<BaseScript> _modContext = new Stack<BaseScript>();
 
-        internal static readonly List<BaseScript> _loadedScripts = new List<BaseScript>();
+        private int _status = 0;
 
-        private static Assembly _gameAssembly;
+        internal BaseScript CurrentModContext => _modContext.Count == 0 ? null : _modContext.Peek();
 
-        private static IEnumerable<TypeInfo> _gameTypes;
+        internal List<BaseScript> LoadedScripts { get; } = new List<BaseScript>();
 
-        public static Game1 Game { get; private set; }
+        internal Texture2D MissingTex { get; private set; }
 
-        internal static string GSCommand = "GrindScript";
+        internal ConsoleLogger Logger { get; private set; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
 
-        internal static ConsoleLogger Logger { get; private set; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
+        internal GlobalLibrary Library = new GlobalLibrary();
+
+        internal IDAllocator Allocator = new IDAllocator();
+
+        public ItemModding ItemAPI { get; private set; }
+
+        public AudioModding AudioAPI { get; private set; }
+
+        public LevelModding LevelAPI { get; private set; }
+
+        public MiscModding MiscAPI { get; private set; } // Misc sounds like multiple responsibility, therefore bad?
+
+        public RoguelikeModding RoguelikeAPI { get; private set; }
+
+        public TextModding TextAPI { get; private set; }
+
+        public SaveModding SaveAPI { get; private set; }
+
+        public GrindScript()
+        {
+            ModGlobals.API = this;
+            ModGlobals.Log = Logger;
+            Logger.Debug("GrindScript instantiated!");
+
+            ItemAPI = new ItemModding(this);
+            AudioAPI = new AudioModding(this);
+            LevelAPI = new LevelModding(this);
+            MiscAPI = new MiscModding(this);
+            RoguelikeAPI = new RoguelikeModding(this);
+            TextAPI = new TextModding(this);
+            SaveAPI = new SaveModding(this);
+
+            Library.Commands[GrindScriptCommands.APIName] = GrindScriptCommands.SetupAndGet(this);
+        }
+
+        /// <summary>
+        /// Sets a load context. All subsequent content creation methods will use the given context as the target. <para/>
+        /// BaseScript::LoadContent() is called with the current mod as context. <para/>
+        /// Only use this if you really need to load on behalf of other mods, or outside of LoadContent()
+        /// </summary>
+
+        internal void CallWithContext(BaseScript mod, Action<BaseScript> call)
+        {
+            _modContext.Push(mod);
+            call?.Invoke(mod);
+            _modContext.Pop();
+        }
 
         /// <summary>
         /// Prepares GrindScript by doing some processing before SoG's Main method runs.
         /// </summary>
 
-        private static void Prepare()
+        public void SetupGrindScript()
         {
-            Logger.Info("Preparing Grindscript...");
+            if (_status != 0)
+            {
+                Logger.Error($"Can't setup self: Status is {_status}!");
+                return;
+            }
 
-            _gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
-            _gameTypes = _gameAssembly.DefinedTypes;
+            Logger.Info("Setting up Grindscript...");
+
+            if (AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Secrets Of Grindea") == null)
+            {
+                Logger.Warn("Couldn't find Secrets of Grindea.exe in current AppDomain!");
+                return;
+            }
+
+            Utils.TryCreateDirectory("Mods");
+            Utils.TryCreateDirectory("Content/ModContent");
 
             ApplyPatches();
-            SetupCommands();
+
+            _status = 1;
         }
 
         /// <summary>
         /// Initializes GrindScript during SoG's startup thread
         /// </summary>
 
-        private static void Initialize()
+        public void SetupSoG()
         {
-            if (_gameTypes == null)
+            if (_status != 1)
             {
-                Logger.Error("Can not start GrindScript because it hasn't been prepared!");
+                Logger.Error($"Can't setup SoG: Status is {_status}!");  
                 return;
             }
 
-            Logger.Info("Initializing Grindscript...");
+            Logger.Info("Setting up Secrets of Grindea..."); 
 
-            Game = (Game1)GetGameType("SoG.Program").GetField("game", BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
+
+            ModGlobals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
+
+            // Place mod saves in a separate folder. This prevents crashes from damaging vanilla saves
+            ModGlobals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
+
+            // Disable submission of high scores for obvious reasons
+            // This doesn't prevent cheating, but it avoids accidental cheater tagging by the game
+            ModGlobals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
+
+            // Load a texture that can be used as an alternate "Null Texture" when TryLoad-ing
+            MissingTex = Utils.TryLoadTex("ModContent/GrindScript/NullTexGS", ModGlobals.Game.Content);
             
-            // Modded content resides in a separate folder to avoid breaking vanilla stuff accidentally.
-            Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
-
-            // It is not a good idea for modded runs to submit scores.
-            Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
-
-            // Set up a cooler null tex for missing assets
-            MissingTex = Utils.TryLoadTex("ModContent/GrindScript/NullTexGS", GrindScript.Game.Content);
-            
+            // Instantiate all mods found in "Mods/"
             LoadMods();
-        }
 
-        /// <summary>
-        /// Gets a game type via reflection. Not needed if you have a reference to Secrets of Grindea.exe
-        /// </summary>
-
-        public static TypeInfo GetGameType(string name)
-        {
-            return _gameTypes.First(t => t.FullName == name);
+            _status = 2;
         }
 
         /// <summary>
         /// Applies all patches found in PatchCodex.
         /// </summary>
 
-        private static void ApplyPatches()
+        private void ApplyPatches()
         {
             Logger.Info("Applying Patches...");
 
-            List<PatchCodex.PatchID> nullPatches = new List<PatchCodex.PatchID>();
-            int successCount = 0;
-            int totalCount = 0;
-            int nextProgressUpdate = 20;
+            Array allPatches = Enum.GetValues(typeof(PatchCodex.PatchID));
+            var nullPatches = new List<PatchCodex.PatchID>();
 
-            var allPatches = Enum.GetValues(typeof(PatchCodex.PatchID));
+            const int division = 100 / 5;
+            int successCount = 0;
+            int progress = 0;
+            int nextProgressUpdate = division;
+
             foreach (PatchCodex.PatchID id in allPatches)
             {
                 PatchCodex.PatchInfo patch = PatchCodex.GetPatch(id);
-                totalCount++;
+                progress++;
 
-                if (patch != null)
+                if (patch == null)
                 {
-                    try
-                    {
-                        if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))
-                            GrindScript.Logger.Warn($"Patch {id} may be invalid!");
+                    nullPatches.Add(id);
+                    continue;
+                }
 
-                        _harmony.Patch(patch);
-                        successCount++;
+                try
+                {
+                    if (patch.Target == null || (patch.Prefix == null && patch.Postfix == null && patch.Transpiler == null))
+                        Logger.Warn($"Patch {id} may be malformed!");
 
-                        if (totalCount * 100 / allPatches.Length >= nextProgressUpdate)
-                        {
-                            Logger.Info($"{nextProgressUpdate}%...");
-                            nextProgressUpdate += 20;
-                        }
-                    }
-                    catch (Exception e)
+                    _harmony.Patch(patch);
+                    successCount++;
+
+                    if (progress * 100 / allPatches.Length >= nextProgressUpdate)
                     {
-                        Logger.Error($"Patch {id} threw an exception! Message: {e.Message}");
+                        Logger.Info($"{nextProgressUpdate}%...");
+                        nextProgressUpdate += division;
                     }
                 }
-                else nullPatches.Add(id);
+                catch (Exception e)
+                {
+                    Logger.Error($"Patch {id} threw an exception! Message: {e.Message}");
+                }
             }
             
             int nullCount = nullPatches.Count;
@@ -130,8 +194,8 @@ namespace SoG.Modding
             {
                 Logger.Info($"{nullCount} null patches were encountered:");
 
-                int index = -1;
                 const int toDisplay = 3;
+                int index = -1;
 
                 while (++index < toDisplay)
                     Logger.Info("\t" + nullPatches[index]);
@@ -147,25 +211,30 @@ namespace SoG.Modding
         /// Loads a mod and instantiates its BaseScript derived class (if any).
         /// </summary>
 
-        private static void LoadMod(string name)
+        private void LoadMod(string path)
         {
-            Utils.TryCreateDirectory("Mods");
-            Utils.TryCreateDirectory("Content/ModContent");
+            Logger.Info("Loading mod " + path);
 
-            Logger.Info("Loading mod " + name);
             try
             {
-                Assembly assembly = Assembly.LoadFile(name);
-                Type type = assembly.GetTypes().First(t => t.BaseType == typeof(BaseScript));
-                BaseScript script = (BaseScript)type?.GetConstructor(new Type[] { })?.Invoke(new object[] { });
+                Type type = Assembly.LoadFile(path).GetTypes().First(t => t.BaseType == typeof(BaseScript));
+                BaseScript mod = type.GetConstructor(new Type[] { }).Invoke(new object[] { }) as BaseScript;
 
-                _loadedScripts.Add(script);
+                mod.ModAPI = this;
 
-                Logger.Info("Loaded mod " + name);
+                mod.ModIndex = Allocator.ModIndexID.Allocate();
+
+                Library.Audio.Add(mod.ModIndex, new ModAudioEntry(mod, mod.ModIndex));
+
+                Library.Commands[mod.GetType().Name] = new Dictionary<string, CommandParser>();
+
+                LoadedScripts.Add(mod);
+
+                Logger.Info("Loaded mod " + path);
             }
             catch (Exception e)
             {
-                Logger.Error($"Failed to load mod {name}. Exception message: {e.Message}");
+                Logger.Error($"Failed to load mod {path}. Exception message: {e.Message}");
             }
         }
 
@@ -173,7 +242,7 @@ namespace SoG.Modding
         /// Loads all mods found in the "/Mods" directory
         /// </summary>
 
-        private static void LoadMods()
+        private void LoadMods()
         {
             var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
 
@@ -181,103 +250,6 @@ namespace SoG.Modding
             {
                 LoadMod(file);
             }
-        }
-
-        /// <summary>
-        /// Prepares commands that come bundled with GrindScript. These can be accessed using "/GrindScript:{command}"
-        /// </summary>
-
-        private static void SetupCommands()
-        {
-            var parsers = ModLibrary.Commands[GSCommand] = new Dictionary<string, CommandParser>();
-
-            parsers["ModList"] = (_1, _2) =>
-            {
-                CAS.AddChatMessage($"[GrindScript] Mod Count: {_loadedScripts.Count}");
-
-                var messages = new List<string>();
-                var concated = "";
-                foreach (var mod in _loadedScripts)
-                {
-                    string name = mod.GetType().Name;
-                    if (concated.Length + name.Length > 40)
-                    {
-                        messages.Add(concated);
-                        concated = "";
-                    }
-                    concated += mod.GetType().Name + " ";
-                }
-                if (concated != "")
-                    messages.Add(concated);
-
-                foreach (var line in messages)
-                    CAS.AddChatMessage(line);
-            };
-
-            parsers["Help"] = (message, _2) =>
-            {
-                Dictionary<string, CommandParser> commandList = null;
-                var args = Utils.GetArgs(message);
-                if (args.Length == 0)
-                {
-                    commandList = ModLibrary.Commands[GSCommand];
-                }
-                else if(!ModLibrary.Commands.TryGetValue(args[0], out commandList))
-                {
-                    CAS.AddChatMessage($"[{GSCommand}] Unknown mod!");
-                    return;
-                }
-                CAS.AddChatMessage($"[{GSCommand}] Command list{(args.Length == 0 ? "" : $" for {args[0]}" )}:");
-
-                var messages = new List<string>();
-                var concated = "";
-                foreach (var cmd in commandList.Keys)
-                {
-                    if (concated.Length + cmd.Length > 40)
-                    {
-                        messages.Add(concated);
-                        concated = "";
-                    }
-                    concated += cmd + " ";
-                }
-                if (concated != "")
-                    messages.Add(concated);
-
-                foreach (var line in messages)
-                    CAS.AddChatMessage(line);
-            };
-
-            parsers["PlayerPos"] = (_1, _2) =>
-            {
-                var local = Game.xLocalPlayer.xEntity.xTransform.v2Pos;
-
-                CAS.AddChatMessage($"[{GSCommand}] Player position: {(int)local.X}, {(int)local.Y}");
-            };
-
-            parsers["ModTotals"] = (message, _2) =>
-            {
-                var args = Utils.GetArgs(message);
-                if (args.Length != 1)
-                {
-                    CAS.AddChatMessage($"[{GSCommand}] Usage: /GrindScript:ModTotals <unique type>");
-                }
-
-                switch (args[0])
-                {
-                    case "Items":
-                        CAS.AddChatMessage($"[{GSCommand}] Items defined: " + ModLibrary.GlobalLib.Items.Count);
-                        break;
-                    case "Perks":
-                        CAS.AddChatMessage($"[{GSCommand}] Perks defined: " + ModLibrary.GlobalLib.Perks.Count);
-                        break;
-                    case "Treats":
-                        CAS.AddChatMessage($"[{GSCommand}] TreatsCurses defined: " + ModLibrary.GlobalLib.TreatsCurses.Count);
-                        break;
-                    default:
-                        CAS.AddChatMessage($"[{GSCommand}] Usage: /GrindScript:ModTotals <unique type>");
-                        break;
-                }
-            };
         }
     }
 }

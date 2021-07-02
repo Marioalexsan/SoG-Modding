@@ -6,21 +6,25 @@ using System.IO;
 using System.Reflection;
 using System;
 using LevelLoading;
+using SoG.Modding.Core;
+using SoG.Modding.Content;
+using SoG.Modding.Extensions;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Patches
 {
-    internal static partial class Patches
+    internal static partial class PatchCollection
     {
         private static bool OnGetLevelBlueprint(ref LevelBlueprint __result, Level.ZoneEnum enZoneToGet)
         {
-            if (!enZoneToGet.IsModLevel())
+            if (!enZoneToGet.IsFromMod())
                 return true;
 
             LevelBlueprint bprint = new LevelBlueprint();
 
             RareUtils.BlueprintSanityCheck(bprint);
 
-            ModLevelEntry entry = ModLibrary.Levels[enZoneToGet];
+            ModLevelEntry entry = ModGlobals.API.Library.Levels[enZoneToGet];
 
             try
             {
@@ -28,7 +32,7 @@ namespace SoG.Modding
             }
             catch (Exception e)
             {
-                GrindScript.Logger.Error($"Builder threw an exception for level {enZoneToGet}! Exception: {e}");
+                ModGlobals.Log.Error($"Builder threw an exception for level {enZoneToGet}! Exception: {e}");
                 bprint = new LevelBlueprint();
             }
 
@@ -62,9 +66,9 @@ namespace SoG.Modding
         {
             // Modifying vanilla levels not supported yet
 
-            if (!type.IsModLevel()) return;
+            if (!type.IsFromMod()) return;
 
-            ModLevelEntry entry = ModLibrary.Levels[type];
+            ModLevelEntry entry = ModGlobals.API.Library.Levels[type];
 
             try
             {
@@ -72,7 +76,7 @@ namespace SoG.Modding
             }
             catch (Exception e)
             {
-                GrindScript.Logger.Error($"Loader threw an exception for level {type}! Exception: {e}");
+                ModGlobals.Log.Error($"Loader threw an exception for level {type}! Exception: {e}");
             }
         }
     }

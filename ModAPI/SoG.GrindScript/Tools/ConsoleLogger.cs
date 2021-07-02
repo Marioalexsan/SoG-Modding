@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace SoG.Modding
+namespace SoG.Modding.Tools
 {
     /// <summary>
     /// A simple class for logging information to the console.

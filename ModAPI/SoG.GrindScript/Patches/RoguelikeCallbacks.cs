@@ -4,34 +4,38 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Graphics;
+using SoG.Modding.Core;
+using SoG.Modding.Content;
+using SoG.Modding.Extensions;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Patches
 {
-    internal static partial class Patches
+    internal static partial class PatchCollection
     {
         private static bool OnGetPerkTexture(RogueLikeMode.Perks enPerk, ref Texture2D __result)
         {
-            if (!enPerk.IsModPerk())
+            if (!enPerk.IsFromMod())
                 return true;
 
-            __result = Utils.TryLoadTex(ModLibrary.GlobalLib.Perks[enPerk].ResourcePath, GrindScript.Game.Content);
+            __result = Utils.TryLoadTex(ModGlobals.API.Library.Perks[enPerk].ResourcePath, ModGlobals.Game.Content);
 
             return false;
         }
 
         private static bool OnGetTreatCurseTexture(RogueLikeMode.TreatsCurses enTreat, ref Texture2D __result)
         {
-            if (!enTreat.IsModTreatCurse())
+            if (!enTreat.IsFromMod())
                 return true;
 
-            __result = Utils.TryLoadTex(ModLibrary.GlobalLib.TreatsCurses[enTreat].ResourcePath, GrindScript.Game.Content);
+            __result = Utils.TryLoadTex(ModGlobals.API.Library.TreatsCurses[enTreat].ResourcePath, ModGlobals.Game.Content);
 
             return false;
         }
 
         private static bool OnGetTreatCurseInfo(RogueLikeMode.TreatsCurses enTreatCurse, out string sNameHandle, out string sDescriptionHandle, out float fScoreModifier)
         {
-            if (!enTreatCurse.IsModTreatCurse())
+            if (!enTreatCurse.IsFromMod())
             {
                 sNameHandle = "";
                 sDescriptionHandle = "";
@@ -39,7 +43,7 @@ namespace SoG.Modding
                 return true;
             }
 
-            var entry = ModLibrary.GlobalLib.TreatsCurses[enTreatCurse];
+            var entry = ModGlobals.API.Library.TreatsCurses[enTreatCurse];
 
             sNameHandle = entry.NameHandle;
             sDescriptionHandle = entry.DescriptionHandle;
@@ -50,7 +54,7 @@ namespace SoG.Modding
 
         private static void PostFillCurseList(ShopMenu.TreatCurseMenu __instance)
         {
-            foreach (var kvp in ModLibrary.GlobalLib.TreatsCurses)
+            foreach (var kvp in ModGlobals.API.Library.TreatsCurses)
             {
                 if (!kvp.Value.IsTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
@@ -59,7 +63,7 @@ namespace SoG.Modding
 
         private static void PostFillTreatList(ShopMenu.TreatCurseMenu __instance)
         {
-            foreach (var kvp in ModLibrary.GlobalLib.TreatsCurses)
+            foreach (var kvp in ModGlobals.API.Library.TreatsCurses)
             {
                 if (kvp.Value.IsTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
@@ -70,15 +74,15 @@ namespace SoG.Modding
         {
             foreach (var perk in len)
             {
-                if (perk.IsModPerk())
-                    ModLibrary.GlobalLib.Perks[perk].Activator?.Invoke(xView);
+                if (perk.IsFromMod())
+                    ModGlobals.API.Library.Perks[perk].Activator?.Invoke(xView);
             }
         }
 
         private static void PostPerkListInit()
         {
-            GrindScript.Logger.Debug("Init!");
-            foreach (var perk in ModLibrary.GlobalLib.Perks.Values)
+            ModGlobals.Log.Debug("Init!");
+            foreach (var perk in ModGlobals.API.Library.Perks.Values)
                 RogueLikeMode.PerkInfo.lxAllPerks.Add(new RogueLikeMode.PerkInfo(perk.GameID, perk.EssenceCost, perk.TextEntry));
         }
     }

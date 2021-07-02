@@ -4,33 +4,40 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Audio;
 using System.IO;
+using SoG.Modding.Core;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
-    public static class AudioModding
+    public class AudioModding : ModdingLogic
     {
+        public AudioModding(GrindScript modAPI)
+            : base(modAPI) { }
+
         /// <summary>
-        /// Configures custom audio for the mod, using the config provided. <para/>
+        /// Configures custom audio for the current mod, using the config provided. <para/>
         /// After configuring the audio, music and effect IDs can be obtained with <see cref="GetEffectID"/> and <see cref="GetMusicID"/>.
         /// </summary>
+        /// 
 
-        public static void ConfigureModAudio(BaseScript owner, AudioConfig cfg)
+        public void ConfigureAudio(AudioConfig cfg)
         {
+            BaseScript owner = _modAPI.CurrentModContext;
             if (cfg == null || owner == null)
             {
-                GrindScript.Logger.Warn("Can't create audio due to owner or builder being null!");
+                ModGlobals.Log.Warn("Can't create audio due to owner or builder being null!");
                 return;
             }
 
             string assetPath = owner.ModPath;
-            int ID = owner._audioID;
-            ModAudioEntry entry = ModLibrary.Audio[ID];
+            int ID = owner.ModIndex;
+            ModAudioEntry entry = _modAPI.Library.Audio[ID];
 
-            AudioEngine audioEngine = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(GrindScript.Game.xSoundSystem) as AudioEngine;
+            AudioEngine audioEngine = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(ModGlobals.Game.xSoundSystem) as AudioEngine;
 
             if (entry.IsReady)
             {
-                GrindScript.Logger.Warn($"Audio Entry {ID} is being redefined for a second time! This may cause issues.");
+                ModGlobals.Log.Warn($"Audio Entry {ID} is being redefined for a second time! This may cause issues.");
 
                 if (entry.EffectsSB != null)
                 {
@@ -82,7 +89,7 @@ namespace SoG.Modding
                     musicIDToCue[musicID++] = music;
                 }
                 if (!kvp.Key.StartsWith(modName))
-                    GrindScript.Logger.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not follow the naming convention, and may cause conflicts!");
+                    ModGlobals.Log.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not follow the naming convention, and may cause conflicts!");
             }
 
             string root = Path.Combine(entry.Owner.ModContent.RootDirectory, assetPath);
@@ -101,36 +108,36 @@ namespace SoG.Modding
         /// If redirect is the empty string, any existing redirects and cleared.
         /// </summary>
 
-        public static void RedirectVanillaMusic(string vanilla, string redirect)
+        public void RedirectVanillaMusic(string vanilla, string redirect)
         {
-            var songRegionMapField = (Dictionary<string, string>)typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(GrindScript.Game.xSoundSystem);
+            var songRegionMapField = (Dictionary<string, string>)typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ModGlobals.Game.xSoundSystem);
             if (!songRegionMapField.ContainsKey(vanilla))
             {
-                GrindScript.Logger.Warn($"Redirecting {vanilla} to {redirect} is not possible since {vanilla} is not a vanilla music!");
+                ModGlobals.Log.Warn($"Redirecting {vanilla} to {redirect} is not possible since {vanilla} is not a vanilla music!");
                 return;
             }
 
             bool isModded = Utils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
-            var entry = ModLibrary.Audio.ContainsKey(entryID) ? ModLibrary.Audio[entryID] : null;
+            var entry = _modAPI.Library.Audio.ContainsKey(entryID) ? _modAPI.Library.Audio[entryID] : null;
             string cueName = entry != null && entry.MusicNames.ContainsKey(cueID) ? entry.MusicNames[cueID] : null;
 
             if ((!isModded || !isMusic || cueName == null) && !(redirect == ""))
             {
-                GrindScript.Logger.Warn($"Redirecting {vanilla} to {redirect} is not possible since {redirect} is not a modded music!");
+                ModGlobals.Log.Warn($"Redirecting {vanilla} to {redirect} is not possible since {redirect} is not a modded music!");
                 return;
             }
 
-            var redirectedSongs = ModLibrary.VanillaMusicRedirects;
+            var redirectedSongs = _modAPI.Library.VanillaMusicRedirects;
             bool replacing = redirectedSongs.ContainsKey(vanilla);
 
             if (redirect == "")
             {
-                GrindScript.Logger.Info($"Song {vanilla} has been cleared of any redirects.");
+                ModGlobals.Log.Info($"Song {vanilla} has been cleared of any redirects.");
                 redirectedSongs.Remove(vanilla);
             }
             else
             {
-                GrindScript.Logger.Info($"Song {vanilla} is now redirected to {redirect} ({cueName}). {(replacing ? $"Previous redirect was {redirectedSongs[vanilla]}" : "")}");
+                ModGlobals.Log.Info($"Song {vanilla} is now redirected to {redirect} ({cueName}). {(replacing ? $"Previous redirect was {redirectedSongs[vanilla]}" : "")}");
                 redirectedSongs[vanilla] = redirect;
             }
         }
@@ -140,14 +147,14 @@ namespace SoG.Modding
         /// This ID can be used to play effects with methods such as <see cref="SoundSystem.PlayCue"/>.
         /// </summary>
 
-        public static string GetEffectID(BaseScript owner, string cueName)
+        public string GetEffectID(BaseScript owner, string cueName)
         {
             if (owner == null)
             {
-                GrindScript.Logger.Warn("Can't get sound ID due to owner being null!");
+                ModGlobals.Log.Warn("Can't get sound ID due to owner being null!");
                 return "";
             }
-            return GetEffectID(owner._audioID, cueName);
+            return GetEffectID(owner.ModIndex, cueName);
         }
 
         /// <summary>
@@ -155,9 +162,9 @@ namespace SoG.Modding
         /// This ID can be used to play effects with methods such as <see cref="SoundSystem.PlayCue"/>.
         /// </summary>
 
-        public static string GetEffectID(int audioEntryID, string cueName)
+        public string GetEffectID(int audioEntryID, string cueName)
         {
-            var effects = ModLibrary.Audio[audioEntryID].EffectNames;
+            var effects = _modAPI.Library.Audio[audioEntryID].EffectNames;
             foreach (var kvp in effects)
             {
                 if (kvp.Value == cueName)
@@ -173,14 +180,14 @@ namespace SoG.Modding
         /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
         /// </summary>
 
-        public static string GetMusicID(BaseScript owner, string cueName)
+        public string GetMusicID(BaseScript owner, string cueName)
         {
             if (owner == null)
             {
-                GrindScript.Logger.Warn("Can't get sound ID due to owner being null!");
+                ModGlobals.Log.Warn("Can't get sound ID due to owner being null!");
                 return "";
             }
-            return GetMusicID(owner._audioID, cueName);
+            return GetMusicID(owner.ModIndex, cueName);
         }
 
         /// <summary>
@@ -188,9 +195,9 @@ namespace SoG.Modding
         /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
         /// </summary>
 
-        public static string GetMusicID(int audioEntryID, string cueName)
+        public string GetMusicID(int audioEntryID, string cueName)
         {
-            var music = ModLibrary.Audio[audioEntryID].MusicNames;
+            var music = _modAPI.Library.Audio[audioEntryID].MusicNames;
             foreach (var kvp in music)
             {
                 if (kvp.Value == cueName)
@@ -203,12 +210,133 @@ namespace SoG.Modding
         /// Gets the cue name based on the modded ID. <para/>
         /// </summary>
 
-        public static string GetCueName(string GSID)
+        public string GetCueName(string GSID)
         {
             if (!Utils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
-            ModAudioEntry entry = ModLibrary.Audio[entryID];
+            ModAudioEntry entry = _modAPI.Library.Audio[entryID];
             return isMusic ? entry.MusicNames[cueID] : entry.EffectNames[cueID];
+        }
+
+        /// <summary>
+        /// Retrieves a new Cue for the given modded audio ID.
+        /// </summary>
+
+        public Cue GetEffectCue(string audioID)
+        {
+            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            if (!(success && !isMusic))
+                return null;
+
+            var entry = _modAPI.Library.Audio[entryID];
+            return entry.EffectsSB.GetCue(entry.EffectNames[cueID]);
+        }
+
+        /// <summary>
+        /// Retrieves the SoundBank associated with the given modded audio ID.
+        /// </summary>
+
+        public SoundBank GetEffectSoundBank(string audioID)
+        {
+            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
+            if (!(success && !isMusic))
+                return null;
+
+            var entry = _modAPI.Library.Audio[entryID];
+
+            if (entry == null)
+                return null;
+
+            return entry.EffectsSB;
+        }
+
+        /// <summary>
+        /// Retrieves the WaveBank associated with the given modded audio ID.
+        /// </summary>
+
+        public WaveBank GetEffectWaveBank(string audioID)
+        {
+            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
+            if (!(success && !isMusic))
+                return null;
+
+            return _modAPI.Library.Audio[entryID]?.EffectsWB;
+        }
+
+        /// <summary>
+        /// Retrieves the SoundBank associated with the given modded audio ID.
+        /// </summary>
+
+        public SoundBank GetMusicSoundBank(string audioID)
+        {
+            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
+            if (!(success && isMusic))
+                return null;
+
+            return _modAPI.Library.Audio[entryID]?.MusicSB;
+        }
+
+        /// <summary>
+        /// Retrieves the WaveBank associated with the given modded audio ID.
+        /// </summary>
+
+        public string GetMusicWaveBank(string audioID)
+        {
+            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            if (!(success && isMusic))
+                return null;
+
+            var entry = _modAPI.Library.Audio[entryID];
+
+            if (!entry.MusicNames.TryGetValue(cueID, out string cueName))
+                return null;
+
+            if (!entry.MusicBankNames.TryGetValue(cueName, out string bank))
+                return null;
+
+            return bank;
+        }
+
+        /// <summary>
+        /// Checks whenever the given name may represent a persistent WaveBank. <para/>
+        /// Persistent WaveBanks are never unloaded.
+        /// </summary>
+
+        public bool IsUniversalMusicBank(string bank)
+        {
+            if (bank == "UniversalMusic")
+                return true;
+
+            foreach (var kvp in _modAPI.Library.Audio)
+            {
+                if (kvp.Value.Owner.GetType().Name == bank)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whenever the given WaveBank is persistent. <para/>
+        /// Persistent WaveBanks are never unloaded.
+        /// </summary>
+
+        public bool IsUniversalMusicBank(WaveBank bank)
+        {
+            if (bank == null)
+                return false;
+
+            foreach (var kvp in _modAPI.Library.Audio)
+            {
+                if (kvp.Value.UniversalWB == bank)
+                    return true;
+            }
+
+            FieldInfo universalWaveBankField = typeof(SoundSystem).GetTypeInfo().GetField("universalMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (bank == universalWaveBankField.GetValue(ModGlobals.Game.xSoundSystem))
+                return true;
+
+            return false;
         }
     }
 }

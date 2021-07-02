@@ -5,8 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Extensions
 {
     public static class HarmonyExtension
     {

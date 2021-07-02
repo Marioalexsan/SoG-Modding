@@ -3,35 +3,42 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
-    public static class ItemModding
+    public class ItemModding : ModdingLogic
     {
-        /// <summary>
-        /// Helper method that calls <see cref="CreateItem(BaseScript, ItemConfig)"/> for each configuration.
+        public ItemModding(GrindScript modAPI)
+            : base(modAPI) { }
+
+        /// <summary> 
+        /// Creates an item for each of the ItemConfigs provided. 
         /// </summary>
 
-        public static void CreateItemsFrom(BaseScript owner, IEnumerable<ItemConfig> cfgs)
+        public void CreateItems(IEnumerable<ItemConfig> cfgs)
         {
             foreach (var cfg in cfgs)
-                CreateItem(owner, cfg);
+                CreateItem(cfg);
         }
 
         /// <summary> 
-        /// Creates a new item from the given <see cref="ItemConfig"/>. <para/>
+        /// Creates an item from the given ItemConfig.
         /// </summary>
-        /// <returns> The new item's <see cref="ItemCodex.ItemTypes"/> identifier. If creation failed, <see cref="ItemCodex.ItemTypes.Null"/> is returned. </returns>
+        /// <returns> 
+        /// The new item's <see cref="ItemCodex.ItemTypes"/> identifier. If creation failed, <see cref="ItemCodex.ItemTypes.Null"/> is returned. 
+        /// </returns>
 
-        public static ItemCodex.ItemTypes CreateItem(BaseScript owner, ItemConfig cfg)
+        public ItemCodex.ItemTypes CreateItem(ItemConfig cfg)
         {
+            BaseScript owner = _modAPI.CurrentModContext;
             if (cfg == null || owner == null)
             {
-                GrindScript.Logger.Error("Can't create item because owner or itemBuilder is null.");
+                ModGlobals.Log.Error("Can't create item because owner or itemBuilder is null.");
                 return ItemCodex.ItemTypes.Null;
             }
 
-            ItemCodex.ItemTypes gameID = IDAllocator.NewItemType();
+            ItemCodex.ItemTypes gameID = _modAPI.Allocator.ItemID.Allocate();
 
             ModItemEntry entry = new ModItemEntry(owner, gameID, cfg.ModID)
             {
@@ -41,7 +48,7 @@ namespace SoG.Modding
                 EquipResourcePath = cfg.EquipResourcePath
             };
 
-            ModLibrary.GlobalLib.Items[gameID] = owner.ModLib.Items[gameID] = entry;
+            _modAPI.Library.Items[gameID] = owner.Library.Items[gameID] = entry;
 
             ItemDescription itemData = entry.ItemData = new ItemDescription()
             {
@@ -158,10 +165,10 @@ namespace SoG.Modding
             TextModding.AddMiscText("Items", itemData.sNameLibraryHandle, itemData.sFullName, MiscTextTypes.GenericItemName);
             TextModding.AddMiscText("Items", itemData.sDescriptionLibraryHandle, itemData.sDescription, MiscTextTypes.GenericItemDescription);
 
-            if (owner.ModLib.Items.Values.Any(x => x != entry && x.ModID == cfg.ModID))
+            if (owner.Library.Items.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                GrindScript.Logger.Error($"Mod {owner.GetType().Name} has two or more items with the uniqueID {cfg.ModID}!");
-                GrindScript.Logger.Error($"This is likely to break loading, saving, and many other things!");
+                ModGlobals.Log.Error($"Mod {owner.GetType().Name} has two or more items with the uniqueID {cfg.ModID}!");
+                ModGlobals.Log.Error($"This is likely to break loading, saving, and many other things!");
             }
 
             return gameID;
@@ -181,11 +188,11 @@ namespace SoG.Modding
         /// Adds a new crafting recipe.
         /// </summary>
 
-        public static void AddRecipe(ItemCodex.ItemTypes result, Dictionary<ItemCodex.ItemTypes, ushort> ingredients)
+        public void AddRecipe(ItemCodex.ItemTypes result, Dictionary<ItemCodex.ItemTypes, ushort> ingredients)
         {
             if (ingredients == null)
             {
-                GrindScript.Logger.Warn("Can't add recipe because ingredient dictionary is null!");
+                ModGlobals.Log.Warn("Can't add recipe because ingredient dictionary is null!");
                 return;
             }
 
@@ -201,7 +208,7 @@ namespace SoG.Modding
                 Crafting.CraftSystem.RecipeCollection.Add(result, new Crafting.CraftSystem.CraftingRecipe(description, kvps));
             }
 
-            GrindScript.Logger.Info($"Added recipe for item {result}!");
+            ModGlobals.Log.Info($"Added recipe for item {result}!");
         }
 
         /// <summary>
@@ -209,9 +216,9 @@ namespace SoG.Modding
         /// If nothing is found, ItemCodex.ItemTypes.Null is returned.
         /// </summary>
 
-        public static ItemCodex.ItemTypes GetItemType(BaseScript owner, string uniqueID)
+        public ItemCodex.ItemTypes GetItemType(BaseScript owner, string uniqueID)
         {
-            var entry = ModLibrary.GlobalLib.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
+            var entry = _modAPI.Library.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
 
             return entry?.GameID ?? ItemCodex.ItemTypes.Null;
         }

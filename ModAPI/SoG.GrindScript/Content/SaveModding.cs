@@ -2,10 +2,14 @@
 using System.IO;
 using System.Linq;
 using System;
+using SoG.Modding.Core;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
-    internal static class ModSaveLoad
+    // Currently this class only houses internals
+    // Later on, we can allow each mod to store some flags or something
+
+    public class SaveModding : ModdingLogic
     {
         public enum Saveables
         {
@@ -14,27 +18,20 @@ namespace SoG.Modding
             RoguelikeTreatsCurses
         }
 
-        private static readonly int GrindScriptVersion = 2;
-        public static readonly string ModExt = ".gs";
+        public const int GrindScriptVersion = 2; // Maybe reset this before first release
 
-        // Identifier methods
+        public const string ModExt = ".gs";
 
-        /// <summary>
-        /// Converts items from one type to another. <para/>
-        /// This affects inventory, crafted items, discovered items, etc. <para/>
-        /// This does not
-        /// </summary>
+        public SaveModding(GrindScript modAPI)
+            : base(modAPI) { }
 
-        private static void ShuffleItem(ItemCodex.ItemTypes from, ItemCodex.ItemTypes to)
+        private void ShuffleItem(ItemCodex.ItemTypes from, ItemCodex.ItemTypes to)
         {
-            if (Enum.IsDefined(typeof(ItemCodex.ItemTypes), from))
-                GrindScript.Logger.Warn($"Item {from} is a SoG item! Shuffling may cause issues.", source: "ShuffleItem");
+            if (Enum.IsDefined(typeof(ItemCodex.ItemTypes), from) || Enum.IsDefined(typeof(ItemCodex.ItemTypes), to))
+                ModGlobals.Log.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: "ShuffleItem");
 
-            if (Enum.IsDefined(typeof(ItemCodex.ItemTypes), to))
-                GrindScript.Logger.Warn($"Item {to} is a SoG item! Shuffling may cause issues.", source: "ShuffleItem");
-
-            Inventory inventory = GrindScript.Game.xLocalPlayer.xInventory;
-            Journal journal = GrindScript.Game.xLocalPlayer.xJournalInfo;
+            Inventory inventory = ModGlobals.Game.xLocalPlayer.xInventory;
+            Journal journal = ModGlobals.Game.xLocalPlayer.xJournalInfo;
 
             // Shuffle inventory, discovered items, crafted items, and fishes
 
@@ -65,13 +62,10 @@ namespace SoG.Modding
 
         private static void ShufflePerk(RogueLikeMode.Perks from, RogueLikeMode.Perks to)
         {
-            if (Enum.IsDefined(typeof(RogueLikeMode.Perks), from))
-                GrindScript.Logger.Warn($"Perk {from} is from SoG! Shuffling may cause issues.", source: "ShufflePerk");
+            if (Enum.IsDefined(typeof(RogueLikeMode.Perks), from) || Enum.IsDefined(typeof(RogueLikeMode.Perks), to))
+                ModGlobals.Log.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: "ShufflePerk");
 
-            if (Enum.IsDefined(typeof(RogueLikeMode.Perks), to))
-                GrindScript.Logger.Warn($"Perk {to} is from SoG! Shuffling may cause issues.", source: "ShufflePerk");
-
-            var session = GrindScript.Game.xGlobalData.xLocalRoguelikeData;
+            var session = ModGlobals.Game.xGlobalData.xLocalRoguelikeData;
 
             if (session.enPerkSlot01 == from)
                 session.enPerkSlot01 = to;
@@ -89,15 +83,12 @@ namespace SoG.Modding
             }
         }
 
-        private static void ShuffleTreatCurse(RogueLikeMode.TreatsCurses from, RogueLikeMode.TreatsCurses to)
+        private void ShuffleTreatCurse(RogueLikeMode.TreatsCurses from, RogueLikeMode.TreatsCurses to)
         {
-            if (Enum.IsDefined(typeof(RogueLikeMode.TreatsCurses), from))
-                GrindScript.Logger.Warn($"TreatCurse {from} is from SoG! Shuffling may cause issues.", source: "ShuffleTreatCurse");
+            if (Enum.IsDefined(typeof(RogueLikeMode.TreatsCurses), from) || Enum.IsDefined(typeof(RogueLikeMode.TreatsCurses), to))
+                ModGlobals.Log.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: "ShuffleTreatCurse");
 
-            if (Enum.IsDefined(typeof(RogueLikeMode.TreatsCurses), to))
-                GrindScript.Logger.Warn($"TreatCurse {to} is from SoG! Shuffling may cause issues.", source: "ShuffleTreatCurse");
-
-            var session = GrindScript.Game.xGlobalData.xLocalRoguelikeData;
+            var session = ModGlobals.Game.xGlobalData.xLocalRoguelikeData;
 
             if (session.enCurseTreatSlot01 == from)
                 session.enCurseTreatSlot01 = to;
@@ -109,18 +100,16 @@ namespace SoG.Modding
                 session.enCurseTreatSlot03 = to;
         }
 
-        public static void IdentifyModUnique<T>(IEnumerable<PersistentEntry<T>> targetUniques, Dictionary<T, string> targetSavedItems, ref T tempShuffleStart, Action<T, T> typeShuffler) where T : struct
+        private void IdentifyPersistentID<T>(IEnumerable<PersistentEntry<T>> targetUniques, Dictionary<T, string> targetSavedItems, ref T tempShuffleStart, Action<T, T> typeShuffler) where T : struct, Enum
         {
             var savedItems = new Dictionary<T, string>(targetSavedItems);
-
-            // Shuffle items into their correct ItemTypes IDs
 
             while (savedItems.Count > 0)
             {
                 var saveItem = savedItems.First();
                 bool found = false;
 
-                GrindScript.Logger.Info($"Checking unique {saveItem.Key}:{saveItem.Value}");
+                ModGlobals.Log.Info($"Checking unique {saveItem.Key}:{saveItem.Value}");
 
                 foreach (var modUnique in targetUniques)
                 {
@@ -134,7 +123,7 @@ namespace SoG.Modding
 
                         if (savedItems.ContainsKey(modUnique.GameID))
                         {
-                            GrindScript.Logger.Debug($"Solving conflict: {savedItems[modUnique.GameID]} -> {tempShuffleStart}", source: "IdentifyModUnique");
+                            ModGlobals.Log.Debug($"Solving conflict: {savedItems[modUnique.GameID]} -> {tempShuffleStart}", source: "IdentifyModUnique");
                             typeShuffler(modUnique.GameID, tempShuffleStart);
 
                             savedItems.Add(tempShuffleStart, savedItems[modUnique.GameID]);
@@ -144,13 +133,13 @@ namespace SoG.Modding
 
                         // Shuffle save ID to mod ID
 
-                        GrindScript.Logger.Debug($"{saveItem.Value}: {saveItem.Key} -> {modUnique.GameID}", source: "IdentifyModUnique");
+                        ModGlobals.Log.Debug($"{saveItem.Value}: {saveItem.Key} -> {modUnique.GameID}", source: "IdentifyModUnique");
                         typeShuffler(modUnique.GameID, tempShuffleStart);
                     }
                 }
 
                 if (!found)
-                    GrindScript.Logger.Warn($"{saveItem.Value} of type {typeof(T).Name} couldn't be identified!", source: "IdentifyModUnique");
+                    ModGlobals.Log.Warn($"{saveItem.Value} of type {typeof(T).Name} couldn't be identified!", source: "IdentifyModUnique");
 
                 savedItems.Remove(saveItem.Key);
             }
@@ -158,21 +147,21 @@ namespace SoG.Modding
 
         // Save methods - these need to save additonal info such as mod list used
 
-        public static void SaveGrindScriptInfo(BinaryWriter file, HashSet<Saveables> targets)
+        internal void SaveGrindScriptInfo(BinaryWriter file, HashSet<Saveables> targets)
         {
             file.Write(GrindScriptVersion);
 
             // Write information for each mod
-            file.Write(GrindScript._loadedScripts.Count);
-            foreach (var mod in GrindScript._loadedScripts)
+            file.Write(_modAPI.LoadedScripts.Count);
+            foreach (var mod in _modAPI.LoadedScripts)
             {
                 file.Write(mod.GetType().FullName);
 
                 if (targets.Contains(Saveables.InventoryItems))
                 {
                     // Items which were defined by this mod during this session
-                    file.Write(mod.ModLib.Items.Count);
-                    foreach (var item in mod.ModLib.Items.Values)
+                    file.Write(mod.Library.Items.Count);
+                    foreach (var item in mod.Library.Items.Values)
                     {
                         file.Write((int)item.GameID);
                         file.Write(item.ModID);
@@ -181,8 +170,8 @@ namespace SoG.Modding
 
                 if (targets.Contains(Saveables.RoguelikePerks))
                 {
-                    file.Write(mod.ModLib.Perks.Count);
-                    foreach (var item in mod.ModLib.Perks.Values)
+                    file.Write(mod.Library.Perks.Count);
+                    foreach (var item in mod.Library.Perks.Values)
                     {
                         file.Write((int)item.GameID);
                         file.Write(item.ModID);
@@ -191,8 +180,8 @@ namespace SoG.Modding
 
                 if (targets.Contains(Saveables.RoguelikeTreatsCurses))
                 {
-                    file.Write(mod.ModLib.TreatsCurses.Count);
-                    foreach (var item in mod.ModLib.TreatsCurses.Values)
+                    file.Write(mod.Library.TreatsCurses.Count);
+                    foreach (var item in mod.Library.TreatsCurses.Values)
                     {
                         file.Write((int)item.GameID);
                         file.Write(item.ModID);
@@ -201,31 +190,32 @@ namespace SoG.Modding
             }
         }
 
-        public static void LoadGrindScriptInfo(BinaryReader file, HashSet<Saveables> targets)
+        internal void LoadGrindScriptInfo(BinaryReader file, HashSet<Saveables> targets)
         {
-            var itemShuffleIndex = IDAllocator.ItemTypes_ShuffleStart;
-            var perkShuffleIndex = IDAllocator.RoguelikePerk_ShuffleStart;
-            var curseShuffleIndex = IDAllocator.TreatsCurses_ShuffleStart; // Not needed, really
+            var itemShuffleIndex = _modAPI.Allocator.ItemID.Max + 1;
+            var perkShuffleIndex = _modAPI.Allocator.PerkID.Max + 1;
+            var curseShuffleIndex = _modAPI.Allocator.TreatCurseID.Max + 1;
 
             int GSVersion = file.ReadInt32();
 
             if (GSVersion != GrindScriptVersion)
             {
-                GrindScript.Logger.Warn($"Version mismatch! Using version {GrindScriptVersion} while save has {GSVersion}.");
+                ModGlobals.Log.Warn($"Version mismatch! Using version {GrindScriptVersion} while save has {GSVersion}.");
             }
 
             // Read information for each mod
+            // I've accidentally wrote the enums as Int32s. Hopefully it doesn't cause issues for ushort / byte enums
 
             int scriptCount = file.ReadInt32();
             while (scriptCount-- > 0)
             {
                 string fullName = file.ReadString();
 
-                BaseScript target = GrindScript._loadedScripts.FirstOrDefault(mod => mod.GetType().FullName == fullName);
+                BaseScript target = _modAPI.LoadedScripts.FirstOrDefault(mod => mod.GetType().FullName == fullName);
                 if (target == null)
                 {
-                    GrindScript.Logger.Warn($"This save used mod {fullName}, which is not loaded right now!");
-                    GrindScript.Logger.Warn($"Game objects can not be identified as a result...");
+                    ModGlobals.Log.Warn($"This save used mod {fullName}, which is not loaded right now!");
+                    ModGlobals.Log.Warn($"Game objects can not be identified as a result...");
                 }
 
                 if (targets.Contains(Saveables.InventoryItems))
@@ -236,7 +226,7 @@ namespace SoG.Modding
                         savedItems.Add((ItemCodex.ItemTypes)file.ReadInt32(), file.ReadString());
 
                     if (target != null)
-                        IdentifyModUnique(target.ModLib.Items.Values, savedItems, ref itemShuffleIndex, ShuffleItem);
+                        IdentifyPersistentID(target.Library.Items.Values, savedItems, ref itemShuffleIndex, ShuffleItem);
                 }
 
                 if (GSVersion >= 2)
@@ -249,7 +239,7 @@ namespace SoG.Modding
                             savedPerks.Add((RogueLikeMode.Perks)file.ReadInt32(), file.ReadString());
 
                         if (target != null)
-                            IdentifyModUnique(target.ModLib.Perks.Values, savedPerks, ref perkShuffleIndex, ShufflePerk);
+                            IdentifyPersistentID(target.Library.Perks.Values, savedPerks, ref perkShuffleIndex, ShufflePerk);
                     }
 
                     if (targets.Contains(Saveables.RoguelikeTreatsCurses))
@@ -260,13 +250,13 @@ namespace SoG.Modding
                             savedCurses.Add((RogueLikeMode.TreatsCurses)file.ReadInt32(), file.ReadString());
 
                         if (target != null)
-                            IdentifyModUnique(target.ModLib.TreatsCurses.Values, savedCurses, ref curseShuffleIndex, ShuffleTreatCurse);
+                            IdentifyPersistentID(target.Library.TreatsCurses.Values, savedCurses, ref curseShuffleIndex, ShuffleTreatCurse);
                     }
                 }
             }
         }
 
-        public static void SaveModCharacter(BinaryWriter file)
+        internal void SaveModCharacter(BinaryWriter file)
         {
             SaveGrindScriptInfo(file, new HashSet<Saveables>
             {
@@ -274,7 +264,7 @@ namespace SoG.Modding
             });
         }
 
-        public static void LoadModCharacter(BinaryReader file)
+        internal void LoadModCharacter(BinaryReader file)
         {
             LoadGrindScriptInfo(file, new HashSet<Saveables>
             {
@@ -282,17 +272,17 @@ namespace SoG.Modding
             });
         }
 
-        public static void SaveModWorld(BinaryWriter file)
+        internal void SaveModWorld(BinaryWriter file)
         {
             // TODO
         }
 
-        public static void LoadModWorld(BinaryReader file)
+        internal void LoadModWorld(BinaryReader file)
         {
             // TODO
         }
 
-        public static void SaveModArcade(BinaryWriter file)
+        internal void SaveModArcade(BinaryWriter file)
         {
             SaveGrindScriptInfo(file, new HashSet<Saveables>
             {
@@ -302,7 +292,7 @@ namespace SoG.Modding
             });
         }
 
-        public static void LoadModArcade(BinaryReader file)
+        internal void LoadModArcade(BinaryReader file)
         {
             LoadGrindScriptInfo(file, new HashSet<Saveables>
             {

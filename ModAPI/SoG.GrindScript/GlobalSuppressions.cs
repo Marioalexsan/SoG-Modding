@@ -5,11 +5,11 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.GrindScript.Prepare")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.GrindScript.Initialize")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
+[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
+[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.Core.GrindScript.SetupGrindScript")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.Core.GrindScript.SetupSoG")]
 
-[assembly: SuppressMessage("Style", "IDE0060", Justification = "Part of the original method's argument list", Scope = "type", Target = "~T:SoG.Modding.Patches")]
+[assembly: SuppressMessage("Style", "IDE0060", Justification = "Part of the original method's argument list", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]

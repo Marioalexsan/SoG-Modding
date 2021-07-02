@@ -8,7 +8,7 @@ using System.Reflection;
 using System.IO;
 using LevelLoading;
 
-namespace SoG.Modding
+namespace SoG.Modding.Extensions
 {
 	/// <summary>
 	/// Extension methods for Level-related stuff that expose some vanilla methods and add new ones.
@@ -16,42 +16,6 @@ namespace SoG.Modding
 
     public static class LevelExtension
     {
-		/// <summary>
-		/// Checks if the given region ID is a vanilla region (i.e. is present in the base game)
-		/// </summary>
-
-		public static bool IsSoGWorldRegion(this Level.WorldRegion level)
-		{
-			return Enum.IsDefined(typeof(Level.WorldRegion), level);
-		}
-
-		/// <summary>
-		/// Checks if the given region ID is a mod region (i.e. is allocated to a mod)
-		/// </summary>
-
-		public static bool IsModWorldRegion(this Level.WorldRegion level)
-		{
-			return IDAllocator.WorldRegionStart <= level && level < IDAllocator.WorldRegionEnd;
-		}
-
-		/// <summary>
-		/// Checks if the given level ID is a vanilla level (i.e. is present in the base game)
-		/// </summary>
-
-		public static bool IsSoGLevel(this Level.ZoneEnum level)
-        {
-			return Enum.IsDefined(typeof(Level.ZoneEnum), level);
-        }
-
-		/// <summary>
-		/// Checks if the given level ID is a mod level (i.e. is allocated to a mod)
-		/// </summary>
-
-		public static bool IsModLevel(this Level.ZoneEnum level)
-        {
-			return IDAllocator.ZoneEnumStart <= level && level < IDAllocator.ZoneEnumEnd;
-        }
-
 		/// <summary>
 		/// Adds a collider that acts as an invisible wall, and applies an offset to its position.
 		/// </summary>

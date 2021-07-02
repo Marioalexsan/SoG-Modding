@@ -1,4 +1,4 @@
-﻿namespace SoG.Modding
+﻿namespace SoG.Modding.Core
 {
     /// <summary>
     /// Defines various misc text types for UI <para/>

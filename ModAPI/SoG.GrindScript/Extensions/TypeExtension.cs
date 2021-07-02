@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Reflection;
 
-namespace SoG.Modding
+namespace SoG.Modding.Extensions
 {
+    // I've seen that Harmony has some reflection utils. Maybe use those instead?
+
     public static class TypeExtension
     {
         // Quick, fast, dirty and easy "just give me the private stuff"

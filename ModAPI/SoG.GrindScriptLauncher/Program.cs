@@ -15,6 +15,7 @@ namespace SoG.GrindScriptLauncher
 
         static Assembly GrindScript;
         static MethodInfo GSInit;
+        static dynamic API;
 
         static void LogErrorAndQuit(string error)
         {
@@ -28,7 +29,7 @@ namespace SoG.GrindScriptLauncher
         {
             try
             {
-                GSInit.Invoke(null, new object[0]);
+                GSInit.Invoke(API, new object[0]);
             }
             catch (Exception e)
             {
@@ -59,7 +60,8 @@ namespace SoG.GrindScriptLauncher
                 GrindScript = Assembly.LoadFile(Directory.GetCurrentDirectory() + "\\GrindScript.dll");
 
                 SoGMain = SoG.DefinedTypes.First(t => t.FullName == "SoG.Program").GetMethod("Main", BindingFlags.Static | BindingFlags.NonPublic);
-                GSInit = GrindScript.DefinedTypes.First(t => t.FullName == "SoG.Modding.GrindScript").GetMethod("Prepare", BindingFlags.Static | BindingFlags.NonPublic);
+                GSInit = GrindScript.DefinedTypes.First(t => t.FullName == "SoG.Modding.Core.GrindScript").GetMethod("SetupGrindScript");
+                API = GrindScript.DefinedTypes.First(t => t.FullName == "SoG.Modding.Core.GrindScript").GetConstructor(new Type[] { }).Invoke(new object[] { });
 
                 Console.WriteLine(whodis + "Launching GrindScript");
                 LaunchGrindScript();

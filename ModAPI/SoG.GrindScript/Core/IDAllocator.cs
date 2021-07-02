@@ -1,50 +1,63 @@
 ﻿using System.Collections.Generic;
+using System;
 
-namespace SoG.Modding
+namespace SoG.Modding.Core
 {
     /// <summary>
     /// Allocates IDs and other things.
     /// </summary>
 
-    internal static class IDAllocator
+    internal class IDAllocator
     {
-		public const ItemCodex.ItemTypes ItemTypes_ShuffleStart = (ItemCodex.ItemTypes)1500000;
-		public const RogueLikeMode.Perks RoguelikePerk_ShuffleStart = (RogueLikeMode.Perks)9000;
-		public const RogueLikeMode.TreatsCurses TreatsCurses_ShuffleStart = (RogueLikeMode.TreatsCurses)9000;
+		// Allocates integers sequentially
+		public class IntAlloc
+        {
+			// The first ID that is allocated
+			public int Start { get; private set; }
 
-		public const ItemCodex.ItemTypes ItemTypesStart = (ItemCodex.ItemTypes)700000;
-		public static ItemCodex.ItemTypes ItemTypesEnd { get; private set; } = ItemTypesStart;
+			// The ID one unit after the last value allocated
+			public int End { get; private set; }
 
-		public const EquipmentInfo.SpecialEffect EquipEffectStart = (EquipmentInfo.SpecialEffect)700;
-		public static EquipmentInfo.SpecialEffect EquipEffectEnd { get; private set; } = EquipEffectStart;
+			// A figurative max that is used for shuffling IDs
+			public int Max { get; private set; }
 
-		public const int AudioIDStart = 0;
-		public static int AudioIDNext { get; private set; } = AudioIDStart;
+			public int Allocate() => End < Max ? End++ : End;
 
-		public const Level.ZoneEnum ZoneEnumStart = (Level.ZoneEnum)5600;
-		public static Level.ZoneEnum ZoneEnumEnd { get; private set; } = ZoneEnumStart;
+			public IntAlloc(int start, int count)
+            {
+				Start = start;
+				End = start;
+				Max = start + count;
+            }
+		}
 
-		public const Level.WorldRegion WorldRegionStart = (Level.WorldRegion)650;
-		public static Level.WorldRegion WorldRegionEnd { get; private set; } = WorldRegionStart;
+		// Allocates enums sequentially by using IntAlloc behind the scenes
+		public class EnumAlloc<IDType> : IntAlloc where IDType : Enum
+        {
+			public new IDType Start { get => (IDType)Enum.ToObject(typeof(IDType), base.Start); }
 
-		public const RogueLikeMode.Perks RoguelikePerkStart = (RogueLikeMode.Perks)3500;
-		public static RogueLikeMode.Perks RoguelikePerkEnd { get; private set; } = RoguelikePerkStart;
+			public new IDType End { get => (IDType)Enum.ToObject(typeof(IDType), base.End); }
 
-		public const RogueLikeMode.TreatsCurses TreatsCursesStart = (RogueLikeMode.TreatsCurses)3500;
-		public static RogueLikeMode.TreatsCurses TreatsCursesEnd { get; private set; } = TreatsCursesStart;
+			public new IDType Max { get => (IDType)Enum.ToObject(typeof(IDType), base.Max); }
 
-		internal static ItemCodex.ItemTypes NewItemType() => ItemTypesEnd++;
+			public new IDType Allocate() => (IDType)Enum.ToObject(typeof(IDType), base.Allocate());
 
-		internal static EquipmentInfo.SpecialEffect NewEquipEffect() => EquipEffectEnd++;
+			public EnumAlloc(int start, int count)
+				: base(start, count) { }
+		}
 
-		internal static int NewAudioEntry() => AudioIDNext++;
+		public EnumAlloc<ItemCodex.ItemTypes> ItemID = new EnumAlloc<ItemCodex.ItemTypes>(700000, 100000);
 
-		internal static Level.ZoneEnum NewZoneEnum() => ZoneEnumEnd++;
+		public EnumAlloc<EquipmentInfo.SpecialEffect> EquipEffectID = new EnumAlloc<EquipmentInfo.SpecialEffect>(700, 5000);
 
-		internal static Level.WorldRegion NewWorldRegion() => WorldRegionEnd++;
+		public IntAlloc ModIndexID = new IntAlloc(0, 65536);
 
-		internal static RogueLikeMode.Perks NewRoguelikePerk() => RoguelikePerkEnd++;
+		public EnumAlloc<Level.ZoneEnum> LevelID = new EnumAlloc<Level.ZoneEnum>(5600, 10000);
 
-		internal static RogueLikeMode.TreatsCurses NewTreatOrCurse() => TreatsCursesEnd++;
+		public EnumAlloc<Level.WorldRegion> WorldRegionID = new EnumAlloc<Level.WorldRegion>(650, 5000);
+
+		public EnumAlloc<RogueLikeMode.Perks> PerkID = new EnumAlloc<RogueLikeMode.Perks>(3500, 1000);
+
+		public EnumAlloc<RogueLikeMode.TreatsCurses> TreatCurseID = new EnumAlloc<RogueLikeMode.TreatsCurses>(3500, 10000);
 	}
 }

@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Content;
 using System;
 using System.Collections.Generic;
 
-namespace SoG.Modding
+namespace SoG.Modding.Core
 {
     /// <summary>
     /// Represents a modded object type that is assigned to a certain mod.

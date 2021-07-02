@@ -7,17 +7,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using SoG.Modding.Core;
+using SoG.Modding.Content;
+using SoG.Modding.Extensions;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Patches
 {
-    internal static partial class Patches
+    internal static partial class PatchCollection
     {
         private static bool OnGetItemDescription(ref ItemDescription __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsModItem())
+            if (!enType.IsFromMod())
                 return true;
 
-            ModItemEntry entry = ModLibrary.GlobalLib.Items[enType];
+            ModItemEntry entry = ModGlobals.API.Library.Items[enType];
             __result = entry.ItemData;
             __result.txDisplayImage = Utils.TryLoadTex(entry.ItemResourcePath, entry.Manager);
 
@@ -26,10 +30,10 @@ namespace SoG.Modding
 
         private static bool OnGetItemInstance(ref Item __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsModItem())
+            if (!enType.IsFromMod())
                 return true;
 
-            ModItemEntry entry = ModLibrary.GlobalLib.Items[enType];
+            ModItemEntry entry = ModGlobals.API.Library.Items[enType];
             string trueShadowTex = entry.ItemShadowPath != "" ? entry.ItemShadowPath : "Items/DropAppearance/hartass02";
             ItemDescription xDesc = entry.ItemData;
 
@@ -53,10 +57,10 @@ namespace SoG.Modding
 
         private static bool OnGetEquipmentInfo(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsModItem())
+            if (!enType.IsFromMod())
                 return true;
 
-            __result = ModLibrary.GlobalLib.Items[enType].EquipData;
+            __result = ModGlobals.API.Library.Items[enType].EquipData;
 
             return false;
         }
@@ -67,10 +71,10 @@ namespace SoG.Modding
 
         private static bool OnGetFacegearInfo(ref FacegearInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsModItem())
+            if (!enType.IsFromMod())
                 return true;
 
-            ModItemEntry entry = ModLibrary.GlobalLib.Items[enType];
+            ModItemEntry entry = ModGlobals.API.Library.Items[enType];
             ContentManager manager = entry.Manager;
             string path = entry.EquipResourcePath;
 
@@ -89,10 +93,10 @@ namespace SoG.Modding
 
         private static bool OnGetHatInfo(ref HatInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsModItem())
+            if (!enType.IsFromMod())
                 return true;
 
-            ModItemEntry entry = ModLibrary.GlobalLib.Items[enType];
+            ModItemEntry entry = ModGlobals.API.Library.Items[enType];
             ContentManager manager = entry.Manager;
             string path = entry.EquipResourcePath;
 
@@ -119,10 +123,10 @@ namespace SoG.Modding
 
         private static bool OnGetWeaponInfo(ref WeaponInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsModItem())
+            if (!enType.IsFromMod())
                 return true;
 
-            __result = ModLibrary.GlobalLib.Items[enType].EquipData as WeaponInfo;
+            __result = ModGlobals.API.Library.Items[enType].EquipData as WeaponInfo;
 
             return false;
         }
@@ -136,10 +140,10 @@ namespace SoG.Modding
         {
             ItemCodex.ItemTypes type = __instance.enType;
 
-            if (!type.IsModItem())
+            if (!type.IsFromMod())
                 return true;
 
-            ModItemEntry entry = ModLibrary.GlobalLib.Items[type];
+            ModItemEntry entry = ModGlobals.API.Library.Items[type];
             ContentManager manager = entry.Manager;
             bool oneHanded = (entry.EquipData as WeaponInfo).enWeaponCategory == WeaponInfo.WeaponCategory.OneHanded;
 
@@ -148,10 +152,9 @@ namespace SoG.Modding
 
             foreach (KeyValuePair<ushort, string> kvp in dis)
             {
-                string resourcePath = ModLibrary.GlobalLib.Items[type].EquipResourcePath;
+                string resourcePath = ModGlobals.API.Library.Items[type].EquipResourcePath;
+                string texPath = kvp.Value.Replace($"Weapons/{resourcePath}/", "");
 
-                string texPath = kvp.Value;
-                texPath = texPath.Replace($"Weapons/{resourcePath}/", "");
                 if (oneHanded)
                 {
                     texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");

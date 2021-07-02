@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using SoG.Modding.Core;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Content
 {
     public class AnimationConfig
     {
-        public ContentManager Manager { get; set; } = GrindScript.Game.Content;
+        public ContentManager Manager { get; set; } = ModGlobals.Game.Content;
 
         public string TexturePath { get; set; } = "";
 

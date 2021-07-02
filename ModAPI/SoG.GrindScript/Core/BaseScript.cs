@@ -2,50 +2,36 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Core
 {
-    public class BaseScript
+    public abstract class BaseScript
     {
-        internal readonly int _audioID;
+        internal int ModIndex { get; set; }
 
-        internal readonly ModLibrary ModLib = new ModLibrary();
+        internal readonly PersistentLibrary Library = new PersistentLibrary();
+
+        protected ConsoleLogger Logger { get; private set; }
 
         public ContentManager ModContent { get; private set; }
 
         public string ModPath { get; private set; }
 
-        protected ConsoleLogger Logger { get; private set; }
+        public GrindScript ModAPI { get; internal set; }
 
         protected BaseScript() 
         {
             Logger = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, GetType().Name) { SourceColor = ConsoleColor.Yellow };
 
-            ModContent = new ContentManager(GrindScript.Game.Content.ServiceProvider, GrindScript.Game.Content.RootDirectory);
+            ModContent = new ContentManager(ModGlobals.Game.Content.ServiceProvider, ModGlobals.Game.Content.RootDirectory);
 
             ModPath = $"ModContent/{GetType().Name}/";
 
-            Logger.Info($"ModPath set as {ModPath}");
-
-            // TODO Clean up the code below
-
-            var allAudio = ModLibrary.Audio;
-            if (allAudio.ContainsKey(IDAllocator.AudioIDNext))
-            {
-                _audioID = IDAllocator.AudioIDNext;
-                Logger.Warn($"An existing audio entry ({_audioID}) was found while trying to create one for mod {GetType().Name}!");
-            }
-            else
-            {
-                _audioID = IDAllocator.NewAudioEntry();
-                allAudio.Add(_audioID, new ModAudioEntry(this, _audioID));
-                Logger.Info($"AudioID set as {_audioID}");
-            }
-
-            ModLibrary.Commands[GetType().Name] = new Dictionary<string, CommandParser>();
+            Logger.Info($"Mod instantiated! ModPath set as {ModPath}.");
         }
 
-        public virtual void LoadContent() { }
+        public abstract void LoadContent();
 
         // Hooks
 

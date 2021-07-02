@@ -4,10 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using SoG.Modding.Core;
+using SoG.Modding.Content;
+using SoG.Modding.Extensions;
+using SoG.Modding.Tools;
 
-namespace SoG.Modding
+namespace SoG.Modding.Patches
 {
-    internal static partial class Patches
+    internal static partial class PatchCollection
     {
         /// <summary>
         /// Runs after <see cref="Game1._Saving_SaveCharacterToFile(int)"/>.
@@ -15,10 +19,10 @@ namespace SoG.Modding
 
         private static void PostCharacterSave(int iFileSlot)
         {
-            string ext = ModSaveLoad.ModExt;
+            string ext = SaveModding.ModExt;
 
-            PlayerView player = GrindScript.Game.xLocalPlayer;
-            string appData = GrindScript.Game.sAppData;
+            PlayerView player = ModGlobals.Game.xLocalPlayer;
+            string appData = ModGlobals.Game.sAppData;
 
             int carousel = player.iSaveCarousel - 1;
             if (carousel < 0)
@@ -51,8 +55,8 @@ namespace SoG.Modding
 
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{chrFile}.temp", FileMode.Create, FileAccess.Write)))
             {
-                GrindScript.Logger.Info($"Saving mod character {iFileSlot}...");
-                ModSaveLoad.SaveModCharacter(bw);
+                ModGlobals.Log.Info($"Saving mod character {iFileSlot}...");
+                ModGlobals.API.SaveAPI.SaveModCharacter(bw);
             }
 
             try
@@ -73,10 +77,10 @@ namespace SoG.Modding
 
         private static void PostWorldSave(int iFileSlot)
         {
-            string ext = ModSaveLoad.ModExt;
+            string ext = SaveModding.ModExt;
 
-            PlayerView player = GrindScript.Game.xLocalPlayer;
-            string appData = GrindScript.Game.sAppData;
+            PlayerView player = ModGlobals.Game.xLocalPlayer;
+            string appData = ModGlobals.Game.sAppData;
 
             string backupPath = "";
             string chrFile = $"{appData}Characters/" + $"{iFileSlot}.cha{ext}";
@@ -97,8 +101,8 @@ namespace SoG.Modding
 
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{wldFile}.temp", FileMode.Create, FileAccess.Write)))
             {
-                GrindScript.Logger.Info($"Saving mod world {iFileSlot}...");
-                ModSaveLoad.SaveModWorld(bw);
+                ModGlobals.Log.Info($"Saving mod world {iFileSlot}...");
+                ModGlobals.API.SaveAPI.SaveModWorld(bw);
             }
 
             try
@@ -119,15 +123,15 @@ namespace SoG.Modding
 
         private static void PostArcadeSave()
         {
-            string ext = ModSaveLoad.ModExt;
+            string ext = SaveModding.ModExt;
 
             bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
-            string savFile = GrindScript.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
+            string savFile = ModGlobals.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
 
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{savFile}.temp", FileMode.Create, FileAccess.Write)))
             {
-                GrindScript.Logger.Info($"Saving mod arcade...");
-                ModSaveLoad.SaveModArcade(bw);
+                ModGlobals.Log.Info($"Saving mod arcade...");
+                ModGlobals.API.SaveAPI.SaveModArcade(bw);
             }
 
             File.Copy($"{savFile}.temp", savFile, overwrite: true);
@@ -140,16 +144,16 @@ namespace SoG.Modding
 
         private static void PostCharacterLoad(int iFileSlot, bool bAppearanceOnly)
         {
-            string ext = ModSaveLoad.ModExt;
+            string ext = SaveModding.ModExt;
 
-            string chrFile = GrindScript.Game.sAppData + "Characters/" + $"{iFileSlot}.cha{ext}";
+            string chrFile = ModGlobals.Game.sAppData + "Characters/" + $"{iFileSlot}.cha{ext}";
 
             if (!File.Exists(chrFile)) return;
 
             using (BinaryReader br = new BinaryReader(new FileStream(chrFile, FileMode.Open, FileAccess.Read)))
             {
-                GrindScript.Logger.Info($"Loading mod character {iFileSlot}...");
-                ModSaveLoad.LoadModCharacter(br);
+                ModGlobals.Log.Info($"Loading mod character {iFileSlot}...");
+                ModGlobals.API.SaveAPI.LoadModCharacter(br);
             }
         }
 
@@ -159,16 +163,16 @@ namespace SoG.Modding
 
         private static void PostWorldLoad(int iFileSlot)
         {
-            string ext = ModSaveLoad.ModExt;
+            string ext = SaveModding.ModExt;
 
-            string wldFile = GrindScript.Game.sAppData + "Worlds/" + $"{iFileSlot}.wld{ext}";
+            string wldFile = ModGlobals.Game.sAppData + "Worlds/" + $"{iFileSlot}.wld{ext}";
 
             if (!File.Exists(wldFile)) return;
 
             using (BinaryReader br = new BinaryReader(new FileStream(wldFile, FileMode.Open, FileAccess.Read)))
             {
-                GrindScript.Logger.Info($"Loading mod world {iFileSlot}...");
-                ModSaveLoad.LoadModWorld(br);
+                ModGlobals.Log.Info($"Loading mod world {iFileSlot}...");
+                ModGlobals.API.SaveAPI.LoadModWorld(br);
             }
         }
 
@@ -178,19 +182,19 @@ namespace SoG.Modding
 
         private static void PostArcadeLoad()
         {
-            string ext = ModSaveLoad.ModExt;
+            string ext = SaveModding.ModExt;
 
             if (RogueLikeMode.LockedOutDueToHigherVersionSaveFile) return;
 
             bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
-            string savFile = GrindScript.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
+            string savFile = ModGlobals.Game.sAppData + $"arcademode{(other ? "_other" : "")}.sav{ext}";
 
             if (!File.Exists(savFile)) return;
 
             using (BinaryReader br = new BinaryReader(new FileStream(savFile, FileMode.Open, FileAccess.Read)))
             {
-                GrindScript.Logger.Info($"Loading mod arcade...");
-                ModSaveLoad.LoadModArcade(br);
+                ModGlobals.Log.Info($"Loading mod arcade...");
+                ModGlobals.API.SaveAPI.LoadModArcade(br);
             }
         }
     }

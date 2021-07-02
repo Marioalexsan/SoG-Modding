@@ -75,12 +75,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Content\AnimationConfig.cs" />
+    <Compile Include="Content\ModdingLogic.cs" />
     <Compile Include="Content\ItemModding.cs" />
     <Compile Include="Content\LevelConfig.cs" />
     <Compile Include="Content\LevelModding.cs" />
     <Compile Include="Content\MiscModding.cs" />
     <Compile Include="Content\RoguelikeMiscConfigs.cs" />
     <Compile Include="Content\RoguelikeModding.cs" />
+    <Compile Include="Core\ModGlobals.cs" />
+    <Compile Include="Core\GrindScriptCommands.cs" />
+    <Compile Include="Extensions\IDExtension.cs" />
     <Compile Include="Extensions\LevelExtension.cs" />
     <Compile Include="Extensions\RoguelikeExtension.cs" />
     <Compile Include="Patches\CoreCallbacks.cs" />
@@ -95,6 +99,7 @@
     <Compile Include="Patches\LevelCallbacks.cs" />
     <Compile Include="Patches\RoguelikeCallbacks.cs" />
     <Compile Include="Patches\SaveCallbacks.cs" />
+    <Compile Include="Patches\StaticAccessPoints.cs" />
     <Compile Include="Patches\Transpilers.cs" />
     <Compile Include="Tools\ConsoleLogger.cs" />
     <Compile Include="Core\Delegates.cs" />
@@ -102,9 +107,9 @@
     <Compile Include="Core\Enums.cs" />
     <Compile Include="Core\GrindScript.cs" />
     <Compile Include="Core\IDAllocator.cs" />
-    <Compile Include="Core\ModLibrary.cs" />
+    <Compile Include="Core\Libraries.cs" />
     <Compile Include="Content\AudioModding.cs" />
-    <Compile Include="Core\ModSaveLoad.cs" />
+    <Compile Include="Content\SaveModding.cs" />
     <Compile Include="Tools\LevelUtils.cs" />
     <Compile Include="Tools\NetUtils.cs" />
     <Compile Include="Core\PatchCodex.cs" />
