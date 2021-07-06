@@ -14,7 +14,6 @@ namespace SoG.Modding.Extensions
         /// <summary>
         /// Creates patches by specifying a PatchDescription.
         /// </summary>
-
         public static MethodInfo Patch(this Harmony harmony, PatchCodex.PatchInfo patch)
         {
             return harmony.Patch(patch.Target,

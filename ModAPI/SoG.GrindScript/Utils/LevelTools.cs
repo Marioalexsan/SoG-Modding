@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 
-namespace SoG.Modding
+namespace SoG.Modding.Utils
 {
-    internal class RareUtils
+    internal class LevelTools
     {
         public static void BlueprintSanityCheck(LevelBlueprint bp, bool withSpawns = false)
         {

@@ -5,22 +5,24 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding.Core;
 using SoG.Modding.Content;
 using SoG.Modding.Extensions;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
+using Microsoft.Xna.Framework.Content;
+using SoG.Modding.Patches;
 
 namespace SoG.Modding.Core
 {
     /// <summary>
-    /// Core of the API
+    /// Core of the modding API.
     /// </summary>
-
     public class GrindScript
     {
         private readonly Harmony _harmony = new Harmony("GrindScriptPatcher");
 
         private readonly Stack<BaseScript> _modContext = new Stack<BaseScript>();
+
+        private readonly List<PatchStateWorker> _workers = new List<PatchStateWorker>();
 
         private int _status = 0;
 
@@ -30,30 +32,59 @@ namespace SoG.Modding.Core
 
         internal Texture2D MissingTex { get; private set; }
 
-        internal ConsoleLogger Logger { get; private set; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
+        internal ConsoleLogger Logger { get; } = new ConsoleLogger(ConsoleLogger.LogLevels.Debug, "GrindScript");
 
-        internal GlobalLibrary Library = new GlobalLibrary();
+        internal GlobalLibrary Library { get; } = new GlobalLibrary();
 
-        internal IDAllocator Allocator = new IDAllocator();
+        internal IDAllocator Allocator { get; } = new IDAllocator();
 
+        /// <summary>
+        /// The Secrets of Grindea game instance.
+        /// </summary>
+        public Game1 Game { get; private set; }
+
+        /// <summary>
+        /// Supports item and equipment creation.
+        /// </summary>
         public ItemModding ItemAPI { get; private set; }
 
+        /// <summary>
+        /// Supports custom music and redirects.
+        /// </summary>
         public AudioModding AudioAPI { get; private set; }
 
+        /// <summary>
+        /// Supports custom level and world region creation.
+        /// </summary>
         public LevelModding LevelAPI { get; private set; }
 
-        public MiscModding MiscAPI { get; private set; } // Misc sounds like multiple responsibility, therefore bad?
+        /// <summary>
+        /// Allows definition of custom commands.
+        /// </summary>
+        public MiscModding MiscAPI { get; private set; }
 
+        /// <summary>
+        /// Supports custom perks, treats and curses.
+        /// </summary>
         public RoguelikeModding RoguelikeAPI { get; private set; }
 
+        /// <summary>
+        /// Has limited support for custom miscellaneous text.
+        /// </summary>
         public TextModding TextAPI { get; private set; }
 
+        /// <summary>
+        /// Currently offers no mod functionality.
+        /// </summary>
         public SaveModding SaveAPI { get; private set; }
 
+        /// <summary>
+        /// Instantiates GrindScript and sets some ModGlobals variables.
+        /// </summary>
         public GrindScript()
         {
-            ModGlobals.API = this;
-            ModGlobals.Log = Logger;
+            APIGlobals.API = this;
+            APIGlobals.Logger = Logger;
             Logger.Debug("GrindScript instantiated!");
 
             ItemAPI = new ItemModding(this);
@@ -68,11 +99,9 @@ namespace SoG.Modding.Core
         }
 
         /// <summary>
-        /// Sets a load context. All subsequent content creation methods will use the given context as the target. <para/>
-        /// BaseScript::LoadContent() is called with the current mod as context. <para/>
-        /// Only use this if you really need to load on behalf of other mods, or outside of LoadContent()
+        /// Sets the given mod as the current load context, and calls the given method.
+        /// GrindScript uses this method when calling each mod's LoadContent() method.
         /// </summary>
-
         internal void CallWithContext(BaseScript mod, Action<BaseScript> call)
         {
             _modContext.Push(mod);
@@ -81,9 +110,37 @@ namespace SoG.Modding.Core
         }
 
         /// <summary>
-        /// Prepares GrindScript by doing some processing before SoG's Main method runs.
+        /// Retrieves a PatchStateWorker of the given subtype if it exists.
+        /// These are used to store state and execute code that is used in very few places
         /// </summary>
+        internal T GetWorker<T>() where T : PatchStateWorker
+        {
+            foreach (var worker in _workers)
+            {
+                if (worker.GetType() == typeof(T))
+                    return worker as T;
+            }
+            return null;
+        }
 
+        /// <summary>
+        /// Retrieves a PatchStateWorker of the given subtype if it exists.
+        /// These are used to store state and execute code that is used in very few places
+        /// </summary>
+        internal T GetNamedWorker<T>(string id) where T : PatchStateWorker
+        {
+            foreach (var worker in _workers)
+            {
+                if (worker.GetType() == typeof(T) && worker.ID == id)
+                    return worker as T;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Prepares GrindScript by doing some processing before SoG's Main method runs.
+        /// This should only be called by the Launcher
+        /// </summary>
         public void SetupGrindScript()
         {
             if (_status != 0)
@@ -100,19 +157,19 @@ namespace SoG.Modding.Core
                 return;
             }
 
-            Utils.TryCreateDirectory("Mods");
-            Utils.TryCreateDirectory("Content/ModContent");
+            Utils.Tools.TryCreateDirectory("Mods");
+            Utils.Tools.TryCreateDirectory("Content/ModContent");
 
+            SetupPatchStateWorkers();
             ApplyPatches();
 
             _status = 1;
         }
 
         /// <summary>
-        /// Initializes GrindScript during SoG's startup thread
+        /// Prepares Secrets of Grindea during its startup thread.
         /// </summary>
-
-        public void SetupSoG()
+        internal void SetupSoG()
         {
             if (_status != 1)
             {
@@ -124,17 +181,17 @@ namespace SoG.Modding.Core
 
             Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
 
-            ModGlobals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
+            APIGlobals.Game = Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
 
             // Place mod saves in a separate folder. This prevents crashes from damaging vanilla saves
-            ModGlobals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
+            Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
 
             // Disable submission of high scores for obvious reasons
             // This doesn't prevent cheating, but it avoids accidental cheater tagging by the game
-            ModGlobals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
+            Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
 
             // Load a texture that can be used as an alternate "Null Texture" when TryLoad-ing
-            MissingTex = Utils.TryLoadTex("ModContent/GrindScript/NullTexGS", ModGlobals.Game.Content);
+            MissingTex = Utils.Tools.TryLoadTex("ModContent/GrindScript/NullTexGS", Game.Content);
             
             // Instantiate all mods found in "Mods/"
             LoadMods();
@@ -145,7 +202,6 @@ namespace SoG.Modding.Core
         /// <summary>
         /// Applies all patches found in PatchCodex.
         /// </summary>
-
         private void ApplyPatches()
         {
             Logger.Info("Applying Patches...");
@@ -210,10 +266,9 @@ namespace SoG.Modding.Core
         /// <summary>
         /// Loads a mod and instantiates its BaseScript derived class (if any).
         /// </summary>
-
         private void LoadMod(string path)
         {
-            Logger.Info("Loading mod " + path);
+            Logger.Info("Loading mod " + Tools.GetShortenedPath(path));
 
             try
             {
@@ -221,27 +276,27 @@ namespace SoG.Modding.Core
                 BaseScript mod = type.GetConstructor(new Type[] { }).Invoke(new object[] { }) as BaseScript;
 
                 mod.ModAPI = this;
-
                 mod.ModIndex = Allocator.ModIndexID.Allocate();
 
-                Library.Audio.Add(mod.ModIndex, new ModAudioEntry(mod, mod.ModIndex));
+                mod.ModContent = new ContentManager(Game.Content.ServiceProvider, Game.Content.RootDirectory);
+                mod.ModPath = $"ModContent/{type.Name}/";
 
+                Library.Audio.Add(mod.ModIndex, new ModAudioEntry(mod, mod.ModIndex));
                 Library.Commands[mod.GetType().Name] = new Dictionary<string, CommandParser>();
 
                 LoadedScripts.Add(mod);
 
-                Logger.Info("Loaded mod " + path);
+                Logger.Info($"ModPath set as {mod.ModPath}");
             }
             catch (Exception e)
             {
-                Logger.Error($"Failed to load mod {path}. Exception message: {e.Message}");
+                Logger.Error($"Failed to load mod {Tools.GetShortenedPath(path)}. Exception message: {Tools.GetShortenedPath(e.Message)}");
             }
         }
 
         /// <summary>
         /// Loads all mods found in the "/Mods" directory
         /// </summary>
-
         private void LoadMods()
         {
             var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
@@ -250,6 +305,14 @@ namespace SoG.Modding.Core
             {
                 LoadMod(file);
             }
+        }
+
+        /// <summary>
+        /// Instantiates workers used elsewhere.
+        /// </summary>
+        private void SetupPatchStateWorkers()
+        {
+            _workers.Add(new TCMenuWorker(this, "TC1"));
         }
     }
 }

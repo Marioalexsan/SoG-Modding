@@ -3,16 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
+using CodeEnumerable = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
+using System.IO;
 
-namespace SoG.Modding.Tools
+namespace SoG.Modding.Utils
 {
     /// <summary>
     /// Provides various helper methods for transpiling the game.
     /// Throughout the code, CodeList is a shortcut for IEnumerable of CodeInstructions.
     /// </summary>
-
-    public static class PatchUtils
+    public static class PatchTools
     {
         // How the stack changes based on a StackBehavior (in terms of objects)
         private static readonly Dictionary<StackBehaviour, int> __stackDeltas = new Dictionary<StackBehaviour, int>
@@ -49,17 +49,42 @@ namespace SoG.Modding.Tools
         };
 
         /// <summary>
-        /// <para> Transpiles the given instruction set by inserting code instructions after the target method. </para>
-        /// <para> If there are multiple calls of the target method, you can specify which one to insert after using methodIndex (zero-indexed). </para>
-        /// <para> 
+        /// Outputs the given code list to a file in "Logs\" folder.
+        /// </summary>
+        public static void WriteILToDisk(CodeEnumerable code, string file = "", ConsoleLogger log = null)
+        {
+            if (file == "")
+            {
+                var time = DateTime.Now;
+                file = $"ILOutput_{time.Year}-{time.Month}-{time.Day}_{time.Hour}-{time.Minute}-{time.Second}.txt";
+            }
+            try
+            {
+                Tools.TryCreateDirectory("Logs");
+                using (StreamWriter writer = new StreamWriter(new FileStream("Logs\\" + file, FileMode.Create, FileAccess.Write)))
+                {
+                    int index = 0;
+                    foreach (CodeInstruction ins in code)
+                    {
+                        writer.Write($"{index++}: {ins}\n");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                log?.Debug("Couldn't write IL due to exception: " + e);
+            }
+        }
+
+        /// <summary>
+        /// Transpiles the given instruction set by inserting code instructions after the target method. <para/>
+        /// If there are multiple calls of the target method, you can specify which one to insert after using methodIndex (zero-indexed). <para/>
         /// If the target method has a return value that is being used by subsquent code, you can specify ignoreLackOfPop = true to force the insertion.
-        /// This is useful if you also use other insertions to create a ternary operator.
-        /// </para>
+        /// This is useful if you also use other insertions to create a ternary operator. <para/>
         /// </summary>
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to the described incompatibilities. </exception>
-
-        public static CodeList InsertAfterMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, bool missingPopIsOk = false, ConsoleLogger log = null)
+        public static CodeEnumerable InsertAfterMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, bool missingPopIsOk = false, ConsoleLogger log = null)
         {
             int counter = methodIndex + 1;
             var noReturnValue = target.ReturnType == typeof(void);
@@ -93,13 +118,12 @@ namespace SoG.Modding.Tools
         }
 
         /// <summary> 
-        /// <para> Transpiles the given instruction set by inserting code instructions before the target method. </para>
-        /// <para> If there are multiple calls of the target method, you can specify which one to insert before of using methodIndex (zero-indexed). </para>
+        /// Transpiles the given instruction set by inserting code instructions before the target method. <para/>
+        /// If there are multiple calls of the target method, you can specify which one to insert before of using methodIndex (zero-indexed). <para/>
         /// </summary>
         /// <returns> The modified code, with new instructions inserted as described. </returns>
         /// <exception cref="Exception"> Thrown if the transpile fails due to failing to find the target method, or if a suitable insertion point wasn't spotted. </exception>
-
-        public static CodeList InsertBeforeMethod(CodeList code, MethodInfo target, CodeList insert, int methodIndex = 0, ConsoleLogger log = null)
+        public static CodeEnumerable InsertBeforeMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, ConsoleLogger log = null)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();
@@ -108,7 +132,8 @@ namespace SoG.Modding.Tools
 
             foreach (CodeInstruction ins in code)
             {
-                if (stage == 0 && ins.Calls(target) && --counter == 0) stage = 1;
+                if (stage == 0 && ins.Calls(target) && --counter == 0) 
+                    stage = 1;
                 if (stage == 0) codeStore.Add(ins);
                 else leftoverCode.Add(ins);
             }
@@ -137,7 +162,8 @@ namespace SoG.Modding.Tools
                 }
             }
             else stage = 2;
-            if (stage != 2) throw new Exception("Transpile failed: couldn't calculate position before method!");
+            if (stage != 2)
+                throw new Exception("Transpile failed: couldn't calculate position before method!");
 
             for (int index = 0; index < codeStore.Count; index++)
             {
@@ -159,6 +185,63 @@ namespace SoG.Modding.Tools
                 yield return ins;
 
             log?.InspectCode(code, target);
+        }
+
+        /// <summary>
+        /// Adds the specified list of IL code, before the instruction at the given offset.
+        /// </summary>
+        public static CodeEnumerable InsertAt(CodeEnumerable code, CodeEnumerable insert, int offset)
+        {
+            bool inserted = false;
+            foreach (CodeInstruction ins in code)
+            {
+                if (!inserted && offset-- <= 0)
+                {
+                    inserted = true;
+                    foreach (CodeInstruction op in insert)
+                        yield return op;
+                }
+                yield return ins;
+            }
+        }
+
+        /// <summary>
+        /// Removes the specified number of IL instructions, starting with the instruction at the given offset.
+        /// </summary>
+        public static CodeEnumerable RemoveAt(CodeEnumerable code, int toDelete, int offset)
+        {
+            foreach (CodeInstruction ins in code)
+            {
+                if (offset-- <= 0 && toDelete-- > 0)
+                    continue;
+                yield return ins;
+            }
+        }
+
+        /// <summary>
+        /// Calls RemoveAt, followed by InsertAt, effectively replacing the removed code with the inserted one.
+        /// </summary>
+        public static CodeEnumerable ReplaceAt(CodeEnumerable code, int toDelete, CodeEnumerable toInsert, int offset)
+        {
+            code = RemoveAt(code, toDelete, offset);
+            return InsertAt(code, toInsert, offset);
+        }
+
+        /// <summary>
+        /// Tries to retrieve the IL at the given offset.
+        /// If found, true is returned, otherwise false.
+        /// </summary>
+        public static bool TryILAt(CodeEnumerable code, int offset, out OpCode op)
+        {
+            foreach (CodeInstruction ins in code)
+            {
+                if (offset-- > 0)
+                    continue;
+                op = ins.opcode;
+                return true;
+            }
+            op = OpCodes.Nop;
+            return false;
         }
     }
 }

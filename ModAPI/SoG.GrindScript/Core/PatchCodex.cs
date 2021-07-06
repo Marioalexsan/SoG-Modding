@@ -5,6 +5,7 @@ using System.Reflection;
 using WeaponAssets;
 using SoG.Modding.Patches;
 using SoG.Modding.Extensions;
+using HarmonyLib;
 
 namespace SoG.Modding.Core
 {
@@ -14,6 +15,9 @@ namespace SoG.Modding.Core
 
     public static class PatchCodex
     {
+        /// <summary>
+        /// Identifies a specific game patch.
+        /// </summary>
         public enum PatchID
         {
             // GrindScript Initialize
@@ -33,10 +37,7 @@ namespace SoG.Modding.Core
             Game1_LevelLoading_DoStuff_Arcadia,
             Game1_Item_Use,
 
-            // Game1 has OnEnemyKilled event
-
             // RogueLike
-
             Game1_RogueLike_GetPerkTexture,
             Game1_RogueLike_GetTreatCurseTexture,
             Game1_RogueLike_GetTreatCurseInfo,
@@ -82,13 +83,15 @@ namespace SoG.Modding.Core
 
             // Level patches
             Game1_LevelLoading_DoStuff,
-            LevelBlueprint_GetBlueprint
+            LevelBlueprint_GetBlueprint,
+
+            // Shop Menu Crap patches
+            Game1_ShopMenu_Render_TreatCurseAssign
         }
 
         /// <summary>
         /// Describes a Harmony patch as a collection of MethodInfo.
         /// </summary>
-
         public class PatchInfo
         {
             public MethodInfo Target;
@@ -106,6 +109,9 @@ namespace SoG.Modding.Core
 
         private static readonly Dictionary<PatchID, PatchInfo> _patchCodex;
 
+        /// <summary>
+        /// Get a patch based on its PatchID. Returns null if no such patch is defined.
+        /// </summary>
         public static PatchInfo GetPatch(PatchID which)
         {
             return _patchCodex.TryGetValue(which, out var patch) ? patch : null;
@@ -113,270 +119,276 @@ namespace SoG.Modding.Core
 
         static PatchCodex()
         {
-            TypeInfo Patches = typeof(PatchCollection).GetTypeInfo(); // Commonly used
-            TypeInfo Game1 = typeof(Game1).GetTypeInfo(); // Commonly used
-            TypeInfo SoundSystem = typeof(SoundSystem).GetTypeInfo(); // SoundSystem patching
-            TypeInfo WeaponContentManager = typeof(WeaponContentManager).GetTypeInfo();
-            TypeInfo ItemCodex = typeof(ItemCodex).GetTypeInfo();
-            TypeInfo EquipmentCodex = typeof(EquipmentCodex).GetTypeInfo();
-            TypeInfo FacegearCodex = typeof(FacegearCodex).GetTypeInfo();
-            TypeInfo HatCodex = typeof(HatCodex).GetTypeInfo();
-            TypeInfo WeaponCodex = typeof(WeaponCodex).GetTypeInfo();
-            TypeInfo TreatCurseMenu = typeof(ShopMenu.TreatCurseMenu).GetTypeInfo();
+            // Commonly used types
+            var patches = typeof(PatchCollection).GetTypeInfo();
+            var game1 = typeof(Game1).GetTypeInfo();
+            var soundSystem = typeof(SoundSystem).GetTypeInfo();
+            var weaponContentManager = typeof(WeaponContentManager).GetTypeInfo();
+            var itemCodex = typeof(ItemCodex).GetTypeInfo();
+            var equipmentCodex = typeof(EquipmentCodex).GetTypeInfo();
+            var facegearCodex = typeof(FacegearCodex).GetTypeInfo();
+            var hatCodex = typeof(HatCodex).GetTypeInfo();
+            var weaponCodex = typeof(WeaponCodex).GetTypeInfo();
+            var treatCurseMenu = typeof(ShopMenu.TreatCurseMenu).GetTypeInfo();
 
             _patchCodex = new Dictionary<PatchID, PatchInfo>()
             {
                 [PatchID.Game1_Initialize] = new PatchInfo()
                 {
-                    Target = Game1.GetPrivateMethod("Initialize"),
-                    Prefix = Patches.GetPrivateMethod("OnGame1Initialize")
+                    Target = game1.GetPrivateMethod("Initialize"),
+                    Prefix = patches.GetPrivateMethod("OnGame1Initialize")
                 },
                 [PatchID.Game1_StartupThreadExecute] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("__StartupThreadExecute"),
-                    Transpiler = Patches.GetPrivateMethod("StartupTranspiler")
+                    Target = game1.GetMethod("__StartupThreadExecute"),
+                    Transpiler = patches.GetPrivateMethod("StartupTranspiler")
                 },
-
 
                 [PatchID.Game1_FinalDraw] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("FinalDraw"),
-                    Prefix = Patches.GetPrivateMethod("OnFinalDraw")
+                    Target = game1.GetMethod("FinalDraw"),
+                    Prefix = patches.GetPrivateMethod("OnFinalDraw")
                 },
                 [PatchID.Game1_Player_TakeDamage] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Player_TakeDamage"),
-                    Prefix = Patches.GetPrivateMethod("OnPlayerTakeDamage")
+                    Target = game1.GetMethod("_Player_TakeDamage"),
+                    Prefix = patches.GetPrivateMethod("OnPlayerTakeDamage")
                 },
                 [PatchID.Game1_Player_KillPlayer] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Player_KillPlayer", new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) }),
-                    Prefix = Patches.GetPrivateMethod("OnPlayerKilled")
+                    Target = game1.GetMethod("_Player_KillPlayer", new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) }),
+                    Prefix = patches.GetPrivateMethod("OnPlayerKilled")
                 },
                 [PatchID.Game1_Player_ApplyLvUpBonus] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Player_ApplyLvUpBonus"),
-                    Postfix = Patches.GetPrivateMethod("PostPlayerLevelUp")
+                    Target = game1.GetMethod("_Player_ApplyLvUpBonus"),
+                    Postfix = patches.GetPrivateMethod("PostPlayerLevelUp")
                 },
                 [PatchID.Game1_Enemy_TakeDamage] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Enemy_TakeDamage"),
-                    Prefix = Patches.GetPrivateMethod("OnEnemyTakeDamage")
+                    Target = game1.GetMethod("_Enemy_TakeDamage"),
+                    Prefix = patches.GetPrivateMethod("OnEnemyTakeDamage")
                 },
                 [PatchID.Game1_NPC_TakeDamage] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_NPC_TakeDamage"),
-                    Prefix = Patches.GetPrivateMethod("OnNPCTakeDamage")
+                    Target = game1.GetMethod("_NPC_TakeDamage"),
+                    Prefix = patches.GetPrivateMethod("OnNPCTakeDamage")
                 },
                 [PatchID.Game1_NPC_Interact] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_NPC_Interact"),
-                    Prefix = Patches.GetPrivateMethod("OnNPCInteraction")
+                    Target = game1.GetMethod("_NPC_Interact"),
+                    Prefix = patches.GetPrivateMethod("OnNPCInteraction")
                 },
                 [PatchID.Game1_LevelLoading_DoStuff_Arcadia] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_LevelLoading_DoStuff_Arcadia"),
-                    Prefix = Patches.GetPrivateMethod("OnArcadiaLoad")
+                    Target = game1.GetMethod("_LevelLoading_DoStuff_Arcadia"),
+                    Prefix = patches.GetPrivateMethod("OnArcadiaLoad")
                 },
                 [PatchID.Game1_Item_Use] = new PatchInfo()
                 {
-                    Target = Game1.GetDeclaredMethods("_Item_Use").ElementAt(1),
-                    Prefix = Patches.GetPrivateMethod("OnItemUse")
+                    Target = game1.GetDeclaredMethods("_Item_Use").ElementAt(1),
+                    Prefix = patches.GetPrivateMethod("OnItemUse")
                 },
 
 
                 [PatchID.Game1_RogueLike_GetPerkTexture] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_RogueLike_GetPerkTexture"),
-                    Prefix = Patches.GetPrivateMethod("OnGetPerkTexture")
+                    Target = game1.GetMethod("_RogueLike_GetPerkTexture"),
+                    Prefix = patches.GetPrivateMethod("OnGetPerkTexture")
                 },
                 [PatchID.Game1_RogueLike_GetTreatCurseTexture] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_RogueLike_GetTreatCurseTexture"),
-                    Prefix = Patches.GetPrivateMethod("OnGetTreatCurseTexture")
+                    Target = game1.GetMethod("_RogueLike_GetTreatCurseTexture"),
+                    Prefix = patches.GetPrivateMethod("OnGetTreatCurseTexture")
                 },
                 [PatchID.Game1_RogueLike_GetTreatCurseInfo] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_RogueLike_GetTreatCurseInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetTreatCurseInfo")
+                    Target = game1.GetMethod("_RogueLike_GetTreatCurseInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetTreatCurseInfo")
                 },
                 [PatchID.TreatCurseMenu_FillCurseList] = new PatchInfo()
                 {
-                    Target = TreatCurseMenu.GetMethod("FillCurseList"),
-                    Postfix = Patches.GetPrivateMethod("PostFillCurseList")
+                    Target = treatCurseMenu.GetMethod("FillCurseList"),
+                    Postfix = patches.GetPrivateMethod("PostFillCurseList")
                 },
                 [PatchID.TreatCurseMenu_FillTreatList] = new PatchInfo()
                 {
-                    Target = TreatCurseMenu.GetMethod("FillTreatList"),
-                    Postfix = Patches.GetPrivateMethod("PostFillTreatList")
+                    Target = treatCurseMenu.GetMethod("FillTreatList"),
+                    Postfix = patches.GetPrivateMethod("PostFillTreatList")
                 },
                 [PatchID.Game1_RogueLike_ActivatePerks] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_RogueLike_ActivatePerks"),
-                    Postfix = Patches.GetPrivateMethod("PostPerkActivation")
+                    Target = game1.GetMethod("_RogueLike_ActivatePerks"),
+                    Postfix = patches.GetPrivateMethod("PostPerkActivation")
                 },
                 [PatchID.Game1_LevelLoading_DoStuff_ArcadeModeRoom] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_LevelLoading_DoStuff_ArcadeModeRoom"),
-                    Postfix = Patches.GetPrivateMethod("PostArcadeRoomStart")
+                    Target = game1.GetMethod("_LevelLoading_DoStuff_ArcadeModeRoom"),
+                    Postfix = patches.GetPrivateMethod("PostArcadeRoomStart")
                 },
                 [PatchID.PerkInfo_Init] = new PatchInfo()
                 {
                     Target = typeof(RogueLikeMode.PerkInfo).GetMethod("Init"),
-                    Postfix = Patches.GetPrivateMethod("PostPerkListInit")
+                    Postfix = patches.GetPrivateMethod("PostPerkListInit")
                 },
 
 
                 [PatchID.Game1_Chat_ParseCommand] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Chat_ParseCommand"),
-                    Transpiler = Patches.GetPrivateMethod("CommandTranspiler")
+                    Target = game1.GetMethod("_Chat_ParseCommand"),
+                    Transpiler = patches.GetPrivateMethod("CommandTranspiler")
                 },
                 [PatchID.ItemCodex_GetItemDescription] = new PatchInfo()
                 {
-                    Target = ItemCodex.GetMethod("GetItemDescription"),
-                    Prefix = Patches.GetPrivateMethod("OnGetItemDescription")
+                    Target = itemCodex.GetMethod("GetItemDescription"),
+                    Prefix = patches.GetPrivateMethod("OnGetItemDescription")
                 },
                 [PatchID.ItemCodex_GetItemInstance] = new PatchInfo()
                 {
-                    Target = ItemCodex.GetMethod("GetItemInstance"),
-                    Prefix = Patches.GetPrivateMethod("OnGetItemInstance")
+                    Target = itemCodex.GetMethod("GetItemInstance"),
+                    Prefix = patches.GetPrivateMethod("OnGetItemInstance")
                 },
                 [PatchID.EquipmentCodex_GetArmorInfo] = new PatchInfo()
                 {
-                    Target = EquipmentCodex.GetMethod("GetArmorInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetEquipmentInfo")
+                    Target = equipmentCodex.GetMethod("GetArmorInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetEquipmentInfo")
                 },
                 [PatchID.EquipmentCodex_GetAccessoryInfo] = new PatchInfo()
                 {
-                    Target = EquipmentCodex.GetMethod("GetAccessoryInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetEquipmentInfo")
+                    Target = equipmentCodex.GetMethod("GetAccessoryInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetEquipmentInfo")
                 },
                 [PatchID.EquipmentCodex_GetShieldInfo] = new PatchInfo()
                 {
-                    Target = EquipmentCodex.GetMethod("GetShieldInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetEquipmentInfo")
+                    Target = equipmentCodex.GetMethod("GetShieldInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetEquipmentInfo")
                 },
                 [PatchID.EquipmentCodex_GetShoesInfo] = new PatchInfo()
                 {
-                    Target = EquipmentCodex.GetMethod("GetShoesInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetEquipmentInfo")
+                    Target = equipmentCodex.GetMethod("GetShoesInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetEquipmentInfo")
                 },
                 [PatchID.FacegearCodex_GetHatInfo] = new PatchInfo()
                 {
-                    Target = FacegearCodex.GetMethod("GetHatInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetFacegearInfo")
+                    Target = facegearCodex.GetMethod("GetHatInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetFacegearInfo")
                 },
                 [PatchID.HatCodex_GetHatInfo] = new PatchInfo()
                 {
-                    Target = HatCodex.GetMethod("GetHatInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetHatInfo")
+                    Target = hatCodex.GetMethod("GetHatInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetHatInfo")
                 },
                 [PatchID.WeaponCodex_GetWeaponInfo] = new PatchInfo()
                 {
-                    Target = WeaponCodex.GetMethod("GetWeaponInfo"),
-                    Prefix = Patches.GetPrivateMethod("OnGetWeaponInfo")
+                    Target = weaponCodex.GetMethod("GetWeaponInfo"),
+                    Prefix = patches.GetPrivateMethod("OnGetWeaponInfo")
                 },
                 [PatchID.WeaponContentManager_LoadBatch] = new PatchInfo()
                 {
-                    Target = WeaponContentManager.GetDeclaredMethods("LoadBatch").ElementAt(1),
-                    Prefix = Patches.GetPrivateMethod("OnLoadBatch")
+                    Target = weaponContentManager.GetDeclaredMethods("LoadBatch").ElementAt(1),
+                    Prefix = patches.GetPrivateMethod("OnLoadBatch")
                 },
                 [PatchID.Game1_Animations_GetAnimationSet] = new PatchInfo()
                 {
-                    Target = Game1.GetDeclaredMethods("_Animations_GetAnimationSet").ElementAt(1),
-                    Prefix = Patches.GetPrivateMethod("OnGetAnimationSet")
+                    Target = game1.GetDeclaredMethods("_Animations_GetAnimationSet").ElementAt(1),
+                    Prefix = patches.GetPrivateMethod("OnGetAnimationSet")
                 },
                 [PatchID.SoundSystem_PlayInterfaceCue] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetMethod("PlayInterfaceCue"),
-                    Transpiler = Patches.GetPrivateMethod("PlayEffectTranspiler")
+                    Target = soundSystem.GetMethod("PlayInterfaceCue"),
+                    Transpiler = patches.GetPrivateMethod("PlayEffectTranspiler")
                 },
                 [PatchID.SoundSystem_PlayTrackableInterfaceCue] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetMethod("PlayTrackableInterfaceCue"),
-                    Transpiler = Patches.GetPrivateMethod("GetEffectTranspiler")
+                    Target = soundSystem.GetMethod("PlayTrackableInterfaceCue"),
+                    Transpiler = patches.GetPrivateMethod("GetEffectTranspiler")
                 },
                 [PatchID.SoundSystem_PlayCue1] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(0),
-                    Transpiler = Patches.GetPrivateMethod("GetEffectTranspiler")
+                    Target = soundSystem.GetDeclaredMethods("PlayCue").ElementAt(0),
+                    Transpiler = patches.GetPrivateMethod("GetEffectTranspiler")
                 },
                 [PatchID.SoundSystem_PlayCue2] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(1),
-                    Transpiler = Patches.GetPrivateMethod("GetEffectTranspiler")
+                    Target = soundSystem.GetDeclaredMethods("PlayCue").ElementAt(1),
+                    Transpiler = patches.GetPrivateMethod("GetEffectTranspiler")
                 },
                 [PatchID.SoundSystem_PlayCue3] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(2),
-                    Transpiler = Patches.GetPrivateMethod("GetEffectTranspiler")
+                    Target = soundSystem.GetDeclaredMethods("PlayCue").ElementAt(2),
+                    Transpiler = patches.GetPrivateMethod("GetEffectTranspiler")
                 },
                 [PatchID.SoundSystem_PlayCue4] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetDeclaredMethods("PlayCue").ElementAt(3),
-                    Transpiler = Patches.GetPrivateMethod("GetEffectTranspiler")
+                    Target = soundSystem.GetDeclaredMethods("PlayCue").ElementAt(3),
+                    Transpiler = patches.GetPrivateMethod("GetEffectTranspiler")
                 },
                 [PatchID.SoundSystem_ReadySongInCue] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetMethod("ReadySongInCue"),
-                    Transpiler = Patches.GetPrivateMethod("GetMusicTranspiler")
+                    Target = soundSystem.GetMethod("ReadySongInCue"),
+                    Transpiler = patches.GetPrivateMethod("GetMusicTranspiler")
                 },
                 [PatchID.SoundSystem_PlaySong] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetMethod("PlaySong"),
-                    Prefix = Patches.GetPrivateMethod("OnPlaySong"),
-                    Transpiler = Patches.GetPrivateMethod("GetMusicTranspiler"),
+                    Target = soundSystem.GetMethod("PlaySong"),
+                    Prefix = patches.GetPrivateMethod("OnPlaySong"),
+                    Transpiler = patches.GetPrivateMethod("GetMusicTranspiler"),
                 },
                 [PatchID.SoundSystem_PlayMixCues] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetMethod("PlayMixCues"),
-                    Transpiler = Patches.GetPrivateMethod("PlayMixTranspiler")
+                    Target = soundSystem.GetMethod("PlayMixCues"),
+                    Transpiler = patches.GetPrivateMethod("PlayMixTranspiler")
                 },
                 [PatchID.SoundSystem_ChangeSongRegionIfNecessary] = new PatchInfo()
                 {
-                    Target = SoundSystem.GetMethod("ChangeSongRegionIfNecessary"),
-                    Prefix = Patches.GetPrivateMethod("OnChangeSongRegionIfNecessary")
+                    Target = soundSystem.GetMethod("ChangeSongRegionIfNecessary"),
+                    Prefix = patches.GetPrivateMethod("OnChangeSongRegionIfNecessary")
                 },
                 [PatchID.Game1_Saving_SaveCharacterToFile] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Saving_SaveCharacterToFile"),
-                    Postfix = Patches.GetPrivateMethod("PostCharacterSave")
+                    Target = game1.GetMethod("_Saving_SaveCharacterToFile"),
+                    Postfix = patches.GetPrivateMethod("PostCharacterSave")
                 },
                 [PatchID.Game1_Saving_SaveWorldToFile] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Saving_SaveWorldToFile"),
-                    Postfix = Patches.GetPrivateMethod("PostWorldSave")
+                    Target = game1.GetMethod("_Saving_SaveWorldToFile"),
+                    Postfix = patches.GetPrivateMethod("PostWorldSave")
                 },
                 [PatchID.Game1_Saving_SaveRogueToFile] = new PatchInfo()
                 {
-                    Target = Game1.GetDeclaredMethods("_Saving_SaveRogueToFile").Where(item => item.GetParameters().Count() == 1).First(),
-                    Postfix = Patches.GetPrivateMethod("PostArcadeSave")
+                    Target = game1.GetDeclaredMethods("_Saving_SaveRogueToFile").Where(item => item.GetParameters().Count() == 1).First(),
+                    Postfix = patches.GetPrivateMethod("PostArcadeSave")
                 },
                 [PatchID.Game1_Loading_LoadCharacterFromFile] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Loading_LoadCharacterFromFile"),
-                    Postfix = Patches.GetPrivateMethod("PostCharacterLoad")
+                    Target = game1.GetMethod("_Loading_LoadCharacterFromFile"),
+                    Postfix = patches.GetPrivateMethod("PostCharacterLoad")
                 },
                 [PatchID.Game1_Loading_LoadWorldFromFile] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Loading_LoadWorldFromFile"),
-                    Postfix = Patches.GetPrivateMethod("PostWorldLoad")
+                    Target = game1.GetMethod("_Loading_LoadWorldFromFile"),
+                    Postfix = patches.GetPrivateMethod("PostWorldLoad")
                 },
                 [PatchID.Game1_Loading_LoadRogueFile] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_Loading_LoadRogueFile"),
-                    Postfix = Patches.GetPrivateMethod("PostArcadeLoad")
+                    Target = game1.GetMethod("_Loading_LoadRogueFile"),
+                    Postfix = patches.GetPrivateMethod("PostArcadeLoad")
                 },
                 [PatchID.Game1_LevelLoading_DoStuff] = new PatchInfo()
                 {
-                    Target = Game1.GetMethod("_LevelLoading_DoStuff"),
-                    Transpiler = Patches.GetPrivateMethod("LevelDoStuffTranspiler")
+                    Target = game1.GetMethod("_LevelLoading_DoStuff"),
+                    Transpiler = patches.GetPrivateMethod("LevelDoStuffTranspiler")
                 },
                 [PatchID.LevelBlueprint_GetBlueprint] = new PatchInfo()
                 {
                     Target = typeof(LevelBlueprint).GetMethod("GetBlueprint"),
-                    Prefix = Patches.GetPrivateMethod("OnGetLevelBlueprint")
+                    Prefix = patches.GetPrivateMethod("OnGetLevelBlueprint")
+                },
+
+                [PatchID.Game1_ShopMenu_Render_TreatCurseAssign] = new PatchInfo()
+                {
+                    Target = game1.GetMethod("_ShopMenu_Render_TreatCurseAssign"),
+                    Transpiler = patches.GetPrivateMethod("RenderTreatCurseAssignTranspiler")
                 },
             };
         }

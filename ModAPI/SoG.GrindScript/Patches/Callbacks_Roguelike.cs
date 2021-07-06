@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Core;
 using SoG.Modding.Content;
 using SoG.Modding.Extensions;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.Patches
 {
@@ -18,7 +18,9 @@ namespace SoG.Modding.Patches
             if (!enPerk.IsFromMod())
                 return true;
 
-            __result = Utils.TryLoadTex(ModGlobals.API.Library.Perks[enPerk].ResourcePath, ModGlobals.Game.Content);
+            string path = APIGlobals.API.Library.Perks[enPerk].ResourcePath;
+
+            __result = path != "" ? Tools.TryLoadTex(path, APIGlobals.Game.Content) : APIGlobals.API.MissingTex;
 
             return false;
         }
@@ -28,7 +30,9 @@ namespace SoG.Modding.Patches
             if (!enTreat.IsFromMod())
                 return true;
 
-            __result = Utils.TryLoadTex(ModGlobals.API.Library.TreatsCurses[enTreat].ResourcePath, ModGlobals.Game.Content);
+            string path = APIGlobals.API.Library.TreatsCurses[enTreat].ResourcePath;
+
+            __result = path != "" ? Tools.TryLoadTex(path, APIGlobals.Game.Content) : APIGlobals.API.MissingTex;
 
             return false;
         }
@@ -43,7 +47,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            var entry = ModGlobals.API.Library.TreatsCurses[enTreatCurse];
+            var entry = APIGlobals.API.Library.TreatsCurses[enTreatCurse];
 
             sNameHandle = entry.NameHandle;
             sDescriptionHandle = entry.DescriptionHandle;
@@ -54,7 +58,7 @@ namespace SoG.Modding.Patches
 
         private static void PostFillCurseList(ShopMenu.TreatCurseMenu __instance)
         {
-            foreach (var kvp in ModGlobals.API.Library.TreatsCurses)
+            foreach (var kvp in APIGlobals.API.Library.TreatsCurses)
             {
                 if (!kvp.Value.IsTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
@@ -63,7 +67,7 @@ namespace SoG.Modding.Patches
 
         private static void PostFillTreatList(ShopMenu.TreatCurseMenu __instance)
         {
-            foreach (var kvp in ModGlobals.API.Library.TreatsCurses)
+            foreach (var kvp in APIGlobals.API.Library.TreatsCurses)
             {
                 if (kvp.Value.IsTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
@@ -75,14 +79,14 @@ namespace SoG.Modding.Patches
             foreach (var perk in len)
             {
                 if (perk.IsFromMod())
-                    ModGlobals.API.Library.Perks[perk].Activator?.Invoke(xView);
+                    APIGlobals.API.Library.Perks[perk].Activator?.Invoke(xView);
             }
         }
 
         private static void PostPerkListInit()
         {
-            ModGlobals.Log.Debug("Init!");
-            foreach (var perk in ModGlobals.API.Library.Perks.Values)
+            APIGlobals.Logger.Debug("Init!");
+            foreach (var perk in APIGlobals.API.Library.Perks.Values)
                 RogueLikeMode.PerkInfo.lxAllPerks.Add(new RogueLikeMode.PerkInfo(perk.GameID, perk.EssenceCost, perk.TextEntry));
         }
     }

@@ -5,11 +5,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
-[assembly: SuppressMessage("CodeQuality", "IDE0052", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.Core.GrindScript.SetupGrindScript")]
-[assembly: SuppressMessage("CodeQuality", "IDE0051", Justification = "Used via reflection", Scope = "member", Target = "~M:SoG.Modding.Core.GrindScript.SetupSoG")]
+[assembly: SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
+[assembly: SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "Used via reflection", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
 
-[assembly: SuppressMessage("Style", "IDE0060", Justification = "Part of the original method's argument list", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]
+[assembly: SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Part of the original method's argument list", Scope = "type", Target = "~T:SoG.Modding.Patches.PatchCollection")]

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SoG.Modding.Content
+namespace SoG.Modding.Content.Configs
 {
     public class TreatCurseConfig
     {

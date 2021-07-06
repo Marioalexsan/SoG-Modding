@@ -7,6 +7,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Audio;
 using SoG.Modding.Core;
+using System.Diagnostics;
+using SoG.Modding.Utils;
+using SoG.Modding.Content.Configs;
 
 namespace SoG.Modding.Content
 {
@@ -17,16 +20,19 @@ namespace SoG.Modding.Content
 
         public RogueLikeMode.TreatsCurses CreateTreatOrCurse(TreatCurseConfig cfg)
         {
-            BaseScript owner = _modAPI.CurrentModContext;
-            if (cfg == null || owner == null)
+            ThrowHelper.ThrowIfNull(cfg);
+
+            BaseScript mod = _modAPI.CurrentModContext;
+            if (mod == null)
             {
-                ModGlobals.Log.Error("Can't create treat or curse because owner or cfg is null.");
+                _modAPI.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateTreatOrCurse));
                 return RogueLikeMode.TreatsCurses.None;
             }
 
+
             RogueLikeMode.TreatsCurses gameID = _modAPI.Allocator.TreatCurseID.Allocate();
 
-            ModCurseEntry entry = new ModCurseEntry(owner, gameID, cfg.ModID)
+            ModCurseEntry entry = new ModCurseEntry(mod, gameID, cfg.ModID)
             {
                 IsTreat = cfg.IsTreat,
                 NameHandle = "TreatCurse_" + (int)gameID + "_Name",
@@ -35,32 +41,34 @@ namespace SoG.Modding.Content
                 ScoreModifier = cfg.ScoreModifier
             };
 
-            _modAPI.Library.TreatsCurses[gameID] = owner.Library.TreatsCurses[gameID] = entry;
+            _modAPI.Library.TreatsCurses[gameID] = mod.Library.TreatsCurses[gameID] = entry;
 
-            if (owner.Library.TreatsCurses.Values.Any(x => x != entry && x.ModID == cfg.ModID))
+            if (mod.Library.TreatsCurses.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                ModGlobals.Log.Error($"Mod {owner.GetType().Name} has two or more treats / curses with the uniqueID {cfg.ModID}!");
-                ModGlobals.Log.Error($"This is likely to break loading, saving, and many other things!");
+                _modAPI.Logger.Error($"Mod {mod.GetType().Name} has two or more treats / curses with the uniqueID {cfg.ModID}!");
+                _modAPI.Logger.Error($"This is likely to break loading, saving, and many other things!");
             }
 
-            TextModding.AddMiscText("Menus", entry.NameHandle, cfg.Name, MiscTextTypes.GenericItemName);
-            TextModding.AddMiscText("Menus", entry.DescriptionHandle, cfg.Description, MiscTextTypes.GenericItemDescription);
+            _modAPI.TextAPI.AddMiscText("Menus", entry.NameHandle, cfg.Name, MiscTextTypes.GenericItemName);
+            _modAPI.TextAPI.AddMiscText("Menus", entry.DescriptionHandle, cfg.Description, MiscTextTypes.GenericItemDescription);
 
             return gameID;
         }
 
         public RogueLikeMode.Perks CreatePerk(PerkConfig cfg)
         {
-            BaseScript owner = _modAPI.CurrentModContext;
-            if (cfg == null || owner == null)
+            ThrowHelper.ThrowIfNull(cfg);
+
+            BaseScript mod = _modAPI.CurrentModContext;
+            if (mod == null)
             {
-                ModGlobals.Log.Error("Can't create perk because owner or cfg is null.");
+                _modAPI.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreatePerk));
                 return RogueLikeMode.Perks.None;
             }
 
             RogueLikeMode.Perks gameID = _modAPI.Allocator.PerkID.Allocate();
 
-            ModPerkEntry entry = new ModPerkEntry(owner, gameID, cfg.ModID)
+            ModPerkEntry entry = new ModPerkEntry(mod, gameID, cfg.ModID)
             {
                 ResourcePath = cfg.TexturePath,
                 Activator = cfg.RunStartActivator,
@@ -69,16 +77,16 @@ namespace SoG.Modding.Content
             };
 
             _modAPI.Library.Perks[gameID] = entry;
-            owner.Library.Perks[gameID] = entry;
+            mod.Library.Perks[gameID] = entry;
 
-            if (owner.Library.Perks.Values.Any(x => x != entry && x.ModID == cfg.ModID))
+            if (mod.Library.Perks.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                ModGlobals.Log.Error($"Mod {owner.GetType().Name} has two or more treats / curses with the uniqueID {cfg.ModID}!");
-                ModGlobals.Log.Error($"This is likely to break loading, saving, and many other things!");
+                _modAPI.Logger.Error($"Mod {mod.GetType().Name} has two or more treats / curses with the uniqueID {cfg.ModID}!");
+                _modAPI.Logger.Error($"This is likely to break loading, saving, and many other things!");
             }
 
-            TextModding.AddMiscText("Menus", "Perks_Name_" + entry.TextEntry, cfg.Name, MiscTextTypes.GenericItemName);
-            TextModding.AddMiscText("Menus", "Perks_Description_" + entry.TextEntry, cfg.Description, MiscTextTypes.GenericItemDescription);
+            _modAPI.TextAPI.AddMiscText("Menus", "Perks_Name_" + entry.TextEntry, cfg.Name, MiscTextTypes.GenericItemName);
+            _modAPI.TextAPI.AddMiscText("Menus", "Perks_Description_" + entry.TextEntry, cfg.Description, MiscTextTypes.GenericItemDescription);
 
             return gameID;
         }

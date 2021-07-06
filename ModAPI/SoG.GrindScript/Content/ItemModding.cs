@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SoG.Modding.Core;
+using SoG.Modding.Utils;
+using SoG.Modding.Content.Configs;
 
 namespace SoG.Modding.Content
 {
@@ -24,23 +27,23 @@ namespace SoG.Modding.Content
 
         /// <summary> 
         /// Creates an item from the given ItemConfig.
+        /// Config must not be null.
         /// </summary>
-        /// <returns> 
-        /// The new item's <see cref="ItemCodex.ItemTypes"/> identifier. If creation failed, <see cref="ItemCodex.ItemTypes.Null"/> is returned. 
-        /// </returns>
 
         public ItemCodex.ItemTypes CreateItem(ItemConfig cfg)
         {
-            BaseScript owner = _modAPI.CurrentModContext;
-            if (cfg == null || owner == null)
+            ThrowHelper.ThrowIfNull(cfg);
+
+            BaseScript mod = _modAPI.CurrentModContext;
+            if (mod == null)
             {
-                ModGlobals.Log.Error("Can't create item because owner or itemBuilder is null.");
+                _modAPI.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateItem));
                 return ItemCodex.ItemTypes.Null;
             }
 
             ItemCodex.ItemTypes gameID = _modAPI.Allocator.ItemID.Allocate();
 
-            ModItemEntry entry = new ModItemEntry(owner, gameID, cfg.ModID)
+            ModItemEntry entry = new ModItemEntry(mod, gameID, cfg.ModID)
             {
                 ItemShadowPath = cfg.ShadowPath,
                 Manager = cfg.Manager,
@@ -48,7 +51,7 @@ namespace SoG.Modding.Content
                 EquipResourcePath = cfg.EquipResourcePath
             };
 
-            _modAPI.Library.Items[gameID] = owner.Library.Items[gameID] = entry;
+            _modAPI.Library.Items[gameID] = mod.Library.Items[gameID] = entry;
 
             ItemDescription itemData = entry.ItemData = new ItemDescription()
             {
@@ -162,13 +165,13 @@ namespace SoG.Modding.Content
                 }
             }
 
-            TextModding.AddMiscText("Items", itemData.sNameLibraryHandle, itemData.sFullName, MiscTextTypes.GenericItemName);
-            TextModding.AddMiscText("Items", itemData.sDescriptionLibraryHandle, itemData.sDescription, MiscTextTypes.GenericItemDescription);
+            _modAPI.TextAPI.AddMiscText("Items", itemData.sNameLibraryHandle, itemData.sFullName, MiscTextTypes.GenericItemName);
+            _modAPI.TextAPI.AddMiscText("Items", itemData.sDescriptionLibraryHandle, itemData.sDescription, MiscTextTypes.GenericItemDescription);
 
-            if (owner.Library.Items.Values.Any(x => x != entry && x.ModID == cfg.ModID))
+            if (mod.Library.Items.Values.Any(x => x != entry && x.ModID == cfg.ModID))
             {
-                ModGlobals.Log.Error($"Mod {owner.GetType().Name} has two or more items with the uniqueID {cfg.ModID}!");
-                ModGlobals.Log.Error($"This is likely to break loading, saving, and many other things!");
+                _modAPI.Logger.Error($"Mod {mod.GetType().Name} has two or more items with the uniqueID {cfg.ModID}!");
+                _modAPI.Logger.Error($"This is likely to break loading, saving, and many other things!");
             }
 
             return gameID;
@@ -192,7 +195,7 @@ namespace SoG.Modding.Content
         {
             if (ingredients == null)
             {
-                ModGlobals.Log.Warn("Can't add recipe because ingredient dictionary is null!");
+                _modAPI.Logger.Warn("Can't add recipe because ingredient dictionary is null!");
                 return;
             }
 
@@ -208,7 +211,7 @@ namespace SoG.Modding.Content
                 Crafting.CraftSystem.RecipeCollection.Add(result, new Crafting.CraftSystem.CraftingRecipe(description, kvps));
             }
 
-            ModGlobals.Log.Info($"Added recipe for item {result}!");
+            _modAPI.Logger.Info($"Added recipe for item {result}!");
         }
 
         /// <summary>

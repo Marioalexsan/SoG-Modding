@@ -3,12 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace SoG.Modding.Tools
+namespace SoG.Modding.Utils
 {
     /// <summary>
     /// A simple class for logging information to the console.
     /// </summary>
-
     public class ConsoleLogger
     {
         readonly static (ConsoleColor, ConsoleColor)[] _levelColors = new (ConsoleColor, ConsoleColor)[]
@@ -53,7 +52,6 @@ namespace SoG.Modding.Tools
         /// Logs the message if its level is equal or higher in severity than LogLevel. <para/>
         /// If source is empty, DefaultSource is used.
         /// </summary>
-
         public void Log(LogLevels level, string msg, string source = "")
         {
             if (level < _logLevel || _logLevel == LogLevels.None) return;
@@ -124,7 +122,6 @@ namespace SoG.Modding.Tools
         /// Attempts to find the target method in the instruction list, and outputs surrounding IL code. <para/>
         /// By default, this method outputs at Trace level.
         /// </summary>
-
         public void InspectCode(IEnumerable<CodeInstruction> instructions, MethodInfo target, int previous = 3, int following = 3, int whichMethod = 1, LogLevels level = LogLevels.Trace)
         {
             if (level < _logLevel || _logLevel == LogLevels.None) return;

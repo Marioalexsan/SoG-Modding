@@ -7,10 +7,9 @@ namespace SoG.Modding.Core
 	// but just maintaining both libraries is probably better
 
     /// <summary>
-    /// Holds all mod-relevant content.
+    /// Holds all mod-relevant content. Usually composed of PersistentEntries.
     /// </summary>
-
-	internal class PersistentLibrary
+	internal class ModLibrary
 	{
 		public Dictionary<ItemCodex.ItemTypes, ModItemEntry> Items { get; } = new Dictionary<ItemCodex.ItemTypes, ModItemEntry>();
 
@@ -20,10 +19,9 @@ namespace SoG.Modding.Core
 	}
 
 	/// <summary>
-	/// Holds all content, for all mods, including non-persistents.
+	/// Holds all content, for all mods, including non-persistent things.
 	/// </summary>
-
-	internal class GlobalLibrary : PersistentLibrary
+	internal class GlobalLibrary : ModLibrary
 	{
 		public Dictionary<string, Dictionary<string, CommandParser>> Commands { get; } = new Dictionary<string, Dictionary<string, CommandParser>>();
 

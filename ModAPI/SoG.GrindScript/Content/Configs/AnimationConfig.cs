@@ -7,13 +7,16 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Core;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
 
-namespace SoG.Modding.Content
+namespace SoG.Modding.Content.Configs
 {
+    // TODO : Rework / update / whatever this class
     public class AnimationConfig
     {
-        public ContentManager Manager { get; set; } = ModGlobals.Game.Content;
+        private Directions _direction;
+
+        public ContentManager Manager { get; set; } = APIGlobals.Game.Content;
 
         public string TexturePath { get; set; } = "";
 
@@ -47,8 +50,6 @@ namespace SoG.Modding.Content
 
         public bool MoveCancellable { get; set; } = true;
 
-        Directions _direction;
-
         public Directions Direction { get => _direction; set => _direction = Enum.IsDefined(typeof(Directions), value) ? value : Directions.Down; }
 
         public void AddInstructions(params AnimationInstruction[] instructions)
@@ -61,7 +62,7 @@ namespace SoG.Modding.Content
             List<AnimationInstruction> instructions = new List<AnimationInstruction>();
             Instructions.ForEach(x => instructions.Add(x.Clone()));
 
-            Texture2D tex = Utils.TryLoadTex(TexturePath, Manager);
+            Texture2D tex = Utils.Tools.TryLoadTex(TexturePath, Manager);
             Animation proto = new Animation(ID, (byte)Direction, tex, PositionOffset, TicksPerFrame, EndFrame, CellWidth, CellHeight, 0, 0, FramesPerRow, LoopType, CancelType, MoveCancellable, SpellCancellable);
 
             return proto;

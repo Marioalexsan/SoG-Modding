@@ -8,7 +8,6 @@ namespace SoG.Modding.Core
     /// <summary>
     /// Represents a modded object type that is assigned to a certain mod.
     /// </summary>
-
     abstract class Entry<IDType> where IDType : struct 
     {
         public BaseScript Owner { get; private set; }
@@ -23,10 +22,9 @@ namespace SoG.Modding.Core
     }
 
     /// <summary>
-    /// ISaveables are IEntries whose IDTypes are saved by SoG in one way or another.
+    /// PersistentEntries represent objects that are saved by SoG in one way or another.
     /// As a result, additional information is required for ensuring consistency.
     /// </summary>
-
     abstract class PersistentEntry<IDType> : Entry<IDType> where IDType : struct
     {
         public string ModID { get; private set; }
@@ -41,8 +39,6 @@ namespace SoG.Modding.Core
     /// <summary>
     /// Represents a modded item in the ModLibrary.
     /// The item can act as equipment if EquipData is not null.
-    /// </summary>
-
     internal class ModItemEntry : PersistentEntry<ItemCodex.ItemTypes>
     {
         public ItemDescription ItemData;
@@ -64,9 +60,9 @@ namespace SoG.Modding.Core
     }
 
     /// <summary>
-    /// Stores modded audio for a mod - an entry is created for each mod upon its creation, and initialized by the mod if needed
+    /// Stores modded audio for a mod - an entry is created for each mod upon its creation,
+    /// and initialized by the mod if needed.
     /// </summary>
-
     internal class ModAudioEntry : Entry<int>
     {
         public bool IsReady = false;
@@ -89,6 +85,9 @@ namespace SoG.Modding.Core
             : base(owner, audioID) { }
     }
     
+    /// <summary>
+    /// Represents a modded level in the ModLibrary.
+    /// </summary>
     internal class ModLevelEntry : Entry<Level.ZoneEnum>
     {
         public LevelBuilder Builder;
@@ -101,6 +100,10 @@ namespace SoG.Modding.Core
             : base(owner, gameID) { }
     }
 
+    /// <summary>
+    /// Represents a modded treat or curse in the ModLibrary.
+    /// Treats are functionally identical to Curses, but appear in a different menu.
+    /// </summary>
     internal class ModCurseEntry : PersistentEntry<RogueLikeMode.TreatsCurses>
     {
         public bool IsTreat = false;
@@ -117,6 +120,9 @@ namespace SoG.Modding.Core
             : base(owner, gameID, modID) { }
     }
 
+    /// <summary>
+    /// Represents a modded perk in the ModLibrary.
+    /// </summary>
     internal class ModPerkEntry : PersistentEntry<RogueLikeMode.Perks>
     {
         public int EssenceCost = 15;

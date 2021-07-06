@@ -6,14 +6,13 @@ using System.IO;
 using System.Reflection;
 using SoG.Modding.Core;
 
-namespace SoG.Modding.Tools
+namespace SoG.Modding.Utils
 {
-    public static class Utils
+    public static class Tools
     {
         /// <summary>
         /// Tries to create a directory. This method ignores exceptions thrown (if any).
         /// </summary>
-
         public static void TryCreateDirectory(string name)
         {
             try
@@ -27,7 +26,6 @@ namespace SoG.Modding.Tools
         /// Tries to load a Texture2D using the provided ContentManager and AssetPath and returns it if successful.
         /// If an exception is thrown during load, GrindScript.MissingTex or RenderMaster.txNullTex is returned.
         /// </summary>
-
         public static Texture2D TryLoadTex(string assetPath, ContentManager manager)
         {
             try
@@ -36,8 +34,8 @@ namespace SoG.Modding.Tools
             }
             catch (Exception e)
             {
-                ModGlobals.Log.Warn($"Load failed! {e.Message.Replace(Directory.GetCurrentDirectory(), "(SoG Root)")}", source: "TryLoadTex");
-                return ModGlobals.API.MissingTex ?? RenderMaster.txNullTex;
+                APIGlobals.Logger.Warn(GetShortenedPath(e.Message), source: nameof(TryLoadTex));
+                return APIGlobals.API.MissingTex ?? RenderMaster.txNullTex;
             }
         }
 
@@ -45,7 +43,6 @@ namespace SoG.Modding.Tools
         /// Tries to load a WaveBank using the provided path and AudioEngine, and returns it if successful.
         /// If an exception is thrown during load, null is returned.
         /// </summary>
-
         public static WaveBank TryLoadWaveBank(string assetPath, AudioEngine engine)
         {
             try
@@ -54,7 +51,7 @@ namespace SoG.Modding.Tools
             }
             catch (Exception e)
             {
-                ModGlobals.Log.Warn($"Load failed! {e.Message.Replace(Directory.GetCurrentDirectory(), "(SoG Root)")}", source: "TryLoadWaveBank");
+                APIGlobals.Logger.Warn(GetShortenedPath(e.Message), source: nameof(TryLoadWaveBank));
                 return null;
             }
         }
@@ -63,7 +60,6 @@ namespace SoG.Modding.Tools
         /// Tries to load a SoundBank using the provided path and AudioEngine, and returns it if successful.
         /// If an exception is thrown during load, null is returned.
         /// </summary>
-
         public static SoundBank TryLoadSoundBank(string assetPath, AudioEngine engine)
         {
             try
@@ -72,7 +68,7 @@ namespace SoG.Modding.Tools
             }
             catch (Exception e)
             {
-                ModGlobals.Log.Warn($"Load failed! {e.Message.Replace(Directory.GetCurrentDirectory(), "(SoG Root)")}", source: "TryLoadSoundBank");
+                APIGlobals.Logger.Warn(GetShortenedPath(e.Message), source: nameof(TryLoadSoundBank));
                 return null;
             }
         }
@@ -80,7 +76,6 @@ namespace SoG.Modding.Tools
         /// <summary>
         /// Splits an audio ID into separate pieces. Returns true on success.
         /// </summary>
-
         internal static bool SplitGSAudioID(string ID, out int entryID, out bool isMusic, out int cueID)
         {
             entryID = -1;
@@ -112,10 +107,22 @@ namespace SoG.Modding.Tools
         /// <summary>
         /// Splits message in words, removing any empty results
         /// </summary>
-
         public static string[] GetArgs(string message)
         {
             return message == null ? new string[0] : message.Split(new char[] { ' ' }, options: StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        /// <summary>
+        /// Returns a string where common mod paths are replaced with a shortened form.
+        /// </summary>
+        public static string GetShortenedPath(string path)
+        {
+            return path
+                .Replace('/', '\\')
+                .Replace(Directory.GetCurrentDirectory() + @"\Content\ModContent", "(ModContent)")
+                .Replace(Directory.GetCurrentDirectory() + @"\Content\Mods", "(Mods)")
+                .Replace(Directory.GetCurrentDirectory() + @"\Content", "(Content)")
+                .Replace(Directory.GetCurrentDirectory(), "(SoG)");
         }
     }
 }

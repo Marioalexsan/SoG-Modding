@@ -8,12 +8,12 @@ namespace SoG.Modding.Content
         public TextModding(GrindScript modAPI)
             : base(modAPI) { }
 
-        public static void AddMiscText(string sCategory, string sEntry, string sText, MiscTextTypes enType = MiscTextTypes.Default)
+        public void AddMiscText(string sCategory, string sEntry, string sText, MiscTextTypes enType = MiscTextTypes.Default)
         {
             try
             {
                 MiscText xEntry = new MiscText();
-                ModGlobals.Game.xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry] = xEntry;
+                _modAPI.Game.xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry] = xEntry;
 
                 // No support for color tags yet...
                 xEntry.sUnparsedFullLine = xEntry.sUnparsedBaseLine = sText;
@@ -56,12 +56,12 @@ namespace SoG.Modding.Content
             }
         }
 
-        public static string GetMiscText(string sCategory, string sEntry)
+        public string GetMiscText(string sCategory, string sEntry)
         {
             try
             {
                 // try-catch addiction
-                return ModGlobals.Game.xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry].sUnparsedBaseLine;
+                return _modAPI.Game.xMiscTextGod_Default.dsxTextCollections[sCategory].dsxTexts[sEntry].sUnparsedBaseLine;
             }
             catch (Exception e)
             {

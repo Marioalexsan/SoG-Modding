@@ -6,7 +6,7 @@ using System.IO;
 using System.Reflection;
 using System;
 using SoG.Modding.Core;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
 using SoG.Modding.Extensions;
 
 namespace SoG.Modding.Patches
@@ -15,7 +15,7 @@ namespace SoG.Modding.Patches
     {
         private static void OnGame1Initialize()
         {
-            ModGlobals.API.SetupSoG();
+            APIGlobals.API.SetupSoG();
         }
 
         private static bool OnChatParseCommand(string command, string message, int connection)
@@ -27,7 +27,7 @@ namespace SoG.Modding.Patches
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            if (!ModGlobals.API.Library.Commands.TryGetValue(target, out var parsers))
+            if (!APIGlobals.API.Library.Commands.TryGetValue(target, out var parsers))
             {
                 CAS.AddChatMessage($"[{GrindScriptCommands.APIName}] Unknown mod!");
                 return true;
@@ -44,7 +44,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            ModGlobals.Log.Debug($"Parsed command {target} : {trueCommand}, argument list: {message}");
+            APIGlobals.Logger.Debug($"Parsed command {target} : {trueCommand}, argument list: {message}");
             parser(message, connection);
 
             return true;
@@ -54,7 +54,6 @@ namespace SoG.Modding.Patches
         /// Patches <see cref="Game1._Animations_GetAnimationSet(PlayerView, string, string, bool, bool, bool, bool)"/>.
         /// Allows use of modded assets. Modded shields have modified asset paths compared to Vanilla.
         /// </summary>
-
         private static bool OnGetAnimationSet(PlayerView xPlayerView, string sAnimation, string sDirection, bool bWithWeapon, bool bCustomHat, bool bWithShield, bool bWeaponOnTop, ref PlayerAnimationTextureSet __result)
         {
             ContentManager VanillaContent = RenderMaster.contPlayerStuff;
@@ -62,7 +61,7 @@ namespace SoG.Modding.Patches
             __result = new PlayerAnimationTextureSet() 
             { 
                 bWeaponOnTop = bWeaponOnTop,
-                txBase = Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent)
+                txBase = Utils.Tools.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent)
             };
 
             string resource = xPlayerView.xEquipment.DisplayShield?.sResourceName ?? "";
@@ -73,11 +72,11 @@ namespace SoG.Modding.Patches
 
                 if (modItem)
                 {
-                    __result.txShield = Utils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", ModGlobals.API.Library.Items[enType].Manager);
+                    __result.txShield = Utils.Tools.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", APIGlobals.API.Library.Items[enType].Manager);
                 }
                 else
                 {
-                    __result.txShield = Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent);
+                    __result.txShield = Utils.Tools.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent);
                 }
             }
 
@@ -91,10 +90,9 @@ namespace SoG.Modding.Patches
         /// Patches <see cref="SoundSystem.PlaySong"/>.
         /// Vanilla song that have a redirect defined are replaced with their modded counterpart.
         /// </summary>
-
         private static void OnPlaySong(ref string sSongName, bool bFadeIn)
         {
-            var redirects = ModGlobals.API.Library.VanillaMusicRedirects;
+            var redirects = APIGlobals.API.Library.VanillaMusicRedirects;
             string audioIDToUse = sSongName;
 
             if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
@@ -107,12 +105,11 @@ namespace SoG.Modding.Patches
         /// Replaces method <see cref="SoundSystem.ChangeSongRegionIfNecessary"/>.
         /// Allows using music from modded sources.
         /// </summary>
-
         private static bool OnChangeSongRegionIfNecessary(ref SoundSystem __instance, string sSongName)
         {
             // This will probably cause you brain and eye damage if you read it
 
-            var audioAPI = ModGlobals.API.AudioAPI;
+            var audioAPI = APIGlobals.API.AudioAPI;
 
             SoundSystem soundSystem = __instance;
             TypeInfo soundType = typeof(SoundSystem).GetTypeInfo();
@@ -127,12 +124,12 @@ namespace SoG.Modding.Patches
             var universalMusic = soundType.GetField("universalMusicWaveBank", flag).GetValue(soundSystem) as WaveBank;
             var audioEngine = soundType.GetField("audioEngine", flag).GetValue(soundSystem) as AudioEngine;
 
-            bool currentIsModded = Utils.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
+            bool currentIsModded = Utils.Tools.SplitGSAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
 
             if (currentIsModded && !isMusic)
-                ModGlobals.Log.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
+                APIGlobals.Logger.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
 
-            ModAudioEntry entry = currentIsModded ? ModGlobals.API.Library.Audio[entryID] : null;
+            ModAudioEntry entry = currentIsModded ? APIGlobals.API.Library.Audio[entryID] : null;
             string cueName = currentIsModded ? entry.MusicNames[cueID] : sSongName;
             string nextBankName = currentIsModded ? entry.MusicBankNames[cueName] : dssSongRegionMap[sSongName];
 
@@ -142,7 +139,7 @@ namespace SoG.Modding.Patches
             {
                 if (currentIsModded && entry.UniversalWB == null)
                 {
-                    ModGlobals.Log.Error($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
+                    APIGlobals.Logger.Error($"{sSongName} requested modded UniversalMusic bank, but the bank does not exist!");
                     return false;
                 }
 
@@ -165,7 +162,7 @@ namespace SoG.Modding.Patches
                 }
                 else
                 {
-                    string root = Path.Combine(ModGlobals.Game.Content.RootDirectory, currentIsModded ? entry.Owner.ModPath : "");
+                    string root = Path.Combine(APIGlobals.Game.Content.RootDirectory, currentIsModded ? entry.Owner.ModPath : "");
 
                     f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", $"{nextBankName}.xwb")));
                     f_musicWaveBank.SetValue(soundSystem, null);
@@ -183,7 +180,7 @@ namespace SoG.Modding.Patches
                     return false;
                 }
 
-                string root = Path.Combine(ModGlobals.Game.Content.RootDirectory, currentIsModded ? entry.Owner.ModPath : "");
+                string root = Path.Combine(APIGlobals.Game.Content.RootDirectory, currentIsModded ? entry.Owner.ModPath : "");
                 string bankToUse = currentIsModded ? nextBankName : soundSystem.sCurrentMusicWaveBank;
 
                 f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", bankToUse + ".xwb")));

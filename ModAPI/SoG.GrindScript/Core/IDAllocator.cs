@@ -6,19 +6,17 @@ namespace SoG.Modding.Core
     /// <summary>
     /// Allocates IDs and other things.
     /// </summary>
-
     internal class IDAllocator
     {
-		// Allocates integers sequentially
+		/// <summary>
+		/// Allocates int IDs sequentially
+		/// </summary>
 		public class IntAlloc
         {
-			// The first ID that is allocated
 			public int Start { get; private set; }
 
-			// The ID one unit after the last value allocated
 			public int End { get; private set; }
 
-			// A figurative max that is used for shuffling IDs
 			public int Max { get; private set; }
 
 			public int Allocate() => End < Max ? End++ : End;
@@ -31,7 +29,9 @@ namespace SoG.Modding.Core
             }
 		}
 
-		// Allocates enums sequentially by using IntAlloc behind the scenes
+		/// <summary>
+		/// Allocates enum IDs sequentially
+		/// </summary>
 		public class EnumAlloc<IDType> : IntAlloc where IDType : Enum
         {
 			public new IDType Start { get => (IDType)Enum.ToObject(typeof(IDType), base.Start); }
@@ -58,6 +58,6 @@ namespace SoG.Modding.Core
 
 		public EnumAlloc<RogueLikeMode.Perks> PerkID = new EnumAlloc<RogueLikeMode.Perks>(3500, 1000);
 
-		public EnumAlloc<RogueLikeMode.TreatsCurses> TreatCurseID = new EnumAlloc<RogueLikeMode.TreatsCurses>(3500, 10000);
+		public EnumAlloc<RogueLikeMode.TreatsCurses> TreatCurseID = new EnumAlloc<RogueLikeMode.TreatsCurses>(3500, 1000);
 	}
 }

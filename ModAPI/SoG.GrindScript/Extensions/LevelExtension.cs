@@ -13,13 +13,11 @@ namespace SoG.Modding.Extensions
 	/// <summary>
 	/// Extension methods for Level-related stuff that expose some vanilla methods and add new ones.
 	/// </summary>
-
     public static class LevelExtension
     {
 		/// <summary>
 		/// Adds a collider that acts as an invisible wall, and applies an offset to its position.
 		/// </summary>
-
 		public static void AddCollider(this LevelBlueprint blueprint, Collider col, int bitLayers, bool isFlat, Vector2 offset, bool isOutline = true)
         {
             if (blueprint.lxInvisibleWalls != null && offset != null)
@@ -42,7 +40,6 @@ namespace SoG.Modding.Extensions
 		/// Adds colliders from a file at the path given.
 		/// The path is relative to the SoG executable.
 		/// </summary>
-
 		public static void AddCollidersFromFile(this LevelBlueprint blueprint, string relativePath, Vector2 offset, int overrideLayer = 0)
 		{
 			relativePath = Directory.GetCurrentDirectory() + relativePath;
@@ -66,7 +63,6 @@ namespace SoG.Modding.Extensions
 		/// <summary>
 		/// Adds a bush to the level.
 		/// </summary>
-
 		public static void AddBush(this LevelBlueprint blueprint, Vector2 position, int layer, bool orangeBush = false)
         {
 			LevelBlueprint.StaticObject whackToUse = LevelBlueprint.StaticObject._Forest_BushWhacked;
@@ -85,7 +81,6 @@ namespace SoG.Modding.Extensions
 		/// <summary>
 		/// Adds multiple bushes to the level, in a grid pattern.
 		/// </summary>
-
 		public static void AddBushGrid(this LevelBlueprint blueprint, Vector2 topLeftBush, int spacing, int collumns, int rows, int layer, bool orangeBushes = false)
         {
 			for (int i = 0; i < collumns; i++)
@@ -103,7 +98,6 @@ namespace SoG.Modding.Extensions
 		/// Adds a level switch.
 		/// This causes a level switch if everyone is within the respective bounds.
 		/// </summary>
-
 		public static void AddLevelSwitch(this LevelBlueprint blueprint, Rectangle leaderBounds, Rectangle teamBounds, Level.ZoneEnum targetZone, int spawnpoint)
         {
 			blueprint.lxZoningFields.Add(new Level.ZoningField(leaderBounds, teamBounds, targetZone, spawnpoint));
@@ -113,7 +107,6 @@ namespace SoG.Modding.Extensions
 		/// Add a transport within this level.
 		/// This is normally used for indoors / outdoors transitions.
 		/// </summary>
-
 		public static void AddTransport(this LevelBlueprint blueprint, Rectangle bounds, Vector2 targetPosition, int layer)
 		{
 			blueprint.lxPhasingFields.Add(new Level.PhasingField(bounds, targetPosition, layer));
@@ -122,7 +115,6 @@ namespace SoG.Modding.Extensions
 		/// <summary>
 		/// Adds a new spawnpoint in this level, and returns its index.
 		/// </summary>
-
 		public static int AddSpawnpoint(this LevelBlueprint blueprint, Vector2 spawnpoint, int layer = 0, int virtualHeight = 0)
         {
 			int newSize = 1;

@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
-using SoG.Modding.Tools;
+using CodeEnumerable = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
+using SoG.Modding.Utils;
 using SoG.Modding.Extensions;
 
 namespace SoG.Modding.Patches
@@ -16,8 +16,7 @@ namespace SoG.Modding.Patches
         /// Inserts <see cref="OnContentLoad"/> in <see cref="Game1.__StartupThreadExecute"/>.
         /// Insertion is done before <see cref="DialogueCharacterLoading.Init"/>.
         /// </summary>
-
-        private static CodeList StartupTranspiler(CodeList code, ILGenerator gen)
+        private static CodeEnumerable StartupTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             MethodInfo target = typeof(DialogueCharacterLoading).GetMethod("Init");
 
@@ -26,15 +25,14 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Call, typeof(PatchCollection).GetPrivateStaticMethod("OnContentLoad"))
             };
 
-            return PatchUtils.InsertAfterMethod(code, target, insert);
+            return PatchTools.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
         /// Inserts <see cref="OnChatParseCommand"/> in <see cref="Game1._Chat_ParseCommand"/>.
         /// If a mod command runs, vanilla commands are skipped.
         /// </summary>
-
-        private static CodeList CommandTranspiler(CodeList code, ILGenerator gen)
+        private static CodeEnumerable CommandTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             Label afterRet = gen.DefineLabel();
 
@@ -51,14 +49,14 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
 
-            return PatchUtils.InsertAfterMethod(code, target, insert);
+            return PatchTools.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
-        /// Patches <see cref="SoundSystem.PlayCue"/> and its variants so they can support modded sounds.
+        /// Patches <see cref="SoundSystem.PlayCue"/> and its variants
+        /// so they can support modded sounds.
         /// </summary>
-
-        private static CodeList PlayEffectTranspiler(CodeList code, ILGenerator gen)
+        private static CodeEnumerable PlayEffectTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             // Original: soundBank.PlayCue(sCueName)
             // Modified: (local1 = GetEffectSoundBank(sCueName)) != null ? local1.PlayCue(sCueName) : soundBank.PlayCue(sCueName)
@@ -72,13 +70,13 @@ namespace SoG.Modding.Patches
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetEffectSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetEffectSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex), 
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -89,15 +87,15 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            return PatchUtils.InsertBeforeMethod(code, target, insertBefore); 
+            code = PatchTools.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            return PatchTools.InsertBeforeMethod(code, target, insertBefore); 
         }
 
         /// <summary>
-        /// Patches <see cref="SoundSystem.PlayCue"/> and its variants so they can support modded sounds.
+        /// Patches <see cref="SoundSystem.PlayCue"/> and its variants
+        /// so they can support modded sounds.
         /// </summary>
-
-        private static CodeList GetEffectTranspiler(CodeList code, ILGenerator gen)
+        private static CodeEnumerable GetEffectTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             // Original: soundBank.GetCue(sCueName)
             // Modified: (local1 = GetEffectSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
@@ -111,13 +109,13 @@ namespace SoG.Modding.Patches
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetEffectSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetEffectSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -128,15 +126,15 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            return PatchUtils.InsertBeforeMethod(code, target, insertBefore);
+            code = PatchTools.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            return PatchTools.InsertBeforeMethod(code, target, insertBefore);
         }
 
         /// <summary>
-        /// Patches <see cref="SoundSystem.ReadySongInCue"/> so it can support modded music.
+        /// Patches <see cref="SoundSystem.ReadySongInCue"/>
+        /// so it can support modded music.
         /// </summary>
-
-        private static CodeList GetMusicTranspiler(CodeList code, ILGenerator gen)
+        private static CodeEnumerable GetMusicTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             // Original: musicBank.GetCue(sCueName)
             // Modified: (local1 = GetMusicSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
@@ -150,13 +148,13 @@ namespace SoG.Modding.Patches
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetMusicSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -167,15 +165,15 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            return PatchUtils.InsertBeforeMethod(code, target, insertBefore);
+            code = PatchTools.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            return PatchTools.InsertBeforeMethod(code, target, insertBefore);
         }
 
         /// <summary>
-        /// Patches <see cref="SoundSystem.PlayMixCues"/> so it can support modded music.
+        /// Patches <see cref="SoundSystem.PlayMixCues"/>
+        /// so that it can support modded music.
         /// </summary>
-
-        private static CodeList PlayMixTranspiler(CodeList code, ILGenerator gen)
+        private static CodeEnumerable PlayMixTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             Label skipVanillaBank = gen.DefineLabel();
             Label doVanillaBank = gen.DefineLabel();
@@ -186,13 +184,13 @@ namespace SoG.Modding.Patches
             List<CodeInstruction> insertBefore = new List<CodeInstruction>
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetMusicSoundBank")),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(StaticAccessPoints).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(TranspilerAP).GetMethod("GetCueName")),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -205,16 +203,20 @@ namespace SoG.Modding.Patches
 
             // First method, index 0
 
-            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
-            code = PatchUtils.InsertBeforeMethod(code, target, insertBefore);
+            code = PatchTools.InsertAfterMethod(code, target, insertAfter, missingPopIsOk: true);
+            code = PatchTools.InsertBeforeMethod(code, target, insertBefore);
 
             // Second method. Since we inserted the same method we search for, the actual index is 2, not 1
 
-            code = PatchUtils.InsertAfterMethod(code, target, insertAfter, methodIndex: 2, missingPopIsOk: true);
-            return PatchUtils.InsertBeforeMethod(code, target, insertBefore, methodIndex: 2);
+            code = PatchTools.InsertAfterMethod(code, target, insertAfter, methodIndex: 2, missingPopIsOk: true);
+            return PatchTools.InsertBeforeMethod(code, target, insertBefore, methodIndex: 2);
         }
 
-        private static CodeList LevelDoStuffTranspiler(CodeList code, ILGenerator gen)
+        /// <summary>
+        /// Patches <see cref="Game1._LevelLoading_DoStuff(Level.ZoneEnum, bool)"/>
+        /// so that it can support modded level setup.
+        /// </summary>
+        private static CodeEnumerable LevelDoStuffTranspiler(CodeEnumerable code, ILGenerator gen)
         {
             MethodInfo target = typeof(Quests.QuestLog).GetMethod("UpdateCheck_PlaceVisited");
 
@@ -225,7 +227,8 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Call, typeof(PatchCollection).GetPrivateStaticMethod("OnLevelLoadDoStuff"))
             };
 
-            return PatchUtils.InsertBeforeMethod(code, target, insert);
+            return PatchTools.InsertBeforeMethod(code, target, insert);
         }
+
     }
 }

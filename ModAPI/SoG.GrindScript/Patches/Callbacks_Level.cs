@@ -9,7 +9,7 @@ using LevelLoading;
 using SoG.Modding.Core;
 using SoG.Modding.Content;
 using SoG.Modding.Extensions;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.Patches
 {
@@ -22,9 +22,9 @@ namespace SoG.Modding.Patches
 
             LevelBlueprint bprint = new LevelBlueprint();
 
-            RareUtils.BlueprintSanityCheck(bprint);
+            LevelTools.BlueprintSanityCheck(bprint);
 
-            ModLevelEntry entry = ModGlobals.API.Library.Levels[enZoneToGet];
+            ModLevelEntry entry = APIGlobals.API.Library.Levels[enZoneToGet];
 
             try
             {
@@ -32,11 +32,11 @@ namespace SoG.Modding.Patches
             }
             catch (Exception e)
             {
-                ModGlobals.Log.Error($"Builder threw an exception for level {enZoneToGet}! Exception: {e}");
+                APIGlobals.Logger.Error($"Builder threw an exception for level {enZoneToGet}! Exception: {e}");
                 bprint = new LevelBlueprint();
             }
 
-            RareUtils.BlueprintSanityCheck(bprint, true);
+            LevelTools.BlueprintSanityCheck(bprint, true);
 
             // Enforce certain values
 
@@ -66,9 +66,10 @@ namespace SoG.Modding.Patches
         {
             // Modifying vanilla levels not supported yet
 
-            if (!type.IsFromMod()) return;
+            if (!type.IsFromMod())
+                return;
 
-            ModLevelEntry entry = ModGlobals.API.Library.Levels[type];
+            ModLevelEntry entry = APIGlobals.API.Library.Levels[type];
 
             try
             {
@@ -76,7 +77,7 @@ namespace SoG.Modding.Patches
             }
             catch (Exception e)
             {
-                ModGlobals.Log.Error($"Loader threw an exception for level {type}! Exception: {e}");
+                APIGlobals.Logger.Error($"Loader threw an exception for level {type}! Exception: {e}");
             }
         }
     }

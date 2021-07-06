@@ -1,9 +1,8 @@
 ﻿namespace SoG.Modding.Core
 {
     /// <summary>
-    /// Defines various misc text types for UI <para/>
+    /// Defines various misc text types for UI.
     /// </summary>
-
     public enum MiscTextTypes
     {
         Default,
@@ -17,7 +16,6 @@
     /// <summary>
     /// Defines equipment types based on ItemCodex.ItemCategories.
     /// </summary>
-
     public enum EquipmentType
     {
         None = -1,
@@ -31,9 +29,8 @@
     }
 
     /// <summary>
-    /// Indicates the byte values used for directions by the game
+    /// Indicates the byte values used for directions by the game.
     /// </summary>
-
     public enum Directions : byte
     {
         Up = 0, Right = 1, Down = 2, Left = 3

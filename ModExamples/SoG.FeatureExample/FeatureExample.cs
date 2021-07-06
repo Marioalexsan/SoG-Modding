@@ -6,7 +6,8 @@ using System.IO;
 using SoG.Modding.Core;
 using SoG.Modding.Content;
 using SoG.Modding.Extensions;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
+using SoG.Modding.Content.Configs;
 
 namespace SoG.FeatureExample
 {
@@ -64,7 +65,7 @@ namespace SoG.FeatureExample
             Logger.Info("Won't bother outputting any extra draws due to 60 draws / second!");
         }
 
-        public override void OnPlayerDamaged(ref int damage, ref byte type)
+        public override void OnPlayerDamaged(PlayerView view, ref int damage, ref byte type)
         {
             Logger.Info("OnPlayerDamaged() called!");
         }
@@ -225,7 +226,7 @@ namespace SoG.FeatureExample
         {
             Logger.Info("Building sounds...");
 
-            ModAPI.AudioAPI.ConfigureAudio(new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny"));
+            ModAPI.AudioAPI.CreateAudio(new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny"));
 
             audioIntro = ModAPI.AudioAPI.GetMusicID(this, "Intro");
             audioDestiny = ModAPI.AudioAPI.GetMusicID(this, "Destiny");
@@ -263,9 +264,9 @@ namespace SoG.FeatureExample
                 ["GiveItems"] = (argList, _) =>
                 {
                     string[] args = argList.Split(' ');
-                    if (NetUtils.IsLocalOrServer)
+                    if (NetTools.IsLocalOrServer)
                     {
-                        PlayerView localPlayer = ModGlobals.Game.xLocalPlayer;
+                        PlayerView localPlayer = APIGlobals.Game.xLocalPlayer;
                         CAS.AddChatMessage("Dropping Items!");
                         modShield.SpawnItem(localPlayer);
                         modAccessory.SpawnItem(localPlayer);
@@ -293,13 +294,13 @@ namespace SoG.FeatureExample
                     };
 
                     if (music.TryGetValue(args[0], out string ID))
-                        ModGlobals.Game.xSoundSystem.PlaySong(ID, true);
+                        APIGlobals.Game.xSoundSystem.PlaySong(ID, true);
                     else CAS.AddChatMessage("Unknown mod music!");
                 },
 
                 ["TellIDs"] = (argList, _) =>
                 {
-                    Inventory inv = ModGlobals.Game.xLocalPlayer.xInventory;
+                    Inventory inv = APIGlobals.Game.xLocalPlayer.xInventory;
                     CAS.AddChatMessage("Shield:" + (int)modShield + ", count: " + inv.GetAmount(modShield));
                     CAS.AddChatMessage("Accessory:" + (int)modAccessory + ", count: " + inv.GetAmount(modAccessory));
                     CAS.AddChatMessage("Hat:" + (int)modHat + ", count: " + inv.GetAmount(modHat));
@@ -310,7 +311,7 @@ namespace SoG.FeatureExample
 
                 ["GibCraft"] = (argList, _) =>
                 {
-                    PlayerView localPlayer = ModGlobals.Game.xLocalPlayer;
+                    PlayerView localPlayer = APIGlobals.Game.xLocalPlayer;
                     CAS.AddChatMessage("Dropping Items!");
 
                     int amount = 10;
@@ -323,18 +324,11 @@ namespace SoG.FeatureExample
 
                 ["Yeet"] = (argList, _) =>
                 {
-                    ModGlobals.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
+                    APIGlobals.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
                 },
-
-                ["TryCrappyLoad"] = (argList, _) =>
-                {
-                    // This should fail since there's no load context
-                    // In commands
-                    ModAPI.ItemAPI.CreateItem(new ItemConfig("Lmao"));
-                }
             };
 
-            ModAPI.MiscAPI.ConfigureCommands(parsers);
+            ModAPI.MiscAPI.CreateCommand(parsers);
 
             Logger.Info("Commands set up successfully!");
         }
@@ -373,6 +367,47 @@ namespace SoG.FeatureExample
             };
 
             ModAPI.RoguelikeAPI.CreatePerk(perk01);
+
+            TreatCurseConfig curse01 = new TreatCurseConfig("_Mod_Curse001")
+            {
+                Name = "Placeholder 01",
+                Description = "Placeholder-y stuff!",
+                IsCurse = true,
+                ScoreModifier = 5,
+                TexturePath = ""
+            };
+
+            TreatCurseConfig curse02 = new TreatCurseConfig("_Mod_Curse002")
+            {
+                Name = "Placeholder 02",
+                Description = "Placeholder-y stuff!",
+                IsCurse = true,
+                ScoreModifier = 5,
+                TexturePath = ""
+            };
+
+            TreatCurseConfig curse03 = new TreatCurseConfig("_Mod_Curse003")
+            {
+                Name = "Placeholder 03",
+                Description = "Placeholder-y stuff!",
+                IsCurse = true,
+                ScoreModifier = 5,
+                TexturePath = ""
+            };
+
+            TreatCurseConfig treat01 = new TreatCurseConfig("_Mod_Treat001")
+            {
+                Name = "Placeholder 01",
+                Description = "Placeholder-y stuff!",
+                IsCurse = false,
+                ScoreModifier = -5,
+                TexturePath = ""
+            };
+
+            ModAPI.RoguelikeAPI.CreateTreatOrCurse(treat01);
+            ModAPI.RoguelikeAPI.CreateTreatOrCurse(curse01);
+            ModAPI.RoguelikeAPI.CreateTreatOrCurse(curse02);
+            ModAPI.RoguelikeAPI.CreateTreatOrCurse(curse03);
 
             Logger.Info("Done with Roguelike stuff!");
         }

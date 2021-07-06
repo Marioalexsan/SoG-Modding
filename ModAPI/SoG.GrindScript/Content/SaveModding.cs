@@ -28,10 +28,10 @@ namespace SoG.Modding.Content
         private void ShuffleItem(ItemCodex.ItemTypes from, ItemCodex.ItemTypes to)
         {
             if (Enum.IsDefined(typeof(ItemCodex.ItemTypes), from) || Enum.IsDefined(typeof(ItemCodex.ItemTypes), to))
-                ModGlobals.Log.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: "ShuffleItem");
+                _modAPI.Logger.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: nameof(ShuffleItem));
 
-            Inventory inventory = ModGlobals.Game.xLocalPlayer.xInventory;
-            Journal journal = ModGlobals.Game.xLocalPlayer.xJournalInfo;
+            Inventory inventory = _modAPI.Game.xLocalPlayer.xInventory;
+            Journal journal = _modAPI.Game.xLocalPlayer.xJournalInfo;
 
             // Shuffle inventory, discovered items, crafted items, and fishes
 
@@ -60,12 +60,12 @@ namespace SoG.Modding.Content
             }
         }
 
-        private static void ShufflePerk(RogueLikeMode.Perks from, RogueLikeMode.Perks to)
+        private void ShufflePerk(RogueLikeMode.Perks from, RogueLikeMode.Perks to)
         {
             if (Enum.IsDefined(typeof(RogueLikeMode.Perks), from) || Enum.IsDefined(typeof(RogueLikeMode.Perks), to))
-                ModGlobals.Log.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: "ShufflePerk");
+                _modAPI.Logger.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", nameof(ShufflePerk));
 
-            var session = ModGlobals.Game.xGlobalData.xLocalRoguelikeData;
+            var session = _modAPI.Game.xGlobalData.xLocalRoguelikeData;
 
             if (session.enPerkSlot01 == from)
                 session.enPerkSlot01 = to;
@@ -86,9 +86,9 @@ namespace SoG.Modding.Content
         private void ShuffleTreatCurse(RogueLikeMode.TreatsCurses from, RogueLikeMode.TreatsCurses to)
         {
             if (Enum.IsDefined(typeof(RogueLikeMode.TreatsCurses), from) || Enum.IsDefined(typeof(RogueLikeMode.TreatsCurses), to))
-                ModGlobals.Log.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", source: "ShuffleTreatCurse");
+                _modAPI.Logger.Warn($"One or both of the items are from SoG! Shuffling may cause issues.", nameof(ShuffleTreatCurse));
 
-            var session = ModGlobals.Game.xGlobalData.xLocalRoguelikeData;
+            var session = _modAPI.Game.xGlobalData.xLocalRoguelikeData;
 
             if (session.enCurseTreatSlot01 == from)
                 session.enCurseTreatSlot01 = to;
@@ -109,7 +109,7 @@ namespace SoG.Modding.Content
                 var saveItem = savedItems.First();
                 bool found = false;
 
-                ModGlobals.Log.Info($"Checking unique {saveItem.Key}:{saveItem.Value}");
+                _modAPI.Logger.Info($"Checking unique {saveItem.Key}:{saveItem.Value}");
 
                 foreach (var modUnique in targetUniques)
                 {
@@ -123,7 +123,7 @@ namespace SoG.Modding.Content
 
                         if (savedItems.ContainsKey(modUnique.GameID))
                         {
-                            ModGlobals.Log.Debug($"Solving conflict: {savedItems[modUnique.GameID]} -> {tempShuffleStart}", source: "IdentifyModUnique");
+                            _modAPI.Logger.Debug($"Solving conflict: {savedItems[modUnique.GameID]} -> {tempShuffleStart}", source: "IdentifyModUnique");
                             typeShuffler(modUnique.GameID, tempShuffleStart);
 
                             savedItems.Add(tempShuffleStart, savedItems[modUnique.GameID]);
@@ -133,13 +133,13 @@ namespace SoG.Modding.Content
 
                         // Shuffle save ID to mod ID
 
-                        ModGlobals.Log.Debug($"{saveItem.Value}: {saveItem.Key} -> {modUnique.GameID}", source: "IdentifyModUnique");
+                        _modAPI.Logger.Debug($"{saveItem.Value}: {saveItem.Key} -> {modUnique.GameID}", source: "IdentifyModUnique");
                         typeShuffler(modUnique.GameID, tempShuffleStart);
                     }
                 }
 
                 if (!found)
-                    ModGlobals.Log.Warn($"{saveItem.Value} of type {typeof(T).Name} couldn't be identified!", source: "IdentifyModUnique");
+                    _modAPI.Logger.Warn($"{saveItem.Value} of type {typeof(T).Name} couldn't be identified!", source: nameof(IdentifyPersistentID));
 
                 savedItems.Remove(saveItem.Key);
             }
@@ -200,7 +200,7 @@ namespace SoG.Modding.Content
 
             if (GSVersion != GrindScriptVersion)
             {
-                ModGlobals.Log.Warn($"Version mismatch! Using version {GrindScriptVersion} while save has {GSVersion}.");
+                _modAPI.Logger.Warn($"Version mismatch! Using version {GrindScriptVersion} while save has {GSVersion}.");
             }
 
             // Read information for each mod
@@ -214,8 +214,8 @@ namespace SoG.Modding.Content
                 BaseScript target = _modAPI.LoadedScripts.FirstOrDefault(mod => mod.GetType().FullName == fullName);
                 if (target == null)
                 {
-                    ModGlobals.Log.Warn($"This save used mod {fullName}, which is not loaded right now!");
-                    ModGlobals.Log.Warn($"Game objects can not be identified as a result...");
+                    _modAPI.Logger.Warn($"This save used mod {fullName}, which is not loaded right now!");
+                    _modAPI.Logger.Warn($"Game objects can not be identified as a result...");
                 }
 
                 if (targets.Contains(Saveables.InventoryItems))

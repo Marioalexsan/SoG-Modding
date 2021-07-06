@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SoG.Modding.Core;
 
-namespace SoG.Modding.Content
+namespace SoG.Modding.Content.Configs
 {
     public class LevelConfig
     {

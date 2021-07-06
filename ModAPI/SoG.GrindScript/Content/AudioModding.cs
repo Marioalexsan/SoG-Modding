@@ -5,7 +5,10 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Audio;
 using System.IO;
 using SoG.Modding.Core;
-using SoG.Modding.Tools;
+using SoG.Modding.Utils;
+using System;
+using System.Diagnostics;
+using SoG.Modding.Content.Configs;
 
 namespace SoG.Modding.Content
 {
@@ -16,28 +19,28 @@ namespace SoG.Modding.Content
 
         /// <summary>
         /// Configures custom audio for the current mod, using the config provided. <para/>
-        /// After configuring the audio, music and effect IDs can be obtained with <see cref="GetEffectID"/> and <see cref="GetMusicID"/>.
+        /// Config must not be null.
         /// </summary>
-        /// 
-
-        public void ConfigureAudio(AudioConfig cfg)
+        public void CreateAudio(AudioConfig cfg)
         {
-            BaseScript owner = _modAPI.CurrentModContext;
-            if (cfg == null || owner == null)
+            ThrowHelper.ThrowIfNull(cfg);
+
+            BaseScript mod = _modAPI.CurrentModContext;
+            if (mod == null)
             {
-                ModGlobals.Log.Warn("Can't create audio due to owner or builder being null!");
+                _modAPI.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateAudio));
                 return;
             }
 
-            string assetPath = owner.ModPath;
-            int ID = owner.ModIndex;
+            string assetPath = mod.ModPath;
+            int ID = mod.ModIndex;
             ModAudioEntry entry = _modAPI.Library.Audio[ID];
 
-            AudioEngine audioEngine = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(ModGlobals.Game.xSoundSystem) as AudioEngine;
+            AudioEngine audioEngine = typeof(SoundSystem).GetField("audioEngine", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(_modAPI.Game.xSoundSystem) as AudioEngine;
 
             if (entry.IsReady)
             {
-                ModGlobals.Log.Warn($"Audio Entry {ID} is being redefined for a second time! This may cause issues.");
+                _modAPI.Logger.Warn($"Audio Entry {ID} is being redefined for a second time! This may cause issues.");
 
                 if (entry.EffectsSB != null)
                 {
@@ -89,15 +92,15 @@ namespace SoG.Modding.Content
                     musicIDToCue[musicID++] = music;
                 }
                 if (!kvp.Key.StartsWith(modName))
-                    ModGlobals.Log.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not follow the naming convention, and may cause conflicts!");
+                    _modAPI.Logger.Warn($"Music WaveBank {kvp.Key} from mod {modName} does not follow the naming convention, and may cause conflicts!");
             }
 
             string root = Path.Combine(entry.Owner.ModContent.RootDirectory, assetPath);
 
-            entry.EffectsWB = Utils.TryLoadWaveBank(Path.Combine(root, "Sound", modName + "Effects.xwb"), audioEngine);
-            entry.EffectsSB = Utils.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Effects.xsb"), audioEngine);
-            entry.MusicSB = Utils.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Music.xsb"), audioEngine);
-            entry.UniversalWB = Utils.TryLoadWaveBank(Path.Combine(root, "Sound", modName + ".xwb"), audioEngine);
+            entry.EffectsWB = Utils.Tools.TryLoadWaveBank(Path.Combine(root, "Sound", modName + "Effects.xwb"), audioEngine);
+            entry.EffectsSB = Utils.Tools.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Effects.xsb"), audioEngine);
+            entry.MusicSB = Utils.Tools.TryLoadSoundBank(Path.Combine(root, "Sound", modName + "Music.xsb"), audioEngine);
+            entry.UniversalWB = Utils.Tools.TryLoadWaveBank(Path.Combine(root, "Sound", modName + ".xwb"), audioEngine);
             entry.EffectNames = effectIDToCue;
             entry.MusicNames = musicIDToCue;
             entry.MusicBankNames = cueToWaveBank;
@@ -110,20 +113,20 @@ namespace SoG.Modding.Content
 
         public void RedirectVanillaMusic(string vanilla, string redirect)
         {
-            var songRegionMapField = (Dictionary<string, string>)typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ModGlobals.Game.xSoundSystem);
+            var songRegionMapField = (Dictionary<string, string>)typeof(SoundSystem).GetTypeInfo().GetField("dssSongRegionMap", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_modAPI.Game.xSoundSystem);
             if (!songRegionMapField.ContainsKey(vanilla))
             {
-                ModGlobals.Log.Warn($"Redirecting {vanilla} to {redirect} is not possible since {vanilla} is not a vanilla music!");
+                _modAPI.Logger.Warn($"Redirecting {vanilla} to {redirect} is not possible since {vanilla} is not a vanilla music!");
                 return;
             }
 
-            bool isModded = Utils.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
+            bool isModded = Utils.Tools.SplitGSAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
             var entry = _modAPI.Library.Audio.ContainsKey(entryID) ? _modAPI.Library.Audio[entryID] : null;
             string cueName = entry != null && entry.MusicNames.ContainsKey(cueID) ? entry.MusicNames[cueID] : null;
 
             if ((!isModded || !isMusic || cueName == null) && !(redirect == ""))
             {
-                ModGlobals.Log.Warn($"Redirecting {vanilla} to {redirect} is not possible since {redirect} is not a modded music!");
+                _modAPI.Logger.Warn($"Redirecting {vanilla} to {redirect} is not possible since {redirect} is not a modded music!");
                 return;
             }
 
@@ -132,12 +135,12 @@ namespace SoG.Modding.Content
 
             if (redirect == "")
             {
-                ModGlobals.Log.Info($"Song {vanilla} has been cleared of any redirects.");
+                _modAPI.Logger.Info($"Song {vanilla} has been cleared of any redirects.");
                 redirectedSongs.Remove(vanilla);
             }
             else
             {
-                ModGlobals.Log.Info($"Song {vanilla} is now redirected to {redirect} ({cueName}). {(replacing ? $"Previous redirect was {redirectedSongs[vanilla]}" : "")}");
+                _modAPI.Logger.Info($"Song {vanilla} is now redirected to {redirect} ({cueName}). {(replacing ? $"Previous redirect was {redirectedSongs[vanilla]}" : "")}");
                 redirectedSongs[vanilla] = redirect;
             }
         }
@@ -151,7 +154,7 @@ namespace SoG.Modding.Content
         {
             if (owner == null)
             {
-                ModGlobals.Log.Warn("Can't get sound ID due to owner being null!");
+                _modAPI.Logger.Warn("Can't get sound ID due to owner being null!");
                 return "";
             }
             return GetEffectID(owner.ModIndex, cueName);
@@ -184,7 +187,7 @@ namespace SoG.Modding.Content
         {
             if (owner == null)
             {
-                ModGlobals.Log.Warn("Can't get sound ID due to owner being null!");
+                _modAPI.Logger.Warn("Can't get sound ID due to owner being null!");
                 return "";
             }
             return GetMusicID(owner.ModIndex, cueName);
@@ -212,7 +215,7 @@ namespace SoG.Modding.Content
 
         public string GetCueName(string GSID)
         {
-            if (!Utils.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
+            if (!Utils.Tools.SplitGSAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
             ModAudioEntry entry = _modAPI.Library.Audio[entryID];
             return isMusic ? entry.MusicNames[cueID] : entry.EffectNames[cueID];
@@ -224,7 +227,7 @@ namespace SoG.Modding.Content
 
         public Cue GetEffectCue(string audioID)
         {
-            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            bool success = Utils.Tools.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
             if (!(success && !isMusic))
                 return null;
 
@@ -238,7 +241,7 @@ namespace SoG.Modding.Content
 
         public SoundBank GetEffectSoundBank(string audioID)
         {
-            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.Tools.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && !isMusic))
                 return null;
 
@@ -256,7 +259,7 @@ namespace SoG.Modding.Content
 
         public WaveBank GetEffectWaveBank(string audioID)
         {
-            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.Tools.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && !isMusic))
                 return null;
 
@@ -269,7 +272,7 @@ namespace SoG.Modding.Content
 
         public SoundBank GetMusicSoundBank(string audioID)
         {
-            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.Tools.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && isMusic))
                 return null;
 
@@ -282,7 +285,7 @@ namespace SoG.Modding.Content
 
         public string GetMusicWaveBank(string audioID)
         {
-            bool success = Utils.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            bool success = Utils.Tools.SplitGSAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
             if (!(success && isMusic))
                 return null;
 
@@ -333,7 +336,7 @@ namespace SoG.Modding.Content
             }
 
             FieldInfo universalWaveBankField = typeof(SoundSystem).GetTypeInfo().GetField("universalMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (bank == universalWaveBankField.GetValue(ModGlobals.Game.xSoundSystem))
+            if (bank == universalWaveBankField.GetValue(_modAPI.Game.xSoundSystem))
                 return true;
 
             return false;
